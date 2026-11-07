@@ -39,7 +39,7 @@ export default function Invitation({ countdown, menuOpen, setMenuOpen, calendarS
         <div className="couple-details reveal">
           <article className="person person-groom"><span className="person-label">ವರ</span><h3><small>ಚಿ.</small> ಆನಂದ</h3><p>ಸೌ. ಹೇಮಾ ಮತ್ತು<br />ಶ್ರೀ ವಿಷ್ಣು ಲಕ್ಷ್ಮಣ ಸುಳ್ಕರ</p><p className="person-detail">ಸಾಗರೊಳ್ಳಿಭಾವಿ, ತಾ.ಜಿ. ಬೆಳಗಾವಿ<br />ಇವರ ಸುಪುತ್ರ</p><Kolam className="person-ornament" /></article>
           <article className="person person-bride"><span className="person-label">ವಧು</span><h3><small>ಚಿ.ಸೌ.ಕಾಂ.</small> ಸುಶ್ಮಿತಾ</h3><p>ಸೌ. ಪೂರ್ಣಿಮಾ ಮತ್ತು<br />ಶ್ರೀ ರಾಮಲಿಂಗ ರಾಮಪ್ಪ ಓಟಗಿ</p><p className="person-detail">ಸಾಗರೊಳ್ಳಿಭಾವಿ, ತಾ.ಜಿ. ಬೆಳಗಾವಿ<br />ಇವರ ತೃತೀಯ ಸುಪುತ್ರಿ</p><Kolam className="person-ornament" /></article>
-          <figure className="couple-portrait"><div className="portrait-frame"><img src="/images/wedding-couple-in-bloom.png" alt="ಕೈ ಹಿಡಿದು ಜೊತೆಯಾಗಿ ನಿಂತಿರುವ ಸಾಂಪ್ರದಾಯಿಕ ಉಡುಗೆಯ ವಧು ಮತ್ತು ವರರ ಚಿತ್ರಣ" width="1254" height="1254" /></div><figcaption>ಸಂಪ್ರದಾಯದ ಸೊಬಗು · ಪ್ರೀತಿಯ ಹೊಸ ಪಯಣ</figcaption></figure>
+          <figure className="couple-portrait"><div className="portrait-frame"><img src="/images/wedding-couple-pink-green.png" alt="ಕೈ ಹಿಡಿದು ಜೊತೆಯಾಗಿ ನಿಂತಿರುವ ಸಾಂಪ್ರದಾಯಿಕ ಉಡುಗೆಯ ವಧು ಮತ್ತು ವರರ ಚಿತ್ರಣ" width="1254" height="1254" /></div><figcaption>ಸಂಪ್ರದಾಯದ ಸೊಬಗು · ಪ್ರೀತಿಯ ಹೊಸ ಪಯಣ</figcaption></figure>
         </div>
         <p className="invitation-note reveal">ಇವರ ಶುಭ ವಿವಾಹವನ್ನು ನೆರವೇರಿಸಲು ಗುರುಹಿರಿಯರು ನಿಶ್ಚಯಿಸಿರುತ್ತಾರೆ.<br />ತಾವು ಈ ಮಂಗಲ ಕಾರ್ಯಕ್ಕೆ ಸಹಕುಟುಂಬ ಸಮೇತರಾಗಿ ಆಗಮಿಸಿ<br className="desktop-break" /> ವಧು–ವರರಿಗೆ ಆಶೀರ್ವದಿಸಬೇಕಾಗಿ ಪ್ರೀತಿಪೂರ್ವಕ ವಿನಂತಿ.</p>
         <Divider />

@@ -9,7 +9,7 @@ button, a { -webkit-tap-highlight-color: transparent; touch-action: manipulation
 button { font: inherit; cursor: pointer; }
 a { color: inherit; text-decoration: none; }
 button:focus-visible, a:focus-visible { outline: 2px solid var(--rose); outline-offset: 6px; }
-::selection { background: var(--olive); color: var(--deep); }
+::selection { background: var(--rose); color: var(--ivory); }
 h1, h2, h3, p, figure { margin: 0; }
 h1, h2, h3 { font-family: 'Noto Serif Kannada', serif; font-weight: 400; }
 img { display: block; max-width: 100%; }
@@ -19,7 +19,7 @@ img { display: block; max-width: 100%; }
 .button svg { flex-shrink: 0; }
 .button-primary { background: var(--deep); border-color: var(--deep); color: var(--ivory); }
 .button-primary:hover { background: var(--rose-dark); border-color: var(--rose-dark); }
-.button-outline { background: transparent; border-color: #a2ab73b3; color: var(--deep); }
+.button-outline { background: transparent; border-color: #283a2db3; color: var(--deep); }
 .button-outline:hover { background: var(--deep); border-color: var(--deep); color: var(--ivory); }
 .skip-link { position: fixed; top: -80px; left: 15px; z-index: 150; padding: 12px 20px; background: var(--deep); color: var(--ivory); }
 .skip-link:focus { top: 12px; }
@@ -41,7 +41,7 @@ img { display: block; max-width: 100%; }
 
 /* The cover follows the geometry and woven edge of printed wedding stationery. */
 .hero { position: relative; width: min(1320px, calc(100% - 64px)); margin: 30px auto 0; border: 1px solid var(--olive); border-bottom: 0; overflow: hidden; }
-.hero-inset { position: absolute; inset: 10px 10px 0; border: 1px solid #a2ab735c; pointer-events: none; }
+.hero-inset { position: absolute; inset: 10px 10px 0; border: 1px solid #283a2d5c; pointer-events: none; }
 .hero-corner { position: absolute; top: 28px; width: 61px; height: 61px; color: var(--olive); opacity: .85; }
 .corner-left { left: 28px; }
 .corner-right { right: 28px; }
@@ -105,13 +105,13 @@ img { display: block; max-width: 100%; }
 .ceremony-message { font-size: 11px; color: var(--muted); line-height: 2.3; margin-top: 20px; }
 .muhurtha-bottom { margin-top: 25px; }
 .calendar-hint { font-size: 9px; line-height: 2; color: var(--muted); min-height: 18px; margin-top: 10px; }
-.countdown-section { background: var(--deep); color: var(--ivory); position: relative; border-bottom: 5px double #a2ab7370; }
+.countdown-section { background: var(--deep); color: var(--ivory); position: relative; border-bottom: 5px double #fff7eb70; }
 .countdown-layout { display: grid; grid-template-columns: 1fr 1.25fr; align-items: center; gap: 65px; padding-block: 35px 40px; }
 .countdown-heading .eyebrow { font-size: 10px; color: var(--thread); }
 .countdown-heading h2 { font-size: 24px; line-height: 1.9; margin-top: 7px; }
 .countdown { display: flex; justify-content: center; }
 .countdown-unit { width: 25%; text-align: center; position: relative; }
-.countdown-unit + .countdown-unit { border-left: 1px solid #a2ab734d; }
+.countdown-unit + .countdown-unit { border-left: 1px solid #fff7eb4d; }
 .countdown-number { display: block; font-family: 'Cormorant Garamond', serif; font-size: 58px; line-height: 1.2; font-variant-numeric: tabular-nums; }
 .countdown-label { display: block; font-size: 9px; color: var(--thread); line-height: 2; margin-top: 7px; }
 .married-message { font-size: 13px; line-height: 2.3; color: var(--ivory); }
@@ -126,14 +126,14 @@ img { display: block; max-width: 100%; }
 .venue-address { font-size: 13px; color: var(--muted); line-height: 2.2; margin: 21px 0 25px; }
 .venue-hint { font-size: 9px; line-height: 2; color: var(--muted); margin-top: 10px; }
 .venue-illustration { border: 1px solid var(--line); background: var(--paper); padding: 40px 10px 24px; position: relative; }
-.venue-illustration::before { content: ''; position: absolute; inset: 8px; border: 1px solid #a2ab7345; pointer-events: none; }
+.venue-illustration::before { content: ''; position: absolute; inset: 8px; border: 1px solid #283a2d45; pointer-events: none; }
 .venue-corner { position: absolute; width: 28px; height: 28px; top: 16px; left: 16px; color: var(--olive); }
-.temple { display: block; width: 100%; color: #7a8656; }
+.temple { display: block; width: 100%; color: var(--deep); }
 .venue-illustration > p { font-size: 10px; color: var(--muted); text-align: center; margin-top: 5px; }
 
 .family-section { padding-block: 78px; }
 .family-card { position: relative; border: 1px solid var(--olive); padding: 52px 38px 42px; text-align: center; }
-.family-card::before { content: ''; position: absolute; inset: 8px; border: 1px solid #a2ab734d; pointer-events: none; }
+.family-card::before { content: ''; position: absolute; inset: 8px; border: 1px solid #283a2d4d; pointer-events: none; }
 .family-corner { width: 43px; height: 43px; color: var(--olive); position: absolute; top: 22px; }
 .family-corner-left { left: 22px; }
 .family-corner-right { right: 22px; }
@@ -157,7 +157,7 @@ img { display: block; max-width: 100%; }
 .footer-blessing { color: var(--muted); font-size: 9px; margin: 20px 15px 36px; line-height: 2; }
 
 .invitation-dialog { width: min(660px, calc(100% - 32px)); max-height: calc(100dvh - 50px); padding: 0; border: 1px solid var(--olive); color: var(--ink); background: var(--ivory); }
-.invitation-dialog::backdrop { background: #1c2c22d9; backdrop-filter: blur(5px); }
+.invitation-dialog::backdrop { background: #283a2dd9; backdrop-filter: blur(5px); }
 .dialog-content { padding: 20px; }
 .dialog-header { display: flex; align-items: center; justify-content: space-between; gap: 15px; padding-bottom: 18px; }
 .dialog-header h2 { font-size: 18px; color: var(--deep); }
@@ -228,7 +228,7 @@ img { display: block; max-width: 100%; }
   .person > .person-detail { font-size: 10px; margin-top: 12px; }
   .person-ornament { display: none; }
   .couple-portrait { width: 100%; margin: 0; }
-  .portrait-frame { padding: 0; border-color: #a2ab7345; }
+  .portrait-frame { padding: 0; border-color: #283a2d45; }
   .portrait-frame img { display: block; width: 100%; height: auto; aspect-ratio: 1; object-fit: contain; }
   .couple-portrait figcaption { font-size: 9px; }
   .invitation-note { font-size: 11px; line-height: 2.4; }

@@ -1,6 +1,14 @@
 # Wedding illustration
 
-## Current ivory, cream, olive, and rose palette
+## Current deep pink and dark green couple illustration
+
+Palette-only edit of the owner's supplied `public/images/wedding-couple-in-bloom.png`, using the built-in imagegen tool. Final asset: `public/images/wedding-couple-pink-green.png`.
+
+Final edit prompt:
+
+> Precise colour correction of this existing square South Indian wedding illustration. Preserve its exact composition, two people seen from behind, their poses and joined hands, clothing shapes and folds, bride's long braided hair with jasmine and gold ornaments, flowers, banana plants, full uncropped square framing, and clean detailed illustration style. Change only the theme colours. Use a strict coordinated pair of base colours: deep pink #A53051 and dark forest green #283A2D. Recolour ALL pink areas to #A53051 as the dominant base colour: bride's sari and blouse, bangles, flowers, flower buds, and small pink accents. Use only highlights and shadows of that same deep pink hue, with no bright magenta, coral, hot pink, or red colour variants. Recolour ALL green areas to #283A2D as the dominant base colour: banana leaves and all foliage, flower stems, groom's shawl stripes, bride's sari borders and stripes, and green jewelry details. Use natural highlights and shadows of this same dark green hue, removing all lime, sage, yellow-green, and olive green. Keep neutral ivory clothing, cream jasmine, small warm gold jewelry, natural warm brown skin, and natural dark hair. Keep the background pale warm ivory #FFF7EB, matching the original paper style. All florals should harmonize in deep pink and dark green. Do not alter, add, remove, crop, or reposition any figure or object. No text, lettering, logo, watermark, or new decoration. This is a faithful palette-only edit of the supplied illustration.
+
+## Previous ivory, cream, olive, and rose palette
 
 Edited using the built-in imagegen tool from the coral illustration, saved as `public/images/wedding-illustration-olive-rose.png`.
 
