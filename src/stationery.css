@@ -89,7 +89,7 @@ img { display: block; max-width: 100%; }
 
 /* The muhurta is set like a date leaf beside the ceremony details. */
 .muhurtha-section { background: var(--paper); border-top: 1px solid var(--line); }
-.muhurtha-layout { display: grid; grid-template-columns: 1fr 1.35fr; gap: 75px; max-width: 1020px; padding-block: 76px 67px; align-items: center; }
+.muhurtha-layout { display: grid; grid-template-columns: 1fr 1.35fr; gap: 32px 64px; max-width: 1020px; padding-block: 56px; align-items: center; }
 .date-composition { text-align: center; padding: 12px 30px 22px; border-right: 1px solid var(--line); }
 .date-composition .eyebrow { color: var(--muted); }
 .big-date { display: block; color: var(--deep); font-family: 'Cormorant Garamond', serif; font-weight: 400; font-size: 190px; line-height: .97; margin: 11px 0 15px; letter-spacing: -8px; }
@@ -104,12 +104,9 @@ img { display: block; max-width: 100%; }
 .ceremony-time svg { color: var(--muted); }
 .muhurtha-caption { color: var(--deep); font-size: 12px; margin-top: 9px; line-height: 2; }
 .ceremony-message { font-size: 11px; color: var(--muted); line-height: 2.3; margin-top: 20px; }
-.muhurtha-bottom { margin-top: 25px; }
-.calendar-hint { font-size: 9px; line-height: 2; color: var(--muted); min-height: 18px; margin-top: 10px; }
-.countdown-section { background: var(--deep); color: var(--ivory); position: relative; border-bottom: 5px double #fff7eb70; }
-.countdown-layout { display: grid; grid-template-columns: 1fr 1.25fr; align-items: center; gap: 65px; padding-block: 35px 40px; }
+.countdown-card { grid-column: 1 / -1; display: grid; grid-template-columns: 1fr 1.25fr; align-items: center; gap: 28px; padding: 23px 30px; background: var(--deep); color: var(--ivory); border: 4px double var(--paper); outline: 1px solid var(--deep); }
 .countdown-heading .eyebrow { font-size: 10px; color: var(--thread); }
-.countdown-heading h2 { font-size: 24px; line-height: 1.9; margin-top: 7px; }
+.countdown-heading h3 { font-size: 23px; line-height: 1.8; margin-top: 4px; }
 .countdown { display: flex; justify-content: center; }
 .countdown-unit { width: 25%; text-align: center; position: relative; }
 .countdown-unit + .countdown-unit { border-left: 1px solid #fff7eb4d; }
@@ -177,8 +174,7 @@ img { display: block; max-width: 100%; }
   .couple-details { gap: 22px; }
   .person h3 { font-size: 32px; }
   .person > p { font-size: 12px; }
-  .muhurtha-layout { gap: 45px; }
-  .countdown-layout { gap: 35px; }
+  .muhurtha-layout { column-gap: 45px; }
   .venue-inner { grid-template-columns: .35fr 1.4fr 1fr; gap: 30px; }
   .venue-copy h2 { font-size: 27px; }
   .hosts p { font-size: 12px; }
@@ -249,48 +245,60 @@ img { display: block; max-width: 100%; }
   .desktop-break { display: none; }
   .ornament-divider { margin-top: 28px; gap: 18px; }
   .ornament-divider span { width: 60px; }
-  .muhurtha-layout { grid-template-columns: 1fr; padding-block: 43px 39px; gap: 30px; }
-  .date-composition { border-right: 0; border-bottom: 1px solid var(--line); padding: 0 20px 29px; width: 230px; max-width: 100%; margin: auto; }
-  .big-date { font-size: 142px; margin-block: 8px 12px; }
-  .date-month p { font-size: 18px; }
-  .date-month > span { font-size: 26px; }
-  .date-day { font-size: 11px; margin-top: 10px; }
+  .muhurtha-layout { min-height: calc(100vh - var(--mobile-header-size) - 2px); min-height: calc(100svh - var(--mobile-header-size) - 2px); display: flex; flex-direction: column; justify-content: space-evenly; gap: clamp(10px, 2svh, 22px); padding-block: clamp(12px, 2.6svh, 26px); }
+  .muhurtha-layout > * { flex-shrink: 0; }
+  .date-composition { display: grid; grid-template-columns: auto auto; column-gap: 16px; border: 0; padding: 0; width: max-content; max-width: 100%; text-align: left; }
+  .date-composition .eyebrow { grid-column: 1 / -1; text-align: center; font-size: clamp(8px, 1.3svh, 10px); }
+  .big-date { grid-row: 2 / 4; font-size: clamp(68px, 12svh, 106px); line-height: .95; margin: 0; letter-spacing: -4px; }
+  .date-month { align-self: end; gap: 9px; }
+  .date-month p { font-size: clamp(13px, 2svh, 17px); }
+  .date-month > span { font-size: clamp(22px, 3svh, 28px); }
+  .date-day { font-size: 10px; line-height: 1.8; margin-top: 3px; }
   .ceremony-copy { text-align: center; }
-  .ceremony-copy h2 { font-size: 26px; margin-top: 10px; }
-  .ceremony-time { justify-content: center; gap: 10px; margin-top: 16px; }
-  .ceremony-time p { font-size: 12px; }
-  .ceremony-time > span { font-size: 25px; }
-  .ceremony-time svg { width: 20px; height: 20px; }
-  .muhurtha-caption { font-size: 11px; }
-  .ceremony-message { font-size: 10px; margin-top: 15px; }
-  .muhurtha-bottom { margin-top: 23px; }
-  .countdown-layout { grid-template-columns: 1fr; gap: 22px; padding-block: 28px 31px; text-align: center; }
-  .countdown-heading .eyebrow { font-size: 9px; }
-  .countdown-heading h2 { font-size: 23px; }
+  .ceremony-copy .eyebrow { font-size: clamp(8px, 1.3svh, 10px); }
+  .ceremony-copy h2 { font-size: clamp(20px, 3.4svh, 29px); line-height: 1.65; margin-top: 4px; }
+  .ceremony-time { justify-content: center; gap: 9px; margin-top: 6px; }
+  .ceremony-time p { font-size: clamp(10px, 1.6svh, 12px); }
+  .ceremony-time > span { font-size: clamp(22px, 4svh, 32px); line-height: 1.6; }
+  .ceremony-time svg { width: 18px; height: 18px; }
+  .muhurtha-caption { font-size: clamp(9px, 1.4svh, 11px); line-height: 1.8; margin-top: 4px; }
+  .ceremony-message { font-size: clamp(9px, 1.35svh, 11px); line-height: 1.9; margin-top: clamp(6px, 1.2svh, 10px); }
+  .countdown-card { width: 100%; grid-template-columns: 1fr; gap: clamp(6px, 1.2svh, 12px); padding: clamp(10px, 2svh, 19px) 12px; text-align: center; }
+  .countdown-heading .eyebrow { font-size: clamp(8px, 1.2svh, 9px); line-height: 1.7; }
+  .countdown-heading h3 { font-size: clamp(18px, 2.8svh, 23px); line-height: 1.6; margin-top: 2px; }
   .countdown { max-width: 420px; width: 100%; margin: auto; }
-  .countdown-number { font-size: 47px; }
-  .countdown-label { font-size: 9px; margin-top: 6px; }
-  .venue-inner { grid-template-columns: 1fr; gap: 30px; padding-block: 48px; }
+  .countdown-number { font-size: clamp(34px, 5.5svh, 48px); }
+  .countdown-label { font-size: clamp(8px, 1.2svh, 9px); line-height: 1.6; margin-top: 3px; }
+  .married-message { font-size: 11px; line-height: 1.9; }
+  .venue-inner { min-height: calc(100vh - var(--mobile-header-size) - 2px); min-height: calc(100svh - var(--mobile-header-size) - 2px); display: flex; flex-direction: column; justify-content: space-evenly; gap: clamp(12px, 2.4svh, 24px); padding-block: clamp(12px, 2.6svh, 28px); }
   .venue-aside { display: none; }
   .venue-copy { text-align: center; }
-  .venue-copy h2 { font-size: 27px; }
-  .venue-address { font-size: 12px; margin-block: 17px 23px; }
-  .venue-illustration { width: min(78%, 320px); margin: auto; padding-top: 35px; }
-  .family-section { padding-block: 48px; }
-  .family-card { padding: 44px 19px 30px; }
+  .venue-copy .eyebrow { font-size: clamp(8px, 1.3svh, 10px); }
+  .venue-copy h2 { font-size: clamp(22px, 3.6svh, 30px); line-height: 1.65; margin-top: 6px; }
+  .venue-address { font-size: clamp(10px, 1.5svh, 12px); line-height: 1.85; margin-block: clamp(8px, 1.6svh, 14px); }
+  .venue-copy .button { min-height: 44px; padding-block: 8px 6px; }
+  .venue-hint { font-size: 8.5px; line-height: 1.7; margin-top: 7px; }
+  .venue-illustration { flex-shrink: 0; width: min(100%, 320px); margin: 0 auto; padding: 20px 14px 12px; }
+  .venue-illustration .temple { height: clamp(95px, 23svh, 250px); }
+  .venue-illustration > p { font-size: 9px; line-height: 1.6; margin-top: 2px; }
+  .venue-corner { width: 22px; height: 22px; top: 12px; left: 12px; }
+  .family-section { min-height: calc(100vh - var(--mobile-header-size) - 1px); min-height: calc(100svh - var(--mobile-header-size) - 1px); display: flex; padding-block: clamp(10px, 2.4svh, 24px); }
+  .family-card { flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: space-evenly; gap: clamp(6px, 1.2svh, 12px); padding: clamp(14px, 2.4svh, 24px) 16px; }
   .family-card::before { inset: 6px; }
-  .family-corner { width: 28px; height: 28px; top: 16px; }
-  .family-corner-left { left: 15px; }
-  .family-corner-right { right: 15px; }
-  .family-card .section-heading h2 { font-size: 22px; }
-  .family-card .eyebrow { font-size: 9px; }
-  .hosts { grid-template-columns: 1fr; margin-top: 20px; }
-  .hosts p { font-size: 13px; padding: 15px 3px; }
+  .family-corner { width: clamp(18px, 3svh, 28px); height: clamp(18px, 3svh, 28px); top: 13px; }
+  .family-corner-left { left: 12px; }
+  .family-corner-right { right: 12px; }
+  .family-card .section-heading h2 { font-size: clamp(19px, 2.9svh, 25px); line-height: 1.65; margin-top: 4px; }
+  .family-card .eyebrow { font-size: clamp(8px, 1.25svh, 9px); line-height: 1.6; }
+  .hosts { grid-template-columns: 1fr; margin: 0; }
+  .hosts p { font-size: clamp(10.5px, 1.65svh, 13px); line-height: 1.85; padding: clamp(5px, 1.2svh, 10px) 0; }
   .hosts p + p { border-left: 0; border-top: 1px solid var(--line); }
-  .family-card .ornament-divider { margin-top: 20px; }
-  .extended-family h3 { font-size: 16px; margin-bottom: 13px; }
-  .extended-family p { font-size: 10px; line-height: 2.4; }
-  .extended-family .younger-hosts { font-size: 9px; margin-top: 18px; }
+  .family-card .ornament-divider { margin: 0; }
+  .family-card .ornament-divider .kolam { width: 18px; height: 18px; }
+  .extended-family { margin: 0; }
+  .extended-family h3 { font-size: clamp(14px, 2.1svh, 17px); line-height: 1.8; margin-bottom: 6px; }
+  .extended-family p { font-size: clamp(9px, 1.35svh, 11px); line-height: 1.85; margin-top: 6px; }
+  .extended-family .younger-hosts { font-size: clamp(8.5px, 1.2svh, 10px); margin-top: 9px; }
   .footer-monogram { width: 72px; height: 72px; margin-bottom: 16px; }
   .footer-welcome { font-size: 10px; }
   .footer-names { font-size: 23px; margin-top: 13px; }
@@ -303,9 +311,6 @@ img { display: block; max-width: 100%; }
 @media (max-width: 360px) {
   .hero-copy { padding-inline: 16px; }
   .section-heading h2 { font-size: 22px; }
-  .family-card .section-heading h2 { font-size: 19px; }
-  .hosts p { font-size: 11px; }
-  .countdown-number { font-size: 42px; }
   .couple-details { column-gap: 12px; }
 }
 @media (max-width: 800px) and (max-height: 620px) {
@@ -317,6 +322,13 @@ img { display: block; max-width: 100%; }
   .person > p { font-size: 10px; line-height: 1.7; }
   .couple-portrait { grid-template-rows: minmax(0, 1fr); gap: 0; }
   .couple-portrait figcaption { display: none; }
+  .family-section { padding-block: 8px; }
+  .family-card { padding-block: 12px; gap: 5px; }
+  .family-card .section-heading .eyebrow { display: none; }
+  .hosts p { line-height: 1.7; padding-block: 4px; }
+  .family-card .ornament-divider .kolam { width: 14px; height: 14px; }
+  .extended-family p { line-height: 1.7; margin-top: 4px; }
+  .extended-family .younger-hosts { margin-top: 6px; }
 }
 @media (max-width: 1000px) and (max-height: 560px) {
   :root { --mobile-header-size: 58px; --hero-gap: 8px; --hero-border-size: 30px; }
@@ -352,6 +364,24 @@ img { display: block; max-width: 100%; }
   .couple-portrait { grid-template-rows: minmax(0, 1fr); }
   .couple-portrait figcaption { display: none; }
   .invitation-section .invitation-note { font-size: 9px; line-height: 1.7; }
+  .muhurtha-layout { display: grid; grid-template-columns: .8fr 1.2fr; grid-template-rows: 1fr auto; padding-block: 10px; gap: 10px 20px; }
+  .countdown-card { grid-template-columns: 1fr 1.2fr; gap: 14px; padding: 7px 12px; }
+  .countdown-heading .eyebrow { display: none; }
+  .countdown-heading h3 { font-size: 18px; margin: 0; }
+  .countdown-number { font-size: 32px; }
+  .venue-inner { display: grid; grid-template-columns: 1.1fr .9fr; gap: 20px; padding-block: 12px; }
+  .venue-copy h2 { font-size: 22px; }
+  .venue-illustration { width: 100%; }
+  .venue-illustration .temple { height: min(50svh, 200px); }
+  .family-section { padding-block: 8px; }
+  .family-card { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: auto 1fr; align-items: center; gap: 8px 22px; padding: 12px 20px; }
+  .family-card .section-heading { grid-column: 1 / -1; }
+  .family-card .section-heading .eyebrow, .family-card > .ornament-divider { display: none; }
+  .family-card .section-heading h2 { font-size: 20px; margin: 0; }
+  .hosts p { font-size: 10.5px; line-height: 1.7; padding-block: 4px; }
+  .extended-family h3 { font-size: 14px; }
+  .extended-family p { font-size: 9px; line-height: 1.7; margin-top: 4px; }
+  .extended-family .younger-hosts { font-size: 8.5px; margin-top: 6px; }
 }
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }

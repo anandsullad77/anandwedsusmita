@@ -1,7 +1,7 @@
 import React from 'react';
 import { Divider, Ganesha, Icon, Kolam, Monogram, Temple, TextileBorder } from './Ornaments';
 
-export default function Invitation({ countdown, menuOpen, setMenuOpen, calendarSaved, saveCalendar, invitationOpen, setInvitationOpen, dialogRef, mapUrl, onReplayOpening }) {
+export default function Invitation({ countdown, menuOpen, setMenuOpen, invitationOpen, setInvitationOpen, dialogRef, mapUrl, onReplayOpening }) {
   const closeMenu = () => setMenuOpen(false);
 
   return <>
@@ -48,9 +48,9 @@ export default function Invitation({ countdown, menuOpen, setMenuOpen, calendarS
       <section className="muhurtha-section" id="muhurtha" aria-labelledby="muhurtha-title">
         <div className="section-shell muhurtha-layout reveal">
           <div className="date-composition"><p className="eyebrow">ಶುಭ ದಿನಾಂಕ</p><span className="big-date">29</span><div className="date-side date-month"><p>ನವೆಂಬರ್</p><span>2026</span></div><span className="date-day">ರವಿವಾರ</span></div>
-          <div className="ceremony-copy"><p className="eyebrow">ಒಂದು ದಿನ · ಜೀವನವಿಡೀ ನೆನಪು</p><h2 id="muhurtha-title">ಶುಭ ವಿವಾಹ ಮುಹೂರ್ತ</h2><div className="date-side ceremony-time"><Icon name="clock" size={22} /><p>ಮಧ್ಯಾಹ್ನ</p><span>12:28ಕ್ಕೆ</span></div><p className="muhurtha-caption">ಅಭಿಜಿತ್ ಶುಭ ಲಗ್ನದ ಮುಹೂರ್ತದಲ್ಲಿ</p><p className="ceremony-message">ನಿಮ್ಮ ದಿನಚರಿಯಲ್ಲಿ ಈ ದಿನ ನಮಗಾಗಿ ಮೀಸಲಿರಲಿ.<br />ನಿಮ್ಮ ಉಪಸ್ಥಿತಿಯಲ್ಲಿ ಈ ಕ್ಷಣ ಇನ್ನಷ್ಟು ಮಂಗಲಮಯ.</p><div className="muhurtha-bottom"><button className="button button-outline" onClick={saveCalendar}><Icon name={calendarSaved ? 'check' : 'calendar'} size={18} />{calendarSaved ? 'ಕ್ಯಾಲೆಂಡರ್ ಕಡತ ಉಳಿಸಲಾಗಿದೆ' : 'ದಿನಾಂಕ ಉಳಿಸಿಕೊಳ್ಳಿ'}</button><p className="calendar-hint" aria-live="polite">{calendarSaved ? 'ಡೌನ್‌ಲೋಡ್ ಆದ ಕಡತವನ್ನು ನಿಮ್ಮ ಕ್ಯಾಲೆಂಡರ್‌ನಲ್ಲಿ ತೆರೆಯಿರಿ.' : 'ನಿಮ್ಮ ಕ್ಯಾಲೆಂಡರ್‌ಗೆ ಸೇರಿಸಿಕೊಳ್ಳಿ'}</p></div></div>
+          <div className="ceremony-copy"><p className="eyebrow">ಒಂದು ದಿನ · ಜೀವನವಿಡೀ ನೆನಪು</p><h2 id="muhurtha-title">ಶುಭ ವಿವಾಹ ಮುಹೂರ್ತ</h2><div className="date-side ceremony-time"><Icon name="clock" size={22} /><p>ಮಧ್ಯಾಹ್ನ</p><span>12:28ಕ್ಕೆ</span></div><p className="muhurtha-caption">ಅಭಿಜಿತ್ ಶುಭ ಲಗ್ನದ ಮುಹೂರ್ತದಲ್ಲಿ</p><p className="ceremony-message">ನಿಮ್ಮ ದಿನಚರಿಯಲ್ಲಿ ಈ ದಿನ ನಮಗಾಗಿ ಮೀಸಲಿರಲಿ.<br />ನಿಮ್ಮ ಉಪಸ್ಥಿತಿಯಲ್ಲಿ ಈ ಕ್ಷಣ ಇನ್ನಷ್ಟು ಮಂಗಲಮಯ.</p></div>
+          <div className="countdown-card" aria-labelledby="countdown-title"><div className="countdown-heading"><p className="eyebrow">ಮಂಗಲ ಕ್ಷಣಗಳ ನಿರೀಕ್ಷೆಯಲ್ಲಿ</p><h3 id="countdown-title">{countdown.total > 0 ? 'ಆ ಶುಭ ದಿನಕ್ಕೆ ಇನ್ನೂ…' : 'ಮಂಗಲ ಪಯಣ ಆರಂಭವಾಗಿದೆ'}</h3></div>{countdown.total > 0 ? <div className="countdown" role="timer" aria-label="ವಿವಾಹದವರೆಗೆ ಉಳಿದ ಸಮಯ">{[['days', 'ದಿನಗಳು'], ['hours', 'ಗಂಟೆಗಳು'], ['minutes', 'ನಿಮಿಷಗಳು'], ['seconds', 'ಕ್ಷಣಗಳು']].map(([key, label]) => <div className="countdown-unit" key={key}><span className="countdown-number">{String(countdown[key]).padStart(2, '0')}</span><span className="countdown-label">{label}</span></div>)}</div> : <p className="married-message">ನಿಮ್ಮ ಪ್ರೀತಿ ಮತ್ತು ಆಶೀರ್ವಾದ ಸದಾ ನಮ್ಮೊಂದಿಗಿರಲಿ.</p>}</div>
         </div>
-        <div className="countdown-section" aria-labelledby="countdown-title"><div className="section-shell countdown-layout reveal"><div className="countdown-heading"><p className="eyebrow">ಮಂಗಲ ಕ್ಷಣಗಳ ನಿರೀಕ್ಷೆಯಲ್ಲಿ</p><h2 id="countdown-title">{countdown.total > 0 ? 'ಆ ಶುಭ ದಿನಕ್ಕೆ ಇನ್ನೂ…' : 'ಮಂಗಲ ಪಯಣ ಆರಂಭವಾಗಿದೆ'}</h2></div>{countdown.total > 0 ? <div className="countdown" role="timer" aria-label="ವಿವಾಹದವರೆಗೆ ಉಳಿದ ಸಮಯ">{[['days', 'ದಿನಗಳು'], ['hours', 'ಗಂಟೆಗಳು'], ['minutes', 'ನಿಮಿಷಗಳು'], ['seconds', 'ಕ್ಷಣಗಳು']].map(([key, label]) => <div className="countdown-unit" key={key}><span className="countdown-number">{String(countdown[key]).padStart(2, '0')}</span><span className="countdown-label">{label}</span></div>)}</div> : <p className="married-message">ನಿಮ್ಮ ಪ್ರೀತಿ ಮತ್ತು ಆಶೀರ್ವಾದ ಸದಾ ನಮ್ಮೊಂದಿಗಿರಲಿ.</p>}</div></div>
       </section>
 
       <section className="venue-section" id="venue" aria-labelledby="venue-title">
@@ -61,7 +61,7 @@ export default function Invitation({ countdown, menuOpen, setMenuOpen, calendarS
         </div>
       </section>
 
-      <section className="family-section section-shell" aria-labelledby="family-title">
+      <section className="family-section section-shell" id="family" aria-labelledby="family-title">
         <div className="family-card"><Kolam className="family-corner family-corner-left" /><Kolam className="family-corner family-corner-right" /><div className="section-heading reveal"><p className="eyebrow">ಪ್ರೀತಿಯಿಂದ ಕಾಯುತ್ತಿರುವವರು</p><h2 id="family-title">ತಮ್ಮ ಆಗಮನಾಭಿಲಾಷಿಗಳು</h2></div>
           <div className="hosts reveal"><p><span>ಸೌ. ವತ್ಸಲಾ ಮತ್ತು</span><span>ಶ್ರೀ ರಾಮಚಂದ್ರ ಲಕ್ಷ್ಮಣ ಸುಳ್ಕರ</span></p><p><span>ಸೌ. ಹೇಮಾ ಮತ್ತು</span><span>ಶ್ರೀ ವಿಷ್ಣು ಲಕ್ಷ್ಮಣ ಸುಳ್ಕರ</span></p><p><span>ಸೌ. ಲಕ್ಷ್ಮೀ ಮತ್ತು</span><span>ಶ್ರೀ ಮಹಾಂತೇಶ ಬಸಪ್ಪ ಹುಲ್ಯಾಳ</span></p></div>
           <Divider />
