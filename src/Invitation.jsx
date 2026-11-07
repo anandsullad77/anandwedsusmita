@@ -1,7 +1,7 @@
 import React from 'react';
 import { Divider, Ganesha, Icon, Kolam, Monogram, Temple, TextileBorder } from './Ornaments';
 
-export default function Invitation({ countdown, menuOpen, setMenuOpen, calendarSaved, saveCalendar, invitationOpen, setInvitationOpen, dialogRef, mapUrl }) {
+export default function Invitation({ countdown, menuOpen, setMenuOpen, calendarSaved, saveCalendar, invitationOpen, setInvitationOpen, dialogRef, mapUrl, onReplayOpening }) {
   const closeMenu = () => setMenuOpen(false);
 
   return <>
@@ -17,7 +17,7 @@ export default function Invitation({ countdown, menuOpen, setMenuOpen, calendarS
       </div>
     </header>
 
-    <main id="main">
+    <main id="main" tabIndex={-1}>
       <section className="hero" id="home" aria-labelledby="couple-names">
         <div className="hero-inset" aria-hidden="true" />
         <Kolam className="hero-corner corner-left" /><Kolam className="hero-corner corner-right" />
@@ -37,9 +37,9 @@ export default function Invitation({ countdown, menuOpen, setMenuOpen, calendarS
       <section className="invitation-section section-shell" id="couple" aria-labelledby="invitation-title">
         <div className="section-heading reveal"><Kolam className="heading-ornament" /><p className="eyebrow">ಗುರುಹಿರಿಯರ ಆಶೀರ್ವಾದದೊಂದಿಗೆ</p><h2 id="invitation-title">ಪ್ರೀತಿ ಬೆಸೆದ ಮಂಗಲ ಬಂಧನ</h2><p className="invitation-intro">ಶ್ರೀ ಶಾಲಿವಾಹನ ಶಕೆ 1948 ಪರಾಭವನಾಮ ಸಂವತ್ಸರದ ಕಾರ್ತಿಕ ಮಾಸ ಕೃಷ್ಣಪಕ್ಷದ ಶುಭ ದಿನದಂದು…</p></div>
         <div className="couple-details reveal">
-          <article className="person person-groom"><span className="person-label">ವರ</span><h3><small>ಚಿ.</small> ಆನಂದ</h3><p>ಸೌ. ಹೇಮಾ ಮತ್ತು<br />ಶ್ರೀ ವಿಷ್ಣು ಲಕ್ಷ್ಮಣ ಸುಳ್ಕರ</p><p className="person-detail">ಸಾಗರೊಳ್ಳಿಭಾವಿ, ತಾ.ಜಿ. ಬೆಳಗಾವಿ<br />ಇವರ ಸುಪುತ್ರ</p><Kolam className="person-ornament" /></article>
-          <article className="person person-bride"><span className="person-label">ವಧು</span><h3><small>ಚಿ.ಸೌ.ಕಾಂ.</small> ಸುಶ್ಮಿತಾ</h3><p>ಸೌ. ಪೂರ್ಣಿಮಾ ಮತ್ತು<br />ಶ್ರೀ ರಾಮಲಿಂಗ ರಾಮಪ್ಪ ಓಟಗಿ</p><p className="person-detail">ಸಾಗರೊಳ್ಳಿಭಾವಿ, ತಾ.ಜಿ. ಬೆಳಗಾವಿ<br />ಇವರ ತೃತೀಯ ಸುಪುತ್ರಿ</p><Kolam className="person-ornament" /></article>
-          <figure className="couple-portrait"><div className="portrait-frame"><img src="/images/wedding-couple-pink-green.png" alt="ಕೈ ಹಿಡಿದು ಜೊತೆಯಾಗಿ ನಿಂತಿರುವ ಸಾಂಪ್ರದಾಯಿಕ ಉಡುಗೆಯ ವಧು ಮತ್ತು ವರರ ಚಿತ್ರಣ" width="1254" height="1254" /></div><figcaption>ಸಂಪ್ರದಾಯದ ಸೊಬಗು · ಪ್ರೀತಿಯ ಹೊಸ ಪಯಣ</figcaption></figure>
+          <article className="person person-groom"><span className="person-label">ವರ</span><h3><small>ಚಿ.</small> ಆನಂದ</h3><p>ಸೌ. ಹೇಮಾ ಮತ್ತು<br />ಶ್ರೀ ವಿಷ್ಣು ಲಕ್ಷ್ಮಣ ಸುಳ್ಕರ</p><p className="person-detail">ಇವರ ಸುಪುತ್ರ</p><Kolam className="person-ornament" /></article>
+          <article className="person person-bride"><span className="person-label">ವಧು</span><h3><small>ಚಿ.ಸೌ.ಕಾಂ.</small> ಸುಶ್ಮಿತಾ</h3><p>ಸೌ. ಪೂರ್ಣಿಮಾ ಮತ್ತು<br />ಶ್ರೀ ರಾಮಲಿಂಗ ರಾಮಪ್ಪ ಓಟಗಿ</p><p className="person-detail">ಇವರ ತೃತೀಯ ಸುಪುತ್ರಿ</p><Kolam className="person-ornament" /></article>
+          <figure className="couple-portrait"><div className="portrait-window"><div className="portrait-frame"><img src="/images/wedding-couple-pink-green.png" alt="ಕೈ ಹಿಡಿದು ಜೊತೆಯಾಗಿ ನಿಂತಿರುವ ಸಾಂಪ್ರದಾಯಿಕ ಉಡುಗೆಯ ವಧು ಮತ್ತು ವರರ ಚಿತ್ರಣ" width="1254" height="1254" /></div></div><figcaption>ಸಂಪ್ರದಾಯದ ಸೊಬಗು · ಪ್ರೀತಿಯ ಹೊಸ ಪಯಣ</figcaption></figure>
         </div>
         <p className="invitation-note reveal">ಇವರ ಶುಭ ವಿವಾಹವನ್ನು ನೆರವೇರಿಸಲು ಗುರುಹಿರಿಯರು ನಿಶ್ಚಯಿಸಿರುತ್ತಾರೆ.<br />ತಾವು ಈ ಮಂಗಲ ಕಾರ್ಯಕ್ಕೆ ಸಹಕುಟುಂಬ ಸಮೇತರಾಗಿ ಆಗಮಿಸಿ<br className="desktop-break" /> ವಧು–ವರರಿಗೆ ಆಶೀರ್ವದಿಸಬೇಕಾಗಿ ಪ್ರೀತಿಪೂರ್ವಕ ವಿನಂತಿ.</p>
         <Divider />
@@ -56,7 +56,7 @@ export default function Invitation({ countdown, menuOpen, setMenuOpen, calendarS
       <section className="venue-section" id="venue" aria-labelledby="venue-title">
         <div className="section-shell venue-inner">
           <div className="venue-aside reveal"><p className="eyebrow">ವಿವಾಹ ಸ್ಥಳ</p><span /><Kolam /></div>
-          <div className="venue-copy reveal"><p className="eyebrow">ನಮ್ಮ ಮಂಗಲ ಸಂಭ್ರಮ ಇಲ್ಲಿ</p><h2 id="venue-title">ಶ್ರೀ ಶಾರ್ದಾಂಬಾ<br />ಮಂಗಲ ಕಾರ್ಯಾಲಯ</h2><p className="venue-address">ಹೊಸಪೇಟೆ ಗಲ್ಲಿ, ಸುಳೇಭಾವಿ,<br />ತಾ.ಜಿ. ಬೆಳಗಾವಿ, ಕರ್ನಾಟಕ.</p><a href={mapUrl} target="_blank" rel="noreferrer" className="button button-outline">ದಾರಿ ತಿಳಿಯಿರಿ <Icon name="external" size={17} /></a><p className="venue-hint">ಗೂಗಲ್ ನಕ್ಷೆಯಲ್ಲಿ ಸ್ಥಳವನ್ನು ಹುಡುಕಿ</p></div>
+          <div className="venue-copy reveal"><p className="eyebrow">ನಮ್ಮ ಮಂಗಲ ಸಂಭ್ರಮ ಇಲ್ಲಿ</p><h2 id="venue-title">ಶ್ರೀ ಶಾರ್ದಾಂಬಾ<br />ಮಂಗಲ ಕಾರ್ಯಾಲಯ</h2><p className="venue-address">ಹೊಸಪೇಟೆ ಗಲ್ಲಿ, ಸುಳೇಭಾವಿ,<br />ತಾ.ಜಿ. ಬೆಳಗಾವಿ, ಕರ್ನಾಟಕ.</p><a href={mapUrl} target="_blank" rel="noreferrer" className="button button-outline">ದಾರಿ ತಿಳಿಯಿರಿ <Icon name="external" size={17} /></a><p className="venue-hint">ಗೂಗಲ್ ನಕ್ಷೆಯಲ್ಲಿ ಸ್ಥಳವನ್ನು ವೀಕ್ಷಿಸಿ</p></div>
           <div className="venue-illustration reveal"><Kolam className="venue-corner" /><Temple /><p>ಶುಭ ಮಂಗಲ</p></div>
         </div>
       </section>
@@ -70,7 +70,7 @@ export default function Invitation({ countdown, menuOpen, setMenuOpen, calendarS
       </section>
     </main>
 
-    <footer className="site-footer"><a href="#home" aria-label="ಮುಖ್ಯಪುಟಕ್ಕೆ ಮರಳಿ"><Monogram className="footer-monogram" /></a><p className="footer-welcome">ನಿಮ್ಮ ಉಪಸ್ಥಿತಿಯೇ ನಮ್ಮ ಸಂತೋಷ.</p><a href="#home" className="footer-names">ಆನಂದ <span>ಮತ್ತು</span> ಸುಶ್ಮಿತಾ</a><span className="footer-date">29 · 11 · 2026</span><p className="footer-blessing">ಪ್ರೀತಿ, ಸಂಪ್ರದಾಯ ಮತ್ತು ನಿಮ್ಮ ಆಶೀರ್ವಾದದೊಂದಿಗೆ</p><TextileBorder /></footer>
+    <footer className="site-footer"><a href="#home" aria-label="ಮುಖ್ಯಪುಟಕ್ಕೆ ಮರಳಿ"><Monogram className="footer-monogram" /></a><p className="footer-welcome">ನಿಮ್ಮ ಉಪಸ್ಥಿತಿಯೇ ನಮ್ಮ ಸಂತೋಷ.</p><a href="#home" className="footer-names">ಆನಂದ <span>ಮತ್ತು</span> ಸುಶ್ಮಿತಾ</a><span className="footer-date">29 · 11 · 2026</span><button className="replay-opening" onClick={onReplayOpening}><Icon name="arrow" size={14} />ಆಮಂತ್ರಣವನ್ನು ಮತ್ತೆ ತೆರೆಯಿರಿ</button><p className="footer-blessing">ಪ್ರೀತಿ, ಸಂಪ್ರದಾಯ ಮತ್ತು ನಿಮ್ಮ ಆಶೀರ್ವಾದದೊಂದಿಗೆ</p><TextileBorder /></footer>
 
     <dialog className="invitation-dialog" ref={dialogRef} onCancel={() => setInvitationOpen(false)} onClose={() => setInvitationOpen(false)} onClick={(event) => { if (event.target === event.currentTarget) setInvitationOpen(false); }} aria-labelledby="dialog-title"><div className="dialog-content"><div className="dialog-header"><h2 id="dialog-title">ನಮ್ಮ ಆಮಂತ್ರಣ ಪತ್ರಿಕೆ</h2><button className="icon-button" aria-label="ಆಮಂತ್ರಣ ಪತ್ರಿಕೆ ಮುಚ್ಚಿ" onClick={() => setInvitationOpen(false)}><Icon name="close" /></button></div>{invitationOpen && <img src="/images/original-invitation.jpeg" alt="ಆನಂದ ಮತ್ತು ಸುಶ್ಮಿತಾ ಅವರ ಮೂಲ ಕನ್ನಡ ವಿವಾಹ ಆಮಂತ್ರಣ ಪತ್ರಿಕೆ" width="1204" height="1600" />}<a href="/images/original-invitation.jpeg" download="ಆನಂದ-ಸುಶ್ಮಿತಾ-ಆಮಂತ್ರಣ.jpeg" className="button button-primary"><Icon name="download" size={18} />ಪತ್ರಿಕೆ ಡೌನ್‌ಲೋಡ್ ಮಾಡಿ</a></div></dialog>
   </>;

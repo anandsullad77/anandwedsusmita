@@ -1,14 +1,15 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import '@fontsource/noto-serif-kannada/400.css';
 import '@fontsource/noto-sans-kannada/400.css';
 import '@fontsource/noto-sans-kannada/500.css';
 import '@fontsource/cormorant-garamond/400.css';
 import Invitation from './Invitation';
+import InvitationOpening from './InvitationOpening';
 import './stationery.css';
 
 const WEDDING_DATE = new Date('2026-11-29T12:28:00+05:30');
-const MAP_URL = 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent('Shri Sharadamba Mangal Karyalaya, Hosapete Galli, Sulebhavi, Belagavi, Karnataka');
+const MAP_URL = 'https://maps.app.goo.gl/CzVGfb7yyeYVoxam6';
 
 function useCountdown() {
   const calculate = () => {
@@ -24,11 +25,21 @@ function useCountdown() {
 }
 
 function App() {
+  const [introActive, setIntroActive] = useState(() => !window.location.hash && !window.matchMedia('(prefers-reduced-motion: reduce)').matches);
   const [menuOpen, setMenuOpen] = useState(false);
   const [calendarSaved, setCalendarSaved] = useState(false);
   const [invitationOpen, setInvitationOpen] = useState(false);
   const dialogRef = useRef(null);
   const countdown = useCountdown();
+  const finishOpening = useCallback(() => setIntroActive(false), []);
+  const replayOpening = useCallback(() => {
+    setMenuOpen(false);
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      window.scrollTo({ top: 0, behavior: 'instant' });
+      return;
+    }
+    setIntroActive(true);
+  }, []);
 
   useEffect(() => {
     const observer = new IntersectionObserver((entries) => {
@@ -61,6 +72,7 @@ function App() {
       'SUMMARY:' + escape('ಆನಂದ ಮತ್ತು ಸುಶ್ಮಿತಾ — ಶುಭ ವಿವಾಹ'),
       'DESCRIPTION:' + escape('ಮಧ್ಯಾಹ್ನ 12:28ಕ್ಕೆ, ಅಭಿಜಿತ್ ಶುಭ ಲಗ್ನದ ಮುಹೂರ್ತದಲ್ಲಿ. ಸಹಕುಟುಂಬ ಸಮೇತರಾಗಿ ಆಗಮಿಸಿ ಆಶೀರ್ವದಿಸಿ.'),
       'LOCATION:' + escape('ಶ್ರೀ ಶಾರ್ದಾಂಬಾ ಮಂಗಲ ಕಾರ್ಯಾಲಯ, ಹೊಸಪೇಟೆ ಗಲ್ಲಿ, ಸುಳೇಭಾವಿ, ಬೆಳಗಾವಿ, ಕರ್ನಾಟಕ'),
+      'URL:' + MAP_URL,
       'BEGIN:VALARM', 'TRIGGER:-P1D', 'ACTION:DISPLAY', 'DESCRIPTION:ನಾಳೆ ಆನಂದ ಮತ್ತು ಸುಶ್ಮಿತಾ ಅವರ ಶುಭ ವಿವಾಹ', 'END:VALARM',
       'END:VEVENT', 'END:VCALENDAR',
     ];
@@ -85,7 +97,7 @@ function App() {
     setTimeout(() => setCalendarSaved(false), 5000);
   }
 
-  return <Invitation countdown={countdown} menuOpen={menuOpen} setMenuOpen={setMenuOpen} calendarSaved={calendarSaved} saveCalendar={saveCalendar} invitationOpen={invitationOpen} setInvitationOpen={setInvitationOpen} dialogRef={dialogRef} mapUrl={MAP_URL} />;
+  return <><div className="invitation-app" inert={introActive ? true : undefined} aria-hidden={introActive ? true : undefined}><Invitation countdown={countdown} menuOpen={menuOpen} setMenuOpen={setMenuOpen} calendarSaved={calendarSaved} saveCalendar={saveCalendar} invitationOpen={invitationOpen} setInvitationOpen={setInvitationOpen} dialogRef={dialogRef} mapUrl={MAP_URL} onReplayOpening={replayOpening} /></div>{introActive && <InvitationOpening onComplete={finishOpening} />}</>;
 }
 
 createRoot(document.getElementById('root')).render(<App />);
