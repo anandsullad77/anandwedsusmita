@@ -44,7 +44,7 @@ export default function InvitationOpening({ onComplete }) {
     document.addEventListener('keydown', handleKeys);
     motion.addEventListener('change', finishOnReducedMotion);
 
-    // Let Kannada fonts settle, with a short ceiling so this never blocks entry.
+    // Let the invitation fonts settle, with a short ceiling so this never blocks entry.
     const ready = Promise.race([
       document.fonts?.ready ?? Promise.resolve(),
       new Promise((resolve) => timers.push(setTimeout(resolve, 600))),
@@ -68,22 +68,22 @@ export default function InvitationOpening({ onComplete }) {
   }, [onComplete]);
 
   return <div ref={openingRef} className={`invitation-opening is-${phase}`} role="dialog" aria-modal="true" aria-labelledby="opening-label" tabIndex={-1}>
-    <button ref={skipRef} className="opening-skip" onClick={onComplete}>ನೇರವಾಗಿ ಆಮಂತ್ರಣಕ್ಕೆ <Icon name="arrow" size={17} /></button>
+    <button ref={skipRef} className="opening-skip" onClick={onComplete}>Skip to invitation <Icon name="arrow" size={17} /></button>
 
     <div className="opening-scene">
-      <p className="opening-kicker" id="opening-label">ಪ್ರೀತಿಯಿಂದ ನಿಮಗಾಗಿ</p>
+      <p className="opening-kicker" id="opening-label">With love, for you</p>
       <div className="opening-perspective" aria-hidden="true">
         <div className="opening-card">
           <div className="opening-cover opening-cover-left"><div className="opening-cover-rule" /><Kolam className="opening-cover-ornament" /><div className="opening-cover-border" /></div>
           <div className="opening-cover opening-cover-right"><div className="opening-cover-rule" /><Kolam className="opening-cover-ornament" /><div className="opening-cover-border" /></div>
-          <p className="opening-cover-title">ಶುಭ ವಿವಾಹ ಆಮಂತ್ರಣ</p>
-          <p className="opening-cover-date">29 ನವೆಂಬರ್ 2026</p>
+          <p className="opening-cover-title">A Wedding Invitation</p>
+          <p className="opening-cover-date">29 November 2026</p>
           <div className="opening-seal"><span className="opening-seal-ring" /><span className="opening-seal-monogram" /></div>
 
           <div className="opening-petals">{PETALS.map(([x, y, rotation], index) => <span key={index} style={{ '--petal-x': `${x}vmin`, '--petal-y': `${y}vmin`, '--petal-rotation': `${rotation}deg`, '--petal-delay': `${160 + index * 245 / (PETALS.length - 1)}ms` }} />)}</div>
         </div>
       </div>
-      <div className="opening-message"><div className="opening-progress" aria-hidden="true"><span /></div><p className="opening-status" role="status">ಪ್ರೀತಿಯ ಆಮಂತ್ರಣ ತೆರೆಯುತ್ತಿದೆ…</p></div>
+      <div className="opening-message"><div className="opening-progress" aria-hidden="true"><span /></div><p className="opening-status" role="status">Opening your invitation…</p></div>
     </div>
   </div>;
 }

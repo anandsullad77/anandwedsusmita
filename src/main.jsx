@@ -1,9 +1,8 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
-import '@fontsource/noto-serif-kannada/400.css';
-import '@fontsource/noto-sans-kannada/400.css';
-import '@fontsource/noto-sans-kannada/500.css';
-import '@fontsource/cormorant-garamond/400.css';
+import '@fontsource/noto-sans-kannada/latin-400.css';
+import '@fontsource/noto-sans-kannada/latin-500.css';
+import '@fontsource/cormorant-garamond/latin-400.css';
 import Invitation from './Invitation';
 import InvitationOpening from './InvitationOpening';
 import './stationery.css';
@@ -38,6 +37,15 @@ function App() {
       return;
     }
     setIntroActive(true);
+  }, []);
+
+  useEffect(() => {
+    const header = document.querySelector('.site-header');
+    const updateHeaderHeight = () => document.documentElement.style.setProperty('--header-height', `${header.getBoundingClientRect().height}px`);
+    updateHeaderHeight();
+    const observer = new ResizeObserver(updateHeaderHeight);
+    observer.observe(header);
+    return () => observer.disconnect();
   }, []);
 
   useEffect(() => {

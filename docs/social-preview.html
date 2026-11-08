@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Wedding link preview artwork</title>
+  <style>
+    @import url('/node_modules/@fontsource/cormorant-garamond/latin-400.css');
+    @import url('/node_modules/@fontsource/noto-sans-kannada/latin-400.css');
+    * { box-sizing: border-box; }
+    html, body { margin: 0; width: 1200px; height: 630px; overflow: hidden; }
+    body { background: #fff7eb; color: #283a2d; font-family: 'Noto Sans Kannada', sans-serif; }
+    main { position: relative; isolation: isolate; width: 100%; height: 100%; text-align: center; border: 8px solid #fff7eb; }
+    main::before { content: ''; position: absolute; inset: 8px; border: 1px solid #283a2d; z-index: -1; }
+    main::after { content: ''; position: absolute; z-index: -2; width: 510px; height: 510px; left: 50%; top: 18px; transform: translateX(-50%); background: url('/images/name-mandala.svg') center / contain no-repeat; opacity: .09; }
+    .logo { display: block; width: 78px; height: 78px; margin: 28px auto 12px; }
+    .eyebrow { margin: 0; color: #a53051; font-size: 16px; letter-spacing: 4px; text-transform: uppercase; }
+    h1 { font-family: 'Cormorant Garamond', serif; font-size: 110px; font-weight: 400; line-height: 1.2; margin: 6px 0 16px; }
+    h1 span { color: #a53051; font-size: 58px; margin-inline: 12px; }
+    .rule { width: 600px; height: 1px; background: #283a2d33; margin: 0 auto 18px; }
+    .date { font-family: 'Cormorant Garamond', serif; font-size: 38px; line-height: 1.3; margin: 0; }
+    .time { color: #a53051; font-size: 23px; margin: 6px 0 18px; }
+    .venue { font-size: 22px; line-height: 1.6; margin: 0; }
+    .place { font-size: 18px; margin: 4px 0 0; }
+    .border { position: absolute; left: 9px; right: 9px; bottom: 9px; height: 61px; background: url('/images/textile-border.svg') repeat-x left bottom / 101.667px 61px; }
+  </style>
+</head>
+<body>
+  <main>
+    <img class="logo" src="/images/as-monogram.svg" alt="AS monogram" />
+    <p class="eyebrow">A Wedding Invitation</p>
+    <h1>Anand <span>&amp;</span> Sushmita</h1>
+    <div class="rule"></div>
+    <p class="date">Sunday, 29 November 2026</p>
+    <p class="time">12:28 PM</p>
+    <p class="venue">Shri Shakambari Mangal Karyalaya</p>
+    <p class="place">Sulebhavi, Belagavi</p>
+    <div class="border"></div>
+  </main>
+</body>
+</html>
