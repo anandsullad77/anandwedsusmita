@@ -8,7 +8,7 @@ export default function Invitation({ countdown, menuOpen, setMenuOpen, invitatio
     <a href="#main" className="skip-link">Skip to content</a>
     <header className="site-header">
       <div className="header-inner">
-        <a className="brand" href="#home" aria-label="Anand and Sushmita — home" onClick={closeMenu}><Monogram /></a>
+        <a className="brand" href="#home" aria-label="Anand and Susmita — home" onClick={closeMenu}><Monogram /></a>
         <nav className={menuOpen ? 'navigation is-open' : 'navigation'} aria-label="Main navigation" id="main-navigation">
           <div className="nav-group"><a href="#couple" onClick={closeMenu}>The Couple</a><a href="#muhurtha" onClick={closeMenu}>The Muhurta</a></div>
           <div className="nav-group"><a href="#venue" onClick={closeMenu}>The Venue</a><button className="nav-invitation" onClick={() => { setInvitationOpen(true); closeMenu(); }}>Invitation Card <Icon name="download" size={16} /></button></div>
@@ -24,7 +24,7 @@ export default function Invitation({ countdown, menuOpen, setMenuOpen, invitatio
         <div className="hero-copy">
           <div className="blessings"><Ganesha /><p><span>With Lord Ganesha’s blessings</span></p></div>
           <p className="eyebrow hero-eyebrow">A Wedding Invitation</p>
-          <h1 id="couple-names"><span>Anand</span><span className="names-join"><i />and<i /></span><span>Sushmita</span></h1>
+          <h1 id="couple-names"><span>Anand</span><span className="names-join"><i />and<i /></span><span>Susmita</span></h1>
           <p className="hero-message">Two hearts. One sacred bond.</p>
           <div className="hero-date"><span>29 November 2026</span><i /><span>Sunday</span><i /><span>12:28 PM</span></div>
           <a className="button button-primary" href="#muhurtha">View Wedding Details <Icon name="arrow" size={19} /></a>
@@ -36,7 +36,7 @@ export default function Invitation({ countdown, menuOpen, setMenuOpen, invitatio
         <div className="section-heading reveal"><Kolam className="heading-ornament" /><p className="eyebrow">With the blessings of our elders</p><h2 id="invitation-title">A Union Rooted in Love</h2><p className="invitation-intro">Kartika Krishna Paksha · Shaka 1948 · Parabhava Samvatsara</p></div>
         <div className="couple-details reveal">
           <article className="person person-groom"><span className="person-label">The Groom</span><h3><small>Chi.</small> Anand</h3><p>Mrs. Hema and<br />Mr. Vishnu Lakkappa Sullad</p><p className="person-detail">Their beloved son</p><Kolam className="person-ornament" /></article>
-          <article className="person person-bride"><span className="person-label">The Bride</span><h3><small>Chi. Sou. Kan.</small> Sushmita</h3><p>Mrs. Poornima and<br />Mr. Ramaling Ramappa Pitagi</p><p className="person-detail">Their third daughter</p><Kolam className="person-ornament" /></article>
+          <article className="person person-bride"><span className="person-label">The Bride</span><h3><small>Chi. Sou. Kan.</small> Susmita</h3><p>Mrs. Poornima and<br />Mr. Ramaling Ramappa Pitagi</p><p className="person-detail">Their third daughter</p><Kolam className="person-ornament" /></article>
           <figure className="couple-portrait"><div className="portrait-window"><div className="portrait-frame"><img src="/images/wedding-couple-pink-green.png" alt="A South Indian bride and groom in traditional attire, holding hands among flowers" width="1254" height="1254" loading="lazy" decoding="async" /></div></div></figure>
         </div>
         <p className="invitation-note reveal">Join us with your family and bless our new beginning.</p>
@@ -61,8 +61,8 @@ export default function Invitation({ countdown, menuOpen, setMenuOpen, invitatio
 
     </main>
 
-    <footer className="site-footer"><a href="#home" aria-label="Back to home"><Monogram className="footer-monogram" /></a><p className="footer-welcome">Your presence is our happiness.</p><a href="#home" className="footer-names">Anand <span>and</span> Sushmita</a><button className="replay-opening" onClick={onReplayOpening}><Icon name="arrow" size={14} />Open the invitation again</button><TextileBorder /></footer>
+    <footer className="site-footer"><a href="#home" aria-label="Back to home"><Monogram className="footer-monogram" /></a><p className="footer-welcome">Your presence is our happiness.</p><a href="#home" className="footer-names">Anand <span>and</span> Susmita</a><button className="replay-opening" onClick={onReplayOpening}><Icon name="arrow" size={14} />Open the invitation again</button><TextileBorder /></footer>
 
-    <dialog className="invitation-dialog" ref={dialogRef} onCancel={() => setInvitationOpen(false)} onClose={() => setInvitationOpen(false)} onClick={(event) => { if (event.target === event.currentTarget) setInvitationOpen(false); }} aria-labelledby="dialog-title"><div className="dialog-content"><div className="dialog-header"><h2 id="dialog-title">Original Invitation · Kannada</h2><button className="icon-button" aria-label="Close invitation card" onClick={() => setInvitationOpen(false)}><Icon name="close" /></button></div>{invitationOpen && <img src="/images/original-invitation.jpeg" alt="The original printed Kannada wedding invitation for Anand and Sushmita" width="1204" height="1600" />}<a href="/images/original-invitation.jpeg" download="anand-sushmita-invitation.jpeg" className="button button-primary"><Icon name="download" size={18} />Download Invitation</a></div></dialog>
+    <dialog className="invitation-dialog" ref={dialogRef} onCancel={() => setInvitationOpen(false)} onClose={() => setInvitationOpen(false)} onClick={(event) => { if (event.target === event.currentTarget) setInvitationOpen(false); }} aria-labelledby="dialog-title"><div className="dialog-content"><div className="dialog-header"><h2 id="dialog-title">Original Invitation · Kannada</h2><button className="icon-button" aria-label="Close invitation card" onClick={() => setInvitationOpen(false)}><Icon name="close" /></button></div>{invitationOpen && <img src="/images/original-invitation.jpeg" alt="The original printed Kannada wedding invitation for Anand and Susmita" width="1204" height="1600" />}<a href="/images/original-invitation.jpeg" download="anand-susmita-invitation.jpeg" className="button button-primary"><Icon name="download" size={18} />Download Invitation</a></div></dialog>
   </>;
 }

@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client';
 import '@fontsource/noto-sans-kannada/latin-400.css';
 import '@fontsource/noto-sans-kannada/latin-500.css';
 import '@fontsource/cormorant-garamond/latin-400.css';
+import '@fontsource/cormorant-garamond/latin-400-italic.css';
 import Invitation from './Invitation';
 import InvitationOpening from './InvitationOpening';
 import './stationery.css';

@@ -16,7 +16,7 @@ export function Icon({ name, size = 20, ...props }) {
 }
 
 export function Monogram({ className = '' }) {
-  return <img className={`monogram ${className}`} src="/images/as-monogram.svg" alt="Anand and Sushmita monogram" width="150" height="150" />;
+  return <img className={`monogram ${className}`} src="/images/as-monogram.svg" alt="Anand and Susmita monogram" width="150" height="150" />;
 }
 
 export function TextileBorder({ className = '' }) {

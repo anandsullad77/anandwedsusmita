@@ -2,7 +2,7 @@
 
 Tool: built-in imagegen.
 
-+Use case: ads-marketing.
+Use case: ads-marketing.
 Asset type: a finished, shareable English wedding invitation image for WhatsApp, portrait 2:3 aspect ratio, preferably 1536 x 2304 pixels. This is the invitation artwork itself, edge to edge, not a photographed card or mockup.
 
 Input references:
@@ -21,7 +21,7 @@ Chi. Anand
 Son of Mrs. Hema and
 Mr. Vishnu Lakkappa Sullad
 and
-Chi. Sou. Kan. Sushmita
+Chi. Sou. Kan. Susmita
 Daughter of Mrs. Poornima and
 Mr. Ramaling Ramappa Pitagi
 SUNDAY, 29 NOVEMBER 2026
@@ -31,5 +31,5 @@ Hosakeri Galli, Sulebhavi,
 Belagavi, Karnataka.
 Your presence and blessings mean the world to us.
 
-Spelling invariants: Sushmita = S U S H M I T A; Lakkappa = L A K K A P P A; Sullad = S U L L A D; Pitagi = P I T A G I; Shakambari = S H A K A M B A R I; Hosakeri = H O S A K E R I.
+Spelling invariants: Susmita = S U S M I T A; Lakkappa = L A K K A P P A; Sullad = S U L L A D; Pitagi = P I T A G I; Shakambari = S H A K A M B A R I; Hosakeri = H O S A K E R I.
 Do not introduce Shantadevi, Lakshman, Sulkar, Otagi, Sharadamba or Hosapete. No hosts list, RSVP, invented details, website URL, QR code, watermark, app interface, buttons, drop shadows, envelope, tabletop or other mockup setting. English text and English digits only. Output one complete high-quality invitation card.

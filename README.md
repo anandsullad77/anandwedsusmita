@@ -1,6 +1,6 @@
-# Anand and Sushmita — Wedding Invitation
+# Anand and Susmita — Wedding Invitation
 
-An English React wedding invitation for **29 November 2026, 12:28 p.m.**, at Shri Shakambari Mangal Karyalaya, Hosakeri Galli, Sulebhavi, Belagavi. The bride's English spelling, **Sushmita**, and family surnames **Sullad** and **Pitagi** are confirmed by the owner.
+An English React wedding invitation for **29 November 2026, 12:28 p.m.**, at Shri Shakambari Mangal Karyalaya, Hosakeri Galli, Sulebhavi, Belagavi. The bride's English spelling, **Susmita**, and family surnames **Sullad** and **Pitagi** are confirmed by the owner.
 
 ## Run locally
 
