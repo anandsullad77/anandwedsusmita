@@ -6,7 +6,6 @@ export function Icon({ name, size = 20, ...props }) {
     calendar: <><rect x="4" y="5" width="16" height="16" rx="2" /><path d="M16 3v4M8 3v4M4 11h16M8 15h2M14 15h2" /></>,
     pin: <><path d="M20 10c0 6-8 11-8 11S4 16 4 10a8 8 0 1 1 16 0Z" /><circle cx="12" cy="10" r="2.5" /></>,
     clock: <><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></>,
-    download: <path d="M12 3v12m-5-5 5 5 5-5M5 16v4h14v-4" />,
     menu: <path d="M4 8h16M4 16h16" />,
     close: <path d="m6 6 12 12M6 18 18 6" />,
     external: <path d="M14 4h6v6m0-6L10 14M10 4H5a1 1 0 0 0-1 1v14a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-5" />,

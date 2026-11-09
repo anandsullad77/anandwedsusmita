@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import '@fontsource/noto-sans-kannada/latin-400.css';
 import '@fontsource/noto-sans-kannada/latin-500.css';
@@ -27,8 +27,6 @@ function useCountdown() {
 function App() {
   const [introActive, setIntroActive] = useState(() => !window.location.hash && !window.matchMedia('(prefers-reduced-motion: reduce)').matches);
   const [menuOpen, setMenuOpen] = useState(false);
-  const [invitationOpen, setInvitationOpen] = useState(false);
-  const dialogRef = useRef(null);
   const countdown = useCountdown();
   const finishOpening = useCallback(() => setIntroActive(false), []);
   const replayOpening = useCallback(() => {
@@ -62,15 +60,7 @@ function App() {
     return () => observer.disconnect();
   }, []);
 
-  useEffect(() => {
-    const dialog = dialogRef.current;
-    if (invitationOpen && !dialog.open) dialog.showModal();
-    if (!invitationOpen && dialog.open) dialog.close();
-    if (invitationOpen) document.body.style.overflow = 'hidden';
-    return () => { document.body.style.overflow = ''; };
-  }, [invitationOpen]);
-
-  return <><div className="invitation-app" inert={introActive ? true : undefined} aria-hidden={introActive ? true : undefined}><Invitation countdown={countdown} menuOpen={menuOpen} setMenuOpen={setMenuOpen} invitationOpen={invitationOpen} setInvitationOpen={setInvitationOpen} dialogRef={dialogRef} mapUrl={MAP_URL} onReplayOpening={replayOpening} /></div>{introActive && <InvitationOpening onComplete={finishOpening} />}</>;
+  return <><div className="invitation-app" inert={introActive ? true : undefined} aria-hidden={introActive ? true : undefined}><Invitation countdown={countdown} menuOpen={menuOpen} setMenuOpen={setMenuOpen} mapUrl={MAP_URL} onReplayOpening={replayOpening} /></div>{introActive && <InvitationOpening onComplete={finishOpening} />}</>;
 }
 
 createRoot(document.getElementById('root')).render(<App />);

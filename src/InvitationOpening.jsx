@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Icon, Kolam } from './Ornaments';
+import { Kolam } from './Ornaments';
 import './opening.css';
 
 const PETALS = [
@@ -15,7 +15,6 @@ const PETALS = [
 export default function InvitationOpening({ onComplete }) {
   const [phase, setPhase] = useState('sealed');
   const openingRef = useRef(null);
-  const skipRef = useRef(null);
 
   useEffect(() => {
     const previousOverflow = document.body.style.overflow;
@@ -38,7 +37,7 @@ export default function InvitationOpening({ onComplete }) {
       if (event.key === 'Escape') onComplete();
       if (event.key === 'Tab') {
         event.preventDefault();
-        skipRef.current?.focus();
+        openingRef.current?.focus({ preventScroll: true });
       }
     };
     document.addEventListener('keydown', handleKeys);
@@ -68,8 +67,6 @@ export default function InvitationOpening({ onComplete }) {
   }, [onComplete]);
 
   return <div ref={openingRef} className={`invitation-opening is-${phase}`} role="dialog" aria-modal="true" aria-labelledby="opening-label" tabIndex={-1}>
-    <button ref={skipRef} className="opening-skip" onClick={onComplete}>Skip to invitation <Icon name="arrow" size={17} /></button>
-
     <div className="opening-scene">
       <p className="opening-kicker" id="opening-label">With love, for you</p>
       <div className="opening-perspective" aria-hidden="true">

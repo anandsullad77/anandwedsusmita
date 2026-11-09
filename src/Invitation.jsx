@@ -1,7 +1,7 @@
 import React from 'react';
 import { Divider, Ganesha, Icon, Kolam, Monogram, Temple, TextileBorder } from './Ornaments';
 
-export default function Invitation({ countdown, menuOpen, setMenuOpen, invitationOpen, setInvitationOpen, dialogRef, mapUrl, onReplayOpening }) {
+export default function Invitation({ countdown, menuOpen, setMenuOpen, mapUrl, onReplayOpening }) {
   const closeMenu = () => setMenuOpen(false);
 
   return <>
@@ -11,7 +11,7 @@ export default function Invitation({ countdown, menuOpen, setMenuOpen, invitatio
         <a className="brand" href="#home" aria-label="Anand and Susmita — home" onClick={closeMenu}><Monogram /></a>
         <nav className={menuOpen ? 'navigation is-open' : 'navigation'} aria-label="Main navigation" id="main-navigation">
           <div className="nav-group"><a href="#couple" onClick={closeMenu}>The Couple</a><a href="#muhurtha" onClick={closeMenu}>The Muhurta</a></div>
-          <div className="nav-group"><a href="#venue" onClick={closeMenu}>The Venue</a><button className="nav-invitation" onClick={() => { setInvitationOpen(true); closeMenu(); }}>Invitation Card <Icon name="download" size={16} /></button></div>
+          <div className="nav-group"><a href="#venue" onClick={closeMenu}>The Venue</a></div>
         </nav>
         <div className="header-actions"><a className="header-directions" href={mapUrl} target="_blank" rel="noreferrer"><Icon name="pin" size={17} /><span>Get Directions</span></a><button className="menu-toggle" aria-label={menuOpen ? 'Close menu' : 'Open menu'} aria-expanded={menuOpen} aria-controls="main-navigation" onClick={() => setMenuOpen(!menuOpen)}><Icon name={menuOpen ? 'close' : 'menu'} size={25} /></button></div>
       </div>
@@ -63,6 +63,5 @@ export default function Invitation({ countdown, menuOpen, setMenuOpen, invitatio
 
     <footer className="site-footer"><a href="#home" aria-label="Back to home"><Monogram className="footer-monogram" /></a><p className="footer-welcome">Your presence is our happiness.</p><a href="#home" className="footer-names">Anand <span>and</span> Susmita</a><button className="replay-opening" onClick={onReplayOpening}><Icon name="arrow" size={14} />Open the invitation again</button><TextileBorder /></footer>
 
-    <dialog className="invitation-dialog" ref={dialogRef} onCancel={() => setInvitationOpen(false)} onClose={() => setInvitationOpen(false)} onClick={(event) => { if (event.target === event.currentTarget) setInvitationOpen(false); }} aria-labelledby="dialog-title"><div className="dialog-content"><div className="dialog-header"><h2 id="dialog-title">Original Invitation · Kannada</h2><button className="icon-button" aria-label="Close invitation card" onClick={() => setInvitationOpen(false)}><Icon name="close" /></button></div>{invitationOpen && <img src="/images/original-invitation.jpeg" alt="The original printed Kannada wedding invitation for Anand and Susmita" width="1204" height="1600" />}<a href="/images/original-invitation.jpeg" download="anand-susmita-invitation.jpeg" className="button button-primary"><Icon name="download" size={18} />Download Invitation</a></div></dialog>
   </>;
 }
