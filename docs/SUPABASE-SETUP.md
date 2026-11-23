@@ -36,8 +36,9 @@ Use the Supabase **SQL Editor** and run each file in `supabase/migrations/` in t
 6. `0006_photo_quests.sql` — photo quests and progress.
 7. `0007_shared_invitation.sql` — shared features for linked family guests.
 8. `0008_single_wedding.sql` — `/invitation` opens only this wedding; PIN crypto functions support Supabase's extensions schema; hosts can remove photo files from private Storage.
+9. `0009_google_guest_access.sql` — Google sign-in is required for this wedding's photos, uploads and wishes, with host access preserved.
 
-**If the project already has migrations 0001–0007 from Jothe Jotheyali, run only 0008.** If it has only some earlier migrations, run just the missing files in order. These migrations are not a database reset script; rerunning `0001` against existing tables will fail. The original Jothe Jotheyali source folder has not been changed.
+**If the project already has migrations 0001–0008, run only 0009.** If it has only earlier migrations, run just the missing files in order. These migrations are not a database reset script; rerunning `0001` against existing tables will fail. Follow [the Google sign-in guide](GOOGLE-SIGN-IN.md) to allow the application callback URLs before publishing. The original Jothe Jotheyali source folder has not been changed.
 
 ## 3. Configure the wedding and host access
 
@@ -92,12 +93,12 @@ For Netlify, the included `public/_redirects` provides the SPA fallback. Other s
 6. **General invitation → Review wishes & blessings:** approve wishes before they appear to guests.
 7. **Gamanisi! updates:** publish actual host updates after confirming the wording.
 
-The companion is linked from the public invitation. Visitors can view visible photos and approved wishes without a family PIN. Family RSVP, travel, stay, phone numbers, and host administration retain their separate access controls. The migrations create the `photos` and `invitation-covers` buckets as private; keep them private.
+The companion is linked from the public invitation. Its invitation, cover, venue and host updates stay public. Visitors need Google sign-in to view photos, read or submit wishes, or upload images; existing hosts retain their email/password access. Family RSVP, travel, stay, phone numbers, and host administration retain their separate access controls. The migrations create the `photos` and `invitation-covers` buckets as private; keep them private.
 
 ## 7. Check before sharing
 
 - Open `/` on a phone and confirm the original invitation and directions.
-- In a separate private browser window, open `/invitation`, upload a test photo, and submit a wish. Confirm the wish stays hidden until approved.
+- In a separate private browser window, open `/invitation` without signing in. Confirm photos and wishes stay hidden, sign in with Google when prompted, then upload a test photo and submit a wish. Confirm the wish stays hidden until approved.
 - Create one test family in admin, open its personal link in the private window, and save RSVP/travel/stay. Confirm the host can see the response and that the general visitor cannot see that family's records.
 - Try `/rsvp` with the configured PIN. Refresh a deep link to confirm hosting fallback.
 - Hide the test photo, approve/reject the test wish, and confirm the guest view updates.

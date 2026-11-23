@@ -1,8 +1,9 @@
 // Offline-first upload queue: photos wait in IndexedDB and post themselves when the signal returns.
 import { get, set } from 'idb-keyval';
 import { api } from './backend';
+import { requireGuestSignIn } from './guestAuth';
 
-export type QueuedPhoto = { id: string; eventId: string; blob: Blob; moment?: string; questId?: string; caption?: string; uploaderName: string; personId: string | null; generalToken?: string; tries: number };
+export type QueuedPhoto = { id: string; eventId: string; blob: Blob; moment?: string; questId?: string; caption?: string; uploaderName: string; personId: string | null; generalToken?: string; authUserId?: string; tries: number };
 
 const KEY = 'as-wedding-upload-queue';
 let running = false;
@@ -29,6 +30,8 @@ export async function flush() {
     while (q.length && navigator.onLine) {
       const item = q[0];
       try {
+        const account = await requireGuestSignIn();
+        if (item.authUserId && item.authUserId !== account.id) throw new Error('Sign in to the account that queued this photo.');
         if (item.generalToken) {
           const invite = await api.generalInvite(item.generalToken, item.uploaderName);
           if (!invite || invite.event.id !== item.eventId) throw new Error('Invitation no longer available');

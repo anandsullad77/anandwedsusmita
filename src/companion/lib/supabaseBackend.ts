@@ -1,17 +1,9 @@
 // Supabase backend — talks to the schema in supabase/migrations/0001_init.sql.
 // Guests use anonymous auth (a silent device session). Hosts use email/password.
-import { createClient, type SupabaseClient } from '@supabase/supabase-js';
+import { supabase as sb } from './supabaseClient';
 import type { AdminData, AdminHousehold, Backend, EventInfo, GeneralInviteBundle, GeneralInvitationSettings, Household, Person, Photo, PhotoQuestSummary, Wish } from './types';
 import { defaultGeneralSettings, normalizeGeneralSettings, validateGeneralSettings, validateWish } from './generalInvitation';
 import { photoQuest } from './photoQuests';
-
-let client: SupabaseClient | null = null;
-function sb(): SupabaseClient {
-  if (!client) client = createClient(import.meta.env.VITE_SUPABASE_URL, import.meta.env.VITE_SUPABASE_ANON_KEY, {
-    auth: { persistSession: true, autoRefreshToken: true }
-  });
-  return client;
-}
 
 async function ensureDevice() {
   const { data } = await sb().auth.getSession();
@@ -42,7 +34,7 @@ const toHousehold = (h: Record<string, any>): Household => ({
 async function signedUrls(paths: string[]): Promise<Map<string, string>> {
   const m = new Map<string, string>();
   if (!paths.length) return m;
-  const { data } = await sb().storage.from('photos').createSignedUrls(paths, 60 * 60);
+  const { data } = await sb().storage.from('photos').createSignedUrls(paths, 5 * 60);
   for (const d of data ?? []) if (d.path && d.signedUrl) m.set(d.path, d.signedUrl);
   return m;
 }

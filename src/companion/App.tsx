@@ -6,6 +6,7 @@ import GuestApp from './guest/GuestApp';
 import GeneralInvite from './guest/GeneralInvite';
 import Admin from './admin/Admin';
 import { WEDDING_SLUG } from './lib/wedding';
+import AuthCallback from './guest/AuthCallback';
 
 function Home() {
   useEffect(() => { window.location.replace('/'); }, []);
@@ -24,6 +25,7 @@ function LegacyInvitation() {
 
 export default function App() {
   return <Routes>
+    <Route path="/auth/callback" element={<AuthCallback />} />
     <Route path="/invitation/*" element={<GeneralInvite />} />
     <Route path="/celebrate/*" element={<LegacyInvitation />} />
     <Route path="/rsvp" element={<FamilyEntry />} />

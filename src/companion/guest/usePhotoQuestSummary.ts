@@ -2,20 +2,23 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { api } from '../lib/backend';
 import type { PhotoQuestSummary } from '../lib/types';
 import { onQueueChange, pendingCount } from '../lib/uploadQueue';
+import { useGuestAuth } from '../lib/useGuestAuth';
 
 export function usePhotoQuestSummary(eventId: string) {
+  const { canAccess, user } = useGuestAuth();
   const [summary, setSummary] = useState<PhotoQuestSummary | null>(null);
   const [pending, setPending] = useState(0);
   const [error, setError] = useState(false);
   const alive = useRef(false);
   const generation = useRef(0);
   const refresh = useCallback(async () => {
+    if (!canAccess) { setSummary(null); setPending(0); setError(false); return; }
     const request = ++generation.current;
     const [stats, queue] = await Promise.allSettled([api.photoQuestSummary(eventId), pendingCount(eventId)]);
     if (!alive.current || generation.current !== request) return;
     if (stats.status === 'fulfilled') { setSummary(stats.value); setError(false); } else setError(true);
     if (queue.status === 'fulfilled') setPending(queue.value);
-  }, [eventId]);
+  }, [eventId, canAccess, user?.id]);
   useEffect(() => {
     alive.current = true;
     let debounce: ReturnType<typeof setTimeout>;

@@ -5,8 +5,10 @@ import { applyTheme } from '../lib/theme';
 import type { GeneralInviteBundle, PhotoContext } from '../lib/types';
 import InvitationExperience from './InvitationExperience';
 import { WeddingMark } from '../components/WeddingBrand';
+import { useGuestAuth } from '../lib/useGuestAuth';
 
 export default function GeneralInvite() {
+  const { user } = useGuestAuth();
   const { token: routeToken = '' } = useParams();
   const [token, setToken] = useState(routeToken);
   const [bundle, setBundle] = useState<GeneralInviteBundle | null>(null);
@@ -26,10 +28,10 @@ export default function GeneralInvite() {
       const { bundle: b, token: resolvedToken } = result;
       setToken(resolvedToken);
       applyTheme(b.event);
-      setBundle({ ...b, guestName: localStorage.getItem(`as-wedding-general-name:${resolvedToken}`) || b.guestName });
+      setBundle(b);
     }).catch(e => { if (alive) setError(e instanceof Error ? e.message : 'Could not open the invitation.'); });
     return () => { alive = false; };
-  }, [routeToken]);
+  }, [routeToken, user?.id]);
 
   if (!bundle) return (
     <div className="phone general-loading" lang="en">
@@ -41,11 +43,10 @@ export default function GeneralInvite() {
 
   const ctx: PhotoContext = {
     b: bundle,
-    me: bundle.guestName ? { id: null, name: bundle.guestName } : undefined,
+    me: bundle.guestName || user?.name ? { id: null, name: bundle.guestName || user!.name } : undefined,
     generalToken: token,
     prepareUpload: async name => {
       if (!name.trim() || name.trim().length > 80) throw new Error('Enter a name between 1 and 80 characters');
-      localStorage.setItem(`as-wedding-general-name:${token}`, name.trim());
       setBundle(b => b ? { ...b, guestName: name.trim() } : b);
     },
   };

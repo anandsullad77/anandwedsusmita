@@ -9,6 +9,7 @@ import { clearQuestDraft, photoQuest, PHOTO_QUESTS, questDraftFiles } from '../l
 import MomentTag from './MomentTag';
 import './photo-quests.css';
 import { WeddingMark } from '../components/WeddingBrand';
+import { requireGuestSignIn } from '../lib/guestAuth';
 
 const MOMENTS = ['Getting ready', 'Oota', 'Candid', 'Family'];
 export default function Haaku({ ctx }: { ctx: PhotoContext }) {
@@ -51,9 +52,10 @@ export default function Haaku({ ctx }: { ctx: PhotoContext }) {
     if (lock.current || !files.length || (!general && !me)) return;
     lock.current = true; setBusy(true); setErr(null);
     try {
+      const account = await requireGuestSignIn();
       if (general) await ctx.prepareUpload!(name.trim());
       const items = [];
-      for (const f of files) items.push({ eventId: b.event.id, blob: await compressImage(f), moment, questId: selectedQuest?.id, caption: caption.trim() || undefined, uploaderName: general ? name.trim() : me!.name, personId: general ? null : me!.id, generalToken: ctx.generalToken });
+      for (const f of files) items.push({ eventId: b.event.id, blob: await compressImage(f), moment, questId: selectedQuest?.id, caption: caption.trim() || undefined, uploaderName: general ? name.trim() : me!.name, personId: general ? null : me!.id, generalToken: ctx.generalToken, authUserId: account.id });
       await enqueue(items); nav(selectedQuest && scenePath.endsWith('/scene') ? `${scenePath}?quest=${selectedQuest.id}` : scenePath);
     } catch (e) { setErr((e as Error).message); }
     finally { lock.current = false; setBusy(false); }

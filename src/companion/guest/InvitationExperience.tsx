@@ -7,6 +7,7 @@ import Haaku from './Haaku';
 import Scene from './Scene';
 import InvitationPage from './InvitationPage';
 import WeddingBrand from '../components/WeddingBrand';
+import { GuestAccount, GuestContentGate } from '../components/GoogleSignIn';
 import './app.css';
 import './general.css';
 
@@ -35,7 +36,7 @@ export default function InvitationExperience({ bundle, base, token, photoContext
 
   return (
     <Routes>
-      <Route path="haaku" element={sections.uploads ? <Haaku key={current.search} ctx={ctx} /> : <Navigate to={base} replace />} />
+      <Route path="haaku" element={sections.uploads ? <GuestContentGate standalone base={base} purpose="share your wedding photos"><Haaku key={current.search} ctx={ctx} /></GuestContentGate> : <Navigate to={base} replace />} />
       <Route path="*" element={
         <div className="gapp general-shell">
           <a className="general-skip" href="#general-content">Skip to content</a>
@@ -51,10 +52,11 @@ export default function InvitationExperience({ bundle, base, token, photoContext
               </nav>
             </div>
           </header>
+          <GuestAccount />
           <main id="general-content" tabIndex={-1} className={`general-main${onScene ? ' general-main-scene' : onFamily ? ' general-main-family' : ''}`}>
             <Routes>
               <Route index element={<InvitationPage bundle={bundle} base={base} token={token} invitationPath={invitationPath}>{personalSection}</InvitationPage>} />
-              <Route path="scene" element={sections.photos ? <Scene ctx={ctx} canUpload={sections.uploads} /> : <Navigate to={base} replace />} />
+              <Route path="scene" element={sections.photos ? <GuestContentGate base={base} purpose="view the wedding photos"><Scene ctx={ctx} canUpload={sections.uploads} /></GuestContentGate> : <Navigate to={base} replace />} />
               {familyPage && <Route path="family" element={familyPage} />}
               <Route path="*" element={<Navigate to={base} replace />} />
             </Routes>

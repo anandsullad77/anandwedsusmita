@@ -19,7 +19,7 @@ export default defineConfig(({ mode }) => {
   plugins: [VitePWA({
     registerType: 'autoUpdate',
     injectRegister: false,
-    includeAssets: ['favicon.svg', 'icon.svg'],
+    includeAssets: ['favicon.svg', 'icon.svg', 'images/google-sign-in.png'],
     manifest: {
       name: 'Anand & Susmita — Wedding',
       short_name: 'Anand & Susmita',

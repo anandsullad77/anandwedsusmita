@@ -10,9 +10,12 @@ import InvitationDownloads from './InvitationDownloads';
 import Wishes from './Wishes';
 import PhotoQuests from './PhotoQuests';
 import { WeddingSignoff } from '../components/WeddingBrand';
+import { GoogleSignIn } from '../components/GoogleSignIn';
+import { useGuestAuth } from '../lib/useGuestAuth';
 
 export default function InvitationPage({ bundle, base, token, invitationPath, children }: { bundle: GeneralInviteBundle; base: string; token: string; invitationPath: string; children?: ReactNode }) {
   const { hash } = useLocation();
+  const { canAccess, user } = useGuestAuth();
   const { event, functions } = bundle;
   const settings = normalizeGeneralSettings(bundle.settings);
   const { sections } = settings;
@@ -30,9 +33,10 @@ export default function InvitationPage({ bundle, base, token, invitationPath, ch
   useEffect(() => {
     let alive = true;
     if (sections.updates) api.announcements(event.id).then(a => { if (alive) setAnnouncements(a); }).catch(() => {});
-    if (sections.photos) api.listPhotos(event.id).then(p => { if (alive) setPhotos(p); }).catch(() => {});
+    setPhotos([]);
+    if (sections.photos && canAccess) api.listPhotos(event.id).then(p => { if (alive) setPhotos(p); }).catch(() => {});
     return () => { alive = false; };
-  }, [event.id, sections.photos, sections.updates]);
+  }, [event.id, sections.photos, sections.updates, canAccess, user?.id]);
 
   return (<>
     <InvitationHero event={event} settings={settings} />
@@ -58,7 +62,7 @@ export default function InvitationPage({ bundle, base, token, invitationPath, ch
           {sections.uploads && <Link to={`${base}/haaku`} className="btn btn-ghost">Share your photos</Link>}
         </div>
       </div>
-      {sections.photos && photos.length > 0 ? <Link to={`${base}/scene`} aria-label="View latest wedding photos" className="general-photo-preview">
+      {sections.photos && canAccess && photos.length > 0 ? <Link to={`${base}/scene`} aria-label="View latest wedding photos" className="general-photo-preview">
         {photos.slice(0, 3).map((p, i) => <img key={p.id} src={p.url} alt={p.caption ?? `Photo by ${p.uploaderName}`} loading="lazy" className={`general-photo-${i + 1}`} />)}
         <span className="general-photo-caption">{photos.length} {photos.length === 1 ? 'memory' : 'memories'} shared <Icon size={16} d="M5 12h14m-6-6l6 6-6 6" /></span>
       </Link> : <div className="general-photo-empty" aria-label="Shared wedding album">
@@ -67,7 +71,11 @@ export default function InvitationPage({ bundle, base, token, invitationPath, ch
       </div>}
     </section>}
     {sections.quests && sections.uploads && <PhotoQuests eventId={event.id} base={base} showCollections={sections.photos} />}
-    {sections.guestbook && <Wishes eventId={event.id} token={token} guestName={bundle.guestName} />}
+    {sections.guestbook && (canAccess ? <Wishes key={user!.id} eventId={event.id} token={token} guestName={bundle.guestName || user!.name} />
+      : <section id="wishes" tabIndex={-1} className="general-section guestbook locked-wishes" aria-labelledby="wishes-title">
+        <div className="general-section-heading"><p className="general-eyebrow">Words to treasure</p><h2 id="wishes-title">Wishes &amp; blessings</h2></div>
+        <GoogleSignIn returnTo={`${base}#wishes`} purpose="read and share wishes for Anand and Susmita" />
+      </section>)}
     {sections.download && <InvitationDownloads bundle={bundle} settings={settings} link={`${location.origin}${invitationPath}`} />}
     <WeddingSignoff />
   </>);

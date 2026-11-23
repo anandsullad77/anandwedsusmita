@@ -4,6 +4,8 @@ The Wedding project now also includes the Jothe Jotheyali guest and host feature
 
 **Live setup:** follow [the Supabase and deployment guide](docs/SUPABASE-SETUP.md). Without Supabase environment variables, the companion uses browser-only demo data (PIN `291126`; any email/password for demo host sign-in).
 
+**Google sign-in:** the invitation stays public; photos, uploads and wishes require Google (existing hosts keep email/password access). Before deploying this change, apply migration `0009_google_guest_access.sql` and allow the callback URLs in [the Google sign-in setup guide](docs/GOOGLE-SIGN-IN.md).
+
 An English React wedding invitation for **29 November 2026, 12:28 p.m.**, at Shri Shakambari Mangal Karyalaya, Hosakeri Galli, Sulebhavi, Belagavi. The bride's English spelling, **Susmita**, and family surnames **Sullad** and **Pitagi** are confirmed by the owner.
 
 ## Run locally

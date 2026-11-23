@@ -1,0 +1,14 @@
+.google-sign-in { display: flex; flex-direction: column; align-items: flex-start; gap: 14px; max-width: 480px; }
+.google-sign-in > p { margin: 0; font-size: 1rem; line-height: 1.6; }
+.google-sign-in > small { font-size: .875rem; line-height: 1.6; color: var(--muted); }
+.google-sign-in-button { display: inline-flex; align-items: center; justify-content: center; gap: 12px; min-height: 48px; padding: 12px 20px; border: 1px solid var(--line); border-radius: 10px; background: white; color: var(--deep); font: 600 1rem/1.4 var(--sans); cursor: pointer; }
+.google-sign-in-button:disabled { opacity: .6; cursor: wait; }
+.google-sign-in-button img { width: 20px; height: 20px; object-fit: contain; flex-shrink: 0; }
+.guest-sign-in-screen { width: min(100%, 620px); min-height: 100dvh; padding: 32px 24px; margin: auto; display: flex; flex-direction: column; align-items: flex-start; justify-content: center; gap: 28px; }
+.guest-content-lock { max-width: 620px; padding: 48px 0; margin: 0 auto; display: flex; flex-direction: column; align-items: flex-start; gap: 24px; }
+.guest-sign-in-screen h1, .guest-content-lock h1 { margin: 0; font: 500 clamp(2rem, 7vw, 3rem)/1.15 var(--serif); }
+.guest-account { max-width: 1200px; padding: 12px 28px 0; margin: 0 auto; display: flex; justify-content: flex-end; align-items: baseline; gap: 12px; flex-wrap: wrap; font-size: .875rem; color: var(--deep); }
+.guest-account button { min-height: 44px; padding: 4px 8px; background: transparent; border: 0; color: var(--primary); font: inherit; text-decoration: underline; cursor: pointer; }
+.locked-wishes { padding-block: 36px; }
+.locked-wishes .general-section-heading { margin-bottom: 20px; }
+@media (max-width: 767px) { .guest-account { justify-content: flex-start; padding-inline: 18px; } }
