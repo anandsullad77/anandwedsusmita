@@ -22,7 +22,7 @@ Existing `/e/anand-susmita` and `/g/<general-token>` links still work. Old `/cel
 1. Use an existing Supabase project for this wedding, or create one. Choose a region close to your guests if creating a project.
 2. In **Authentication → Sign In / Providers**, enable **Anonymous Sign-Ins** for guests. Guests do not enter an email or receive an OTP. Their anonymous account is remembered in their browser. See [Supabase anonymous sign-ins](https://supabase.com/docs/guides/auth/auth-anonymous).
 3. Keep **Email** authentication enabled for hosts. The app uses **email and password**, not an email OTP. In **Authentication → Users**, add each host with their real email and a strong password; ensure the user is confirmed. There is no public host sign-up screen. See [Supabase password authentication](https://supabase.com/docs/guides/auth/passwords).
-4. Set the Auth **Site URL** to `https://anandwedsusmita.vercel.app`, or your final domain. Add your development and preview origins to allowed redirect URLs if needed for later Auth email flows. The current guest and host sign-in flows do not require a redirect callback.
+4. Set the Auth **Site URL** to `https://anandwedsusmita.vercel.app`, or your final public domain, and save. Under **Redirect URLs**, add `https://anandwedsusmita.vercel.app/auth/callback` and `http://127.0.0.1:5174/auth/callback` for Google sign-in. Keep any redirects still needed by the other app. Use the public domain rather than a protected Vercel deployment URL; see [the Google sign-in guide](GOOGLE-SIGN-IN.md).
 
 ## 2. Run the SQL migrations
 

@@ -6,7 +6,7 @@ The invitation at `/` and `/invitation` stays public. Guests sign in with Google
 
 Google is already enabled in project `hfpdujkjdushcqtkhqqs` (checked through the public Auth settings). No extra Google client ID or client secret belongs in the Wedding frontend or its environment files.
 
-1. Open **Supabase → Authentication → URL Configuration** for that project. Keep the existing redirects needed by Jothe Jotheyali and add both of these under **Redirect URLs**:
+1. Open **Supabase → Authentication → URL Configuration** for that project. Set **Site URL** to `https://anandwedsusmita.vercel.app` and save. This is the fallback destination; an old deployment URL protected by Vercel Authentication sends guests to Vercel's login page. Keep the existing redirects needed by Jothe Jotheyali and add both of these under **Redirect URLs**:
 
    ```text
    https://anandwedsusmita.vercel.app/auth/callback
@@ -14,6 +14,8 @@ Google is already enabled in project `hfpdujkjdushcqtkhqqs` (checked through the
    ```
 
    Add any other actual preview/custom domain as its own callback URL if you intend to test sign-in there. The app uses the current website origin for the return address. Supabase must allow it. See [Supabase Google OAuth](https://supabase.com/docs/guides/auth/social-sign-in/auth-google) and [redirect URL configuration](https://supabase.com/docs/guides/auth/redirect-urls).
+
+   Share `https://anandwedsusmita.vercel.app/invitation` with guests. A Vercel deployment or branch preview URL can require a Vercel account even when the public production domain does not. Changes to Supabase's Site URL and Redirect URLs take effect without running SQL or redeploying the app; start a fresh sign-in after saving them.
 
 2. Open **SQL Editor → New query**, paste the entire `supabase/migrations/0009_google_guest_access.sql` file, and run it **once**, after migrations 0001–0008. It adds access rules and wrappers; it does not delete existing photos, wishes, families or accounts. Do not rerun the earlier schema or the wedding seed.
 
