@@ -1,0 +1,219 @@
+﻿/* Shared invitation layout for general visitors and the family app. */
+.general-shell.gapp { max-width: none; background: var(--paper); }
+.general-header { position: sticky; top: 0; z-index: 40; background: color-mix(in srgb, var(--paper) 95%, transparent); border-bottom: 1px solid var(--line); backdrop-filter: blur(14px); }
+.general-header-inner { width: min(1280px, calc(100% - 64px)); min-height: 88px; margin: 0 auto; padding: 4px 0; display: flex; align-items: center; justify-content: space-between; gap: 24px; }
+.general-brand { display: flex; align-items: center; gap: 12px; color: var(--deep); text-decoration: none; min-width: 0; }
+.general-brand > span:last-child { min-width: 0; }
+.general-brand-label { display: block; font-size: 9px; line-height: 1.5; text-transform: uppercase; letter-spacing: .14em; color: var(--muted); }
+.general-brand b { display: block; font: 600 27px/1.2 var(--serif); overflow-wrap: anywhere; }
+.general-nav { display: flex; align-items: center; gap: 4px; flex-shrink: 0; }
+.general-nav a { min-height: 46px; display: flex; align-items: center; justify-content: center; gap: 7px; padding: 0 14px; color: var(--muted); font-size: 13px; font-weight: 600; border-radius: 10px; text-decoration: none; }
+.general-nav a svg { width: 18px; height: 18px; }
+.general-nav a:hover, .general-nav a.active { background: var(--card); color: var(--deep); }
+.general-nav a.general-upload-link { margin-left: 8px; background: var(--deep); color: var(--paper); }
+.general-skip { position: fixed; z-index: 200; left: 16px; top: -100px; padding: 14px 20px; background: var(--deep); color: var(--paper); border-radius: 8px; }
+.general-skip:focus { top: 16px; }
+.general-shell main.general-main { width: min(100%, 1200px); margin: 0 auto; padding: 32px 28px 0; gap: 0; min-width: 0; }
+.general-shell main.general-main-scene { max-width: 720px; padding-bottom: 60px; gap: 18px; }
+.general-shell main.general-main-family { max-width: 940px; padding-bottom: 60px; gap: 20px; }
+.general-family-plan { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr); gap: 40px; align-items: start; }
+.guest-personal-plan { display: flex; flex-direction: column; gap: 18px; min-width: 0; }
+.general-family-plan .chip { border-radius: 10px; }
+.general-shell [hidden] { display: none !important; }
+.general-shell [id] { scroll-margin-top: 112px; }
+.general-shell .btn { min-height: 48px; padding: 0 18px; border-radius: 12px; font-size: 14px; font-weight: 600; line-height: 1.4; }
+.general-shell .btn-ghost { border-color: color-mix(in srgb, var(--deep) 25%, var(--paper)); }
+.general-shell .btn:hover { filter: brightness(.96); }
+.general-shell .btn:disabled { filter: none; }
+.general-loading { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; padding: 28px; text-align: center; }
+.general-eyebrow { margin: 0; color: var(--primary); font-size: 10px; font-weight: 600; letter-spacing: .17em; line-height: 1.7; text-transform: uppercase; }
+
+/* Container queries keep the admin's narrow invitation preview accurate. */
+.general-hero-frame { container-type: inline-size; container-name: invitation-hero; }
+.general-invitation { display: grid; justify-items: center; padding: 26px 22px 22px; background: var(--card); border: 1px solid var(--line); border-radius: 24px; position: relative; min-width: 0; }
+.general-hero-copy { text-align: center; min-width: 0; width: 100%; }
+.general-invitation .general-eyebrow { font-size: 9px; letter-spacing: .13em; color: var(--muted); }
+.general-banni { margin: 16px 0 10px; font-size: 22px; color: var(--primary); display: flex; align-items: center; justify-content: center; gap: 9px; }
+.general-banni span { font: 500 12px var(--sans); color: var(--muted); }
+.general-couple { margin: 0; display: flex; flex-wrap: wrap; align-items: baseline; justify-content: center; column-gap: 10px; font: 600 clamp(40px, 11cqi, 58px)/1.05 var(--serif); letter-spacing: -.035em; color: var(--deep); }
+.general-couple span { overflow-wrap: anywhere; min-width: 0; }
+.general-couple i { color: var(--primary); font-weight: 400; font-size: .7em; }
+.general-welcome { margin: 14px auto 0; max-width: 42ch; color: var(--muted); font-size: 14px; line-height: 1.75; white-space: pre-wrap; overflow-wrap: anywhere; }
+.general-hero-flourish { display: none; }
+.general-portrait { margin-top: 22px; width: min(100%, 250px); height: 224px; padding: 6px; border: 1px solid color-mix(in srgb, var(--primary) 28%, var(--line)); border-radius: 140px 140px 18px 18px; overflow: hidden; background: var(--paper); }
+.general-portrait img { width: 100%; height: 100%; border-radius: inherit; object-fit: cover; object-position: 50% 15%; }
+.general-event-details { display: grid; gap: 18px; width: 100%; margin-top: 24px; padding-top: 22px; border-top: 1px solid var(--line); }
+.general-event-detail { display: flex; align-items: flex-start; gap: 12px; min-width: 0; text-align: left; }
+.general-event-detail > div { min-width: 0; }
+.general-detail-icon { color: var(--primary); flex-shrink: 0; padding-top: 3px; }
+.general-detail-label { display: block; text-transform: uppercase; letter-spacing: .12em; font-size: 9px; font-weight: 600; color: var(--muted); margin-bottom: 5px; }
+.general-date { display: flex; flex-direction: column; gap: 4px; font-size: 14px; line-height: 1.6; }
+.general-date b { font-weight: 600; color: var(--deep); }
+.general-date > span { color: var(--muted); font-size: 12px; }
+.general-venue { margin: 0; font-size: 14px; line-height: 1.6; color: var(--deep); white-space: pre-wrap; overflow-wrap: anywhere; }
+.general-directions { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; color: var(--primary); min-height: 40px; text-decoration: underline; text-underline-offset: 4px; }
+@container invitation-hero (min-width: 700px) {
+  .general-invitation { grid-template-columns: minmax(0, 1.15fr) minmax(0, .85fr); column-gap: clamp(28px, 5cqi, 60px); padding: 42px clamp(28px, 4.5cqi, 52px) 28px; }
+  .general-hero-copy { align-self: center; }
+  .general-invitation .general-eyebrow { font-size: 10px; }
+  .general-banni { margin: 20px 0 16px; font-size: 25px; }
+  .general-couple { flex-direction: column; align-items: center; gap: 2px; font-size: clamp(64px, 7.5cqi, 88px); }
+  .general-couple i { font-size: .4em; line-height: 1; margin: 0; }
+  .general-welcome { margin-top: 20px; font-size: 16px; }
+  .general-hero-flourish { display: block; color: var(--primary); font-size: 15px; margin-top: 24px; }
+  .general-portrait { width: 100%; max-width: 330px; height: auto; aspect-ratio: 33 / 37; margin: 0; padding: 8px; border-radius: 180px 180px 20px 20px; align-self: center; }
+  .general-portrait img { object-position: 50% 40%; }
+  .general-event-details { grid-column: 1 / -1; grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr); gap: 32px; margin-top: 34px; padding-top: 24px; }
+  .general-event-detail + .general-event-detail { border-left: 1px solid var(--line); padding-left: 32px; }
+  .general-date, .general-venue { font-size: 15px; }
+  .general-date > span, .general-directions { font-size: 13px; }
+  .general-detail-label { font-size: 10px; }
+  .general-invitation.without-cover { grid-template-columns: 1fr; }
+  .without-cover .general-couple { flex-direction: row; justify-content: center; gap: 20px; font-size: 76px; }
+  .without-cover .general-couple i { font-size: .7em; }
+  .without-cover .general-hero-copy { padding: 14px 0 4px; }
+}
+
+.general-host-updates { display: flex; align-items: flex-start; gap: 14px; padding: 20px 24px; margin-top: 22px; background: color-mix(in srgb, var(--primary) 5%, var(--paper)); border: 1px solid color-mix(in srgb, var(--primary) 18%, var(--line)); border-radius: 16px; }
+.general-update-icon { display: flex; color: var(--primary); padding-top: 2px; }
+.general-update-content { min-width: 0; flex: 1; }
+.general-update-content h2 { margin: 0 0 6px; display: flex; gap: 12px; align-items: baseline; justify-content: space-between; flex-wrap: wrap; font-size: 13px; font-weight: 600; color: var(--deep); }
+.general-update-content h2 > span, .general-earlier-update time { font-weight: 400; color: var(--muted); font-size: 11px; }
+.general-update-content p { margin: 0; color: var(--ink); font-size: 13px; line-height: 1.8; white-space: pre-wrap; overflow-wrap: anywhere; }
+.general-update-content details { margin-top: 10px; font-size: 12px; }
+.general-update-content summary { color: var(--primary); cursor: pointer; min-height: 32px; padding: 6px 0; font-weight: 600; }
+.general-earlier-update { margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--line); }
+.general-section { padding: 52px 0; border-bottom: 1px solid var(--line); min-width: 0; }
+.general-section-heading { min-width: 0; }
+.general-section-heading h2 { margin: 8px 0 14px; font: 500 clamp(34px, 4vw, 48px)/1.07 var(--serif); letter-spacing: -.025em; color: var(--deep); }
+.general-section-heading > p:not(.general-eyebrow) { margin: 0; font-size: 14px; line-height: 1.8; max-width: 48ch; color: var(--muted); }
+.general-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.general-section-heading .general-actions { margin-top: 24px; }
+.general-moments { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: center; gap: 64px; }
+.general-photo-empty { background: var(--card); border-radius: 20px; min-height: 290px; padding: 30px 20px; text-align: center; display: flex; flex-direction: column; justify-content: center; align-items: center; }
+.general-empty-frames { position: relative; width: 250px; max-width: 100%; height: 114px; margin-bottom: 16px; }
+.general-empty-frames > span { position: absolute; display: grid; place-items: center; top: 12px; left: calc(50% - 80px); width: 82px; height: 98px; border: 1px solid var(--line); border-radius: 10px; background: var(--paper); transform: rotate(-15deg); }
+.general-empty-frames > span:nth-child(2) { top: 0; left: calc(50% - 41px); z-index: 2; transform: rotate(0); color: var(--primary); box-shadow: 0 7px 18px #2B1A1208; }
+.general-empty-frames > span:nth-child(3) { left: calc(50% - 2px); transform: rotate(15deg); }
+.general-photo-empty > p { margin: 0 0 10px; color: var(--deep); font: 500 28px/1.15 var(--serif); }
+.general-photo-empty > span { font-size: 11px; color: var(--muted); }
+.general-photo-preview { display: grid; grid-template-columns: 1.1fr 1fr; grid-template-rows: 140px 140px; gap: 10px; position: relative; border-radius: 20px; overflow: hidden; }
+.general-photo-preview img { width: 100%; height: 100%; object-fit: cover; min-width: 0; }
+.general-photo-1 { grid-row: 1 / 3; }
+.general-photo-preview:not(:has(.general-photo-3)) { grid-template-rows: 290px; }
+.general-photo-preview:not(:has(.general-photo-3)) .general-photo-1 { grid-row: auto; }
+.general-photo-preview:not(:has(.general-photo-2)) .general-photo-1 { grid-column: 1 / -1; }
+.general-photo-caption { position: absolute; bottom: 14px; left: 14px; display: flex; align-items: center; gap: 12px; padding: 10px 14px; border-radius: 10px; background: var(--paper); color: var(--deep); font-size: 12px; font-weight: 600; }
+.general-schedule { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr); gap: 50px; }
+.general-schedule-list { display: flex; flex-direction: column; gap: 22px; }
+.general-schedule-list article { display: flex; gap: 18px; }
+.general-schedule-number { width: 36px; height: 36px; display: grid; place-items: center; border: 1px solid var(--line); border-radius: 50%; color: var(--primary); font-size: 12px; flex-shrink: 0; }
+.general-schedule-list h3 { margin: 0 0 8px; font: 600 25px/1.2 var(--serif); color: var(--deep); }
+.general-schedule-list time, .general-schedule-list p { margin: 0; font-size: 13px; line-height: 1.8; color: var(--muted); }
+
+.general-wishes-heading { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 20px; }
+.general-wishes-heading .general-section-heading { flex: 1 1 280px; }
+.general-wish-form { margin-top: 26px; padding: 24px; border: 1px solid var(--line); border-radius: 18px; background: #fff; display: flex; flex-direction: column; gap: 16px; }
+.general-wish-form > .field:first-child { max-width: 420px; }
+.general-wish-form .input { border-radius: 10px; }
+.general-wish-form-footer { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 10px; }
+.general-wish-form-footer p { margin: 0; color: var(--muted); font-size: 12px; line-height: 1.6; }
+.general-muted { color: var(--muted); font-size: 12px; }
+.wish-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; margin-top: 28px; }
+.wish { padding: 24px; position: relative; border: 1px solid var(--line); border-radius: 16px; background: color-mix(in srgb, white 60%, var(--paper)); min-width: 0; }
+.general-quote { display: block; height: 30px; color: var(--primary); font: 500 64px/.95 var(--serif); opacity: .6; }
+.wish > p { margin: 10px 0 22px; white-space: pre-wrap; overflow-wrap: anywhere; color: var(--ink); font-size: 14px; line-height: 1.85; }
+.wish footer { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; color: var(--muted); font-size: 11px; }
+.wish footer b { min-width: 0; overflow-wrap: anywhere; color: var(--deep); font-weight: 600; flex: 1; }
+.wish footer time { flex-shrink: 0; }
+.general-wish-avatar { flex-shrink: 0; width: 28px; height: 28px; display: grid; place-items: center; border-radius: 50%; background: var(--card); color: var(--primary); font-size: 12px; }
+.general-wishes-empty { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; padding: 28px 20px; margin-top: 26px; border: 1px dashed var(--line); border-radius: 16px; text-align: center; color: var(--primary); }
+.general-wishes-empty p { margin: 0; font: 500 25px/1.2 var(--serif); color: var(--deep); }
+.general-wishes-empty > span, .general-wishes-loading { color: var(--muted); font-size: 12px; }
+.general-wishes-loading { margin: 28px 0 0; }
+.general-more-wishes { margin: 20px auto 0; display: flex !important; }
+.wish-receipt { margin: 22px 0 0; display: flex; align-items: flex-start; gap: 10px; padding: 16px; border-radius: 12px; background: #E3EBDD; color: #283A2D; font-size: 13px; line-height: 1.7; }
+.wish-receipt svg { flex-shrink: 0; margin-top: 2px; }
+.general-download { margin-top: 36px; padding: 28px; display: grid; grid-template-columns: 48px minmax(0, 1fr) auto; align-items: center; gap: 20px; background: var(--deep); color: var(--paper); border-radius: 20px; }
+.general-download-icon { width: 48px; height: 58px; display: grid; place-items: center; border: 1px solid color-mix(in srgb, var(--paper) 30%, transparent); border-radius: 24px 24px 6px 6px; }
+.general-download-copy h2 { margin: 0 0 7px; font: 500 29px/1.15 var(--serif); }
+.general-download-copy p { margin: 0; font-size: 12px; color: color-mix(in srgb, var(--paper) 80%, var(--deep)); line-height: 1.8; }
+.general-download .btn-deep { background: var(--paper); color: var(--deep); }
+.general-download .btn-ghost { border-color: color-mix(in srgb, var(--paper) 40%, var(--deep)); color: var(--paper); }
+.general-download .error { grid-column: 1 / -1; color: #FFE2D4; margin: 0; }
+.general-signoff { text-align: center; padding: 40px 0 48px; color: var(--muted); }
+.general-signoff > span { color: var(--primary); font-size: 14px; }
+.general-signoff p { margin: 14px 0 4px; font-size: 12px; }
+.general-signoff b { font: 500 28px/1.2 var(--serif); color: var(--deep); }
+.invitation-print-root { display: none; }
+
+@media (max-width: 1000px) {
+  .general-moments { gap: 36px; }
+  .general-download { grid-template-columns: 44px minmax(0, 1fr); }
+  .general-download > .general-actions { grid-column: 2; }
+  .general-header-inner { gap: 16px; }
+  .general-nav a { padding-inline: 10px; }
+  .general-brand-label { font-size: 8px; }
+  .general-brand b { font-size: 24px; }
+}
+@media (max-width: 767px) {
+  /* Keep the fixed bottom nav relative to the viewport, outside a backdrop-filter containing block. */
+  .general-header { backdrop-filter: none; }
+  .general-header-inner { width: calc(100% - 36px); min-height: 64px; padding: 4px 0; }
+  .general-brand { gap: 10px; }
+  .general-brand b { font-size: 23px; }
+  .general-brand-label { font-size: 8px; letter-spacing: .12em; }
+  .general-nav { position: fixed; bottom: 0; left: 0; right: 0; z-index: 50; display: grid; padding: 6px 10px calc(8px + env(safe-area-inset-bottom)); gap: 4px; background: var(--paper); border-top: 1px solid var(--line); }
+  .general-nav a { min-height: 52px; border-radius: 10px; flex-direction: column; gap: 4px; padding: 6px 2px; font-size: 11px; line-height: 1.4; }
+  .general-nav a svg { width: 20px; height: 20px; }
+  .general-nav a.general-upload-link { margin: 0; background: transparent; color: var(--muted); }
+  .general-nav a.active { color: var(--primary); background: var(--card); }
+  .general-shell main.general-main { padding: 4px 18px 80px; }
+  .general-shell main.general-main-scene { padding-top: 20px; padding-bottom: 100px; }
+  .general-shell main.general-main-family { padding-top: 20px; padding-bottom: 100px; }
+  .general-family-plan { grid-template-columns: minmax(0, 1fr); gap: 24px; }
+  .general-shell [id] { scroll-margin-top: 80px; }
+  .general-section { padding: 36px 0; }
+  .general-section-heading h2 { font-size: 36px; }
+  .general-section-heading > p:not(.general-eyebrow) { font-size: 14px; }
+  .general-host-updates { padding: 16px; gap: 10px; margin-top: 18px; }
+  .general-update-content h2 { gap: 6px; }
+  .general-update-content p { font-size: 13px; }
+  .general-update-icon svg { width: 19px; height: 19px; }
+  .general-moments, .general-schedule { grid-template-columns: minmax(0, 1fr); gap: 26px; }
+  .general-moments .general-section-heading h2 br { display: none; }
+  .general-moments .general-section-heading h2 br::after { content: ' '; }
+  .general-photo-empty { min-height: 240px; padding: 24px 16px; }
+  .general-photo-preview { grid-template-rows: 120px 120px; }
+  .general-photo-preview:not(:has(.general-photo-3)) { grid-template-rows: 250px; }
+  .general-wishes-heading { gap: 18px; }
+  .general-wishes-heading .general-section-heading { flex-basis: 100%; }
+  .general-wishes-heading > .btn { min-height: 44px; }
+  .general-wish-form { margin-top: 20px; padding: 18px; gap: 14px; }
+  .general-wish-form-footer p { font-size: 11px; }
+  .general-wish-form-footer .general-muted { font-size: 10px; }
+  .wish-list { grid-template-columns: minmax(0, 1fr); gap: 14px; margin-top: 22px; }
+  .wish { padding: 22px; }
+  .general-wishes-empty { padding: 24px 16px; }
+  .general-download { padding: 22px 20px; margin-top: 28px; column-gap: 14px; row-gap: 18px; }
+  .general-download-copy h2 { font-size: 27px; }
+  .general-download > .general-actions { grid-column: 1 / -1; gap: 8px; }
+  .general-download .btn { flex: 1; padding: 0 10px; font-size: 12px; }
+  .general-download .btn svg { width: 16px; }
+  .general-signoff { padding: 34px 0 22px; }
+}
+@media (max-width: 360px) {
+  .general-shell main.general-main { padding-inline: 14px; }
+  .general-invitation { padding-inline: 18px; }
+  .general-couple { font-size: 38px; gap: 7px; }
+  .general-invitation .general-eyebrow { font-size: 8px; }
+  .general-portrait { height: 184px; width: 220px; }
+  .general-download .btn { font-size: 11px; }
+}
+@media print {
+  @page { size: A4; margin: 12mm; }
+  body:has(> .invitation-print-root) > :not(.invitation-print-root) { display: none !important; }
+  body:has(> .invitation-print-root) { height: auto; background: white; }
+  .invitation-print-root { display: block !important; width: 100%; }
+  .invitation-print-root img { width: 100%; height: 270mm; object-fit: contain; }
+}

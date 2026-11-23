@@ -1,5 +1,9 @@
 # Anand and Susmita — Wedding Invitation
 
+The Wedding project now also includes the Jothe Jotheyali guest and host features for **only Anand and Susmita's wedding**. The original invitation remains at `/`, with companion links below its existing footer. Start at `/invitation` for photos and wishes, `/rsvp` for family recovery, or `/admin` for hosts. There is no marketing page or event picker.
+
+**Live setup:** follow [the Supabase and deployment guide](docs/SUPABASE-SETUP.md). Without Supabase environment variables, the companion uses browser-only demo data (PIN `291126`; any email/password for demo host sign-in).
+
 An English React wedding invitation for **29 November 2026, 12:28 p.m.**, at Shri Shakambari Mangal Karyalaya, Hosakeri Galli, Sulebhavi, Belagavi. The bride's English spelling, **Susmita**, and family surnames **Sullad** and **Pitagi** are confirmed by the owner.
 
 ## Run locally
@@ -26,7 +30,11 @@ The production website is generated in `dist/`. Latin font subsets are bundled l
 
 ## Content and appearance
 
-- `src/main.jsx`: countdown, event time, and measured sticky-header height for section links and text resizing.
+- `src/main.jsx`: loads the original invitation or wedding companion independently so their styles do not interfere.
+- `src/home-entry.jsx`: original countdown, event time, opening, and measured sticky-header height for section links and text resizing.
+- `src/WeddingLinks.jsx`: companion links below the original invitation footer.
+- `src/companion/`: imported RSVP story, family plans, photos, offline uploads, quests, wishes, Excel imports, Supabase/browser backends, and host admin.
+- `src/companion/components/WeddingBrand.tsx`: shared AS logo and textile ornaments for guest, RSVP, upload, family, and host pages. These routes reuse the original SVG files and `src/theme.css`; the original invitation remains unchanged.
 - `src/Invitation.jsx`: the English invitation content, navigation, accessible labels, and stationery layout. Traditional honorifics remain transliterated immediately before the couple's names.
 - `src/Ornaments.jsx`: vector kolam ornaments, religious and venue illustrations, and icon components.
 - `src/InvitationOpening.jsx` and `src/opening.css`: a brief full-screen opening sequence with dark green covers, a pink wax-style AS seal, woven trim, and drifting petals. The two covers unfold directly over the actual website, revealing its existing hero; there is no separate inner card or duplicate hero. It opens automatically on a fresh visit, has no visible skip option, and can be replayed from the footer. Escape can dismiss it for keyboard users. Reduced-motion preferences and direct section links bypass the animation. The animation does not wait for the large illustration to download, and scroll locking preserves the hero's position.
@@ -47,7 +55,7 @@ A persistent "Get Directions" header link opens the owner's Google Maps location
 - `public/images/wedding-social-preview.png`: a 1200 × 630 sharing image with the AS monogram, couple's names, wedding date, time and venue. Its editable HTML source is `docs/social-preview.html`, viewable through the Vite server and exportable at 1200 × 630 after fonts have loaded. It uses the existing vector logo and border. The standalone invitation image is retained separately under `share/`.
 - `public/images/wedding-illustration-olive-rose.png`: an illustrative couple generated and recoloured with the built-in imagegen tool to match the ivory, cream, olive, and rose palette; it is not a portrait of the actual couple. The original green and previous coral versions are retained as `public/images/wedding-illustration.png` and `public/images/wedding-illustration-coral.png`. Prompts are in `docs/illustration-prompt.md`.
 
-All website copy is in English, with English digits (0–9). This includes the opening animation, countdown labels and wedding blessing, image descriptions, menu controls, page title, and description. Family names and traditional calendar terms are transliterated from the owner's Kannada copy. The countdown uses the explicit `+05:30` event time, so it remains correct for guests in other time zones. After the muhurta, it displays a wedding blessing. Venue directions use the owner's supplied location link: https://maps.app.goo.gl/CzVGfb7yyeYVoxam6. Static Open Graph and social-card metadata in `index.html` reference the confirmed public address `https://anandwedsusmita.vercel.app/` and the sharing image, so crawlers can read them without JavaScript. These sharing updates become public with the next deployment.
+The original invitation's copy is in English, with English digits (0–9). This includes the opening animation, countdown labels and wedding blessing, image descriptions, menu controls, page title, and description. The imported companion also includes Kannada labels and the Banni RSVP story. Family names and traditional calendar terms are transliterated from the owner's Kannada copy. The countdown uses the explicit `+05:30` event time, so it remains correct for guests in other time zones. After the muhurta, it displays a wedding blessing. Venue directions use the owner's supplied location link: https://maps.app.goo.gl/CzVGfb7yyeYVoxam6. Static Open Graph and social-card metadata in `index.html` reference the confirmed public address `https://anandwedsusmita.vercel.app/` and the sharing image, so crawlers can read them without JavaScript. These sharing updates become public with the next deployment.
 
 ## Owner review
 
@@ -58,3 +66,7 @@ Names and place names follow the typed content supplied by the owner. English fa
 The production build and local Chrome checks cover English copy and metadata, display fonts, mobile navigation, header and venue directions, hero CTA, the 1200 × 630 sharing image, and countdown states before and after the ceremony. Responsive checks cover thirteen portrait, landscape and desktop sizes from 320 × 480 to 1440 × 1000. Text enlargement is checked at 200% at widths 320, 390, 768 and 1440. Typical portrait sections fit one screen; smaller screens and enlarged text allow vertical scrolling without clipping or horizontal overflow. The opening sequence is checked separately for the real hero reveal, automatic completion, keyboard focus and Escape, replay, and reduced motion. Screenshots are saved in the ignored `artifacts/` directory.
 
 The project runs locally by default. Source is stored in the owner's GitHub repository; hosting is configured separately. Installed dependencies, build output, review artifacts, environment files, and local Sites settings are excluded from Git. Local development and production builds do not require `.openai/hosting.json`.
+
+The combined build runs TypeScript checks before bundling and generates the installable app manifest and offline service worker. `vercel.json` supplies deep-link routing for Vercel; `public/_redirects` supplies it for Netlify. The original `jothe-jotheyali` folder is unchanged. Local browser data is namespaced separately from the source app.
+
+Integration checks verified pixel-identical original invitation views at 390px and 1440px, guest and admin layouts at 320–1440px, photo upload, moderated wishes, family PIN recovery, host sign-in, Excel template/import, and the original opening animation. All eight migrations and the repeatable wedding seed passed local PostgreSQL fixture checks, including family privacy and host-only Storage deletion. Production Chrome checks verified the service worker, direct links, and an offline upload persisting through reload before sending on reconnect. A live Supabase project still needs the setup and acceptance checks in the guide.

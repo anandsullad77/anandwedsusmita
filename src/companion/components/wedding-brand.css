@@ -1,0 +1,31 @@
+.wedding-mark { display: block; object-fit: contain; flex-shrink: 0; }
+.wedding-brand { display: inline-flex; align-items: center; gap: 12px; min-width: 0; color: var(--deep); text-decoration: none; }
+.wedding-brand > .wedding-mark { width: 64px; height: 64px; }
+.wedding-brand-copy { min-width: 0; }
+.wedding-brand-copy small { display: block; font: 500 .625rem/1.5 var(--sans); letter-spacing: .12em; text-transform: uppercase; }
+.wedding-brand-copy b { display: block; font: 500 1.75rem/1.2 var(--serif); overflow-wrap: anywhere; }
+.wedding-textile { height: 69px; background: url('/images/textile-border.svg') repeat-x bottom left / 115px 69px; pointer-events: none; }
+.wedding-signoff { padding-top: 40px; text-align: center; color: var(--deep); }
+.wedding-signoff > a { display: inline-flex; margin-bottom: 28px; }
+.wedding-signoff > p { margin: 0 0 14px; font: 400 .875rem/1.6 var(--sans); }
+.wedding-entry-masthead { position: relative; min-height: 160px; border-radius: 0 0 100px 100px; background: var(--deep); margin: -32px -22px 8px; display: grid; place-items: center; overflow: hidden; }
+.wedding-entry-masthead::before { content: ''; position: absolute; inset: 0; background: var(--ivory); mask: url('/images/name-mandala.svg') center / 190px 190px no-repeat; opacity: .14; pointer-events: none; }
+.wedding-entry-masthead > a { position: relative; display: grid; place-items: center; width: 92px; height: 92px; background: var(--rose); border-radius: 50%; }
+.wedding-entry-masthead .wedding-mark { filter: brightness(0) invert(1); }
+.wedding-entry-masthead .wedding-textile { position: absolute; bottom: 0; width: 100%; height: 32px; background-size: 54px 32px; }
+.upload-wedding-heading { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.upload-wedding-heading > a { flex-shrink: 0; }
+.upload-wedding-heading > div { min-width: 0; }
+.upload-header .upload-wedding-heading h1 { font-size: 25px; }
+.banni-home { position: absolute; top: calc(40px + env(safe-area-inset-top)); left: 12px; z-index: 4; width: 52px; height: 52px; display: grid; place-items: center; background: var(--ivory); border: 1px solid var(--line); border-radius: 50%; }
+.banni-home .wedding-mark { width: 44px; height: 44px; }
+.cover > div::before { content: ''; position: absolute; top: 50%; width: min(680px, 82vmin); aspect-ratio: 1; background: var(--ivory); mask: url('/images/name-mandala.svg') center / contain no-repeat; opacity: .15; transform: translateY(-50%); }
+.cover > div { position: relative; overflow: hidden; }
+.cover > div:first-child::before { right: max(-340px, -41vmin); }
+.cover > div:last-child::before { left: max(-340px, -41vmin); }
+.cover > div::after { content: ''; position: absolute; left: 0; bottom: 0; width: 100%; height: 69px; background: url('/images/textile-border.svg') repeat-x bottom left / 115px 69px; }
+@media (max-width: 767px) {
+  .wedding-brand > .wedding-mark { width: 44px; height: 44px; }
+  .wedding-brand-copy b { font-size: 1.4375rem; }
+  .wedding-brand-copy small { font-size: .5625rem; }
+}

@@ -1,0 +1,61 @@
+.photo-quests-heading { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 20px; }
+.photo-quests-heading .general-section-heading { flex: 1 1 300px; }
+.quest-surprise { gap: 8px; }
+.quest-personal-progress { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; color: var(--deep); font-size: 13px; line-height: 1.7; margin: 24px 0 20px; }
+.quest-personal-progress > svg { color: var(--primary); flex-shrink: 0; }
+.quest-personal-progress > button { min-height: 44px; border: 0; background: none; color: var(--primary); text-decoration: underline; font: 600 12px var(--sans); cursor: pointer; }
+.quest-pending { margin: -8px 0 18px; padding: 12px 14px; border-radius: 10px; color: #75500D; background: #FFF0D5; font-size: 12px; line-height: 1.8; }
+.photo-quest-featured { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+.photo-quest-card { display: flex; flex-direction: column; align-items: flex-start; padding: 22px; border: 1px solid var(--line); border-radius: 18px; background: #fff; min-width: 0; }
+.quest-card-top { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; width: 100%; margin-bottom: 16px; }
+.quest-mood { display: inline-flex; align-items: center; gap: 5px; font-size: 10px; font-weight: 600; color: var(--primary); }
+.quest-mood.playful { color: #75500D; }
+.quest-complete { display: inline-flex; align-items: center; gap: 4px; color: #33452D; font-size: 10px; }
+.photo-quest-card h3 { font: 600 28px/1.15 var(--serif); letter-spacing: -.015em; color: var(--deep); margin: 0 0 12px; overflow-wrap: anywhere; }
+.photo-quest-card > p { margin: 0 0 18px; color: var(--muted); font-size: 13px; line-height: 1.8; flex: 1; }
+.photo-quest-card > .moment-tag { margin-bottom: 20px; }
+.quest-card-actions { display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; width: 100%; }
+.quest-card-actions .btn { width: 100%; padding: 10px 12px; }
+.quest-collection-link { min-height: 44px; display: flex; align-items: center; gap: 6px; color: var(--primary); font-size: 11px; font-weight: 600; margin-top: 5px; text-decoration: none; }
+.quest-swipe-hint { display: none; }
+.quest-shuffle-notice { margin: 16px 0 0; font-size: 12px; color: var(--muted); }
+.quest-catalog { border: 1px solid var(--line); border-radius: 14px; margin-top: 22px; }
+.quest-catalog > summary { display: flex; justify-content: space-between; align-items: center; gap: 12px; list-style: none; cursor: pointer; min-height: 52px; padding: 14px 18px; font-size: 13px; font-weight: 600; color: var(--deep); }
+.quest-catalog-filters { display: flex; overflow-x: auto; gap: 8px; padding: 2px 18px 16px; }
+.quest-catalog-filters .chip { border-radius: 10px; white-space: nowrap; flex-shrink: 0; font-size: 12px; }
+.photo-quest-catalog-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; padding: 0 18px 18px; }
+.quest-card-compact { padding: 18px; }
+.quest-card-compact h3 { font-size: 24px; }
+.quest-collection-picker { display: flex; flex-direction: column; gap: 8px; }
+.quest-collection-picker > label, .upload-quest-fields label { font-size: 13px; font-weight: 600; color: var(--deep); }
+.quest-collection-picker .input { font-size: 16px; border-radius: 10px; }
+.quest-selected-collection { padding: 16px; border: 1px solid var(--line); border-radius: 12px; background: var(--card); }
+.quest-selected-collection p { font-size: 13px; color: var(--muted); line-height: 1.8; margin: 10px 0 0; }
+.quest-selected-collection .guest-text-link { background: none; border: 0; padding: 0; cursor: pointer; }
+.upload-quest-picker { border: 1px solid var(--line); border-radius: 14px; background: #fff; }
+.upload-quest-picker > summary { display: flex; justify-content: space-between; align-items: center; gap: 10px; list-style: none; cursor: pointer; min-height: 52px; padding: 14px 16px; font-size: 13px; line-height: 1.6; color: var(--deep); font-weight: 600; }
+.upload-quest-picker summary > span { min-width: 0; }
+.upload-quest-picker summary > svg { flex-shrink: 0; }
+.upload-quest-fields { display: flex; flex-direction: column; align-items: flex-start; padding: 0 16px 18px; gap: 12px; }
+.upload-quest-fields .field { width: 100%; }
+.upload-quest-fields .input { font-size: 16px; }
+.upload-quest-fields p { margin: 0; color: var(--muted); font-size: 13px; line-height: 1.8; }
+.upload-quest-fields small { color: var(--muted); font-size: 11px; line-height: 1.7; }
+.admin-quest-filter { max-width: 480px; }
+.admin-quest-filter > p { margin: 0; }
+@media (max-width: 1000px) {
+  .photo-quest-featured { display: flex; overflow-x: auto; padding: 2px 2px 14px; scroll-snap-type: x proximity; }
+  .photo-quest-featured > article { flex: 0 0 max(280px, 45%); scroll-snap-align: start; }
+  .quest-swipe-hint { display: block; color: var(--muted); font-size: 11px; margin: -8px 0 14px; }
+  .photo-quest-catalog-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 600px) {
+  .photo-quests-heading { gap: 16px; }
+  .photo-quest-featured { gap: 12px; }
+  .photo-quest-featured > article { flex-basis: 88%; }
+  .photo-quest-card { padding: 20px; }
+  .photo-quest-card h3 { font-size: 28px; }
+  .photo-quest-catalog-grid { grid-template-columns: minmax(0, 1fr); }
+  .quest-personal-progress { margin-top: 20px; font-size: 12px; }
+  .quest-card-top { margin-bottom: 14px; }
+}

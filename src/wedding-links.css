@@ -1,0 +1,5 @@
+.wedding-links { padding: 48px 24px; background: var(--ivory); border-top: 1px solid var(--line); text-align: center; }
+.wedding-links h2 { margin: 8px 0 12px; font-size: clamp(2rem, 5vw, 3rem); line-height: 1.2; }
+.wedding-links > p:not(.eyebrow) { max-width: 480px; margin: 0 auto; font-size: 1rem; }
+.wedding-links nav { margin: 24px auto; display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+.wedding-host-link { font-size: .875rem; text-decoration: underline; text-underline-offset: 4px; }

@@ -1,0 +1,63 @@
+@import url('../../theme.css');
+
+:root {
+  /* Share the original invitation's palette across all wedding routes. */
+  --primary: var(--rose);
+  --primary-ink: var(--ivory);
+  --paper: var(--ivory);
+  --card: #F9F0E0;
+  --akshate: #E9A21B;
+  --p-haldi: var(--ivory);
+  --p-kumkuma: var(--rose);
+  --p-ink: var(--deep);
+  --p-ivory: var(--ivory);
+  --p-muted: var(--muted);
+  --p-line: var(--line);
+  --ease: cubic-bezier(.16, 1, .3, 1);
+  --sans: 'Noto Sans Kannada', 'Noto Sans', system-ui, sans-serif;
+  --serif: 'Cormorant Garamond', Georgia, serif;
+  --kn-serif: 'Noto Serif Kannada', 'Noto Sans Kannada', serif;
+  --kn-sans: 'Noto Sans Kannada', 'Noto Sans', sans-serif;
+  --display: var(--serif);
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+html, body, #root { margin: 0; height: 100%; }
+body { font-family: var(--sans); color: var(--ink); background: var(--paper); -webkit-font-smoothing: antialiased; -webkit-tap-highlight-color: transparent; }
+button, input, select, textarea { font: inherit; color: inherit; }
+img { max-width: 100%; display: block; }
+a { color: var(--primary); }
+:focus-visible { outline: 3px solid var(--akshate); outline-offset: 2px; }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+/* phone frame: full-bleed on phones, centred column on desktop */
+.phone { position: relative; width: 100%; max-width: 480px; margin: 0 auto; min-height: 100%; background: var(--paper); }
+
+.eb { margin: 0; font-size: 13px; letter-spacing: .12em; text-transform: uppercase; font-weight: 600; color: var(--muted); }
+.kn-h { font-family: var(--kn-serif); font-weight: 700; line-height: 1.3; margin: 0; }
+.serif { font-family: var(--serif); }
+
+.btn { min-height: 52px; padding: 0 22px; border-radius: 999px; border: 0; font-weight: 700; font-size: 16px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 8px; text-decoration: none; transition: transform .12s ease, background-color .3s ease; }
+.btn:active { transform: scale(.97); }
+.btn:disabled { opacity: .5; cursor: default; }
+.btn-primary { background: var(--primary); color: var(--primary-ink); }
+.btn-deep { background: var(--deep); color: var(--paper); }
+.btn-gold { background: var(--akshate); color: #2B1A12; }
+.btn-ghost { background: transparent; border: 1px solid var(--line); color: var(--ink); }
+.btn-block { width: 100%; }
+
+.chip { min-height: 44px; padding: 0 16px; border-radius: 999px; border: 1px solid var(--line); background: #fff; font-size: 14px; font-weight: 600; cursor: pointer; }
+.chip[aria-pressed="true"] { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+
+.field { display: flex; flex-direction: column; gap: 6px; }
+.field label { font-size: 14px; font-weight: 600; }
+.input { min-height: 52px; border-radius: 14px; border: 1px solid #D8C6AA; background: #fff; padding: 0 14px; font-size: 16px; width: 100%; }
+textarea.input { padding: 12px 14px; min-height: 96px; resize: vertical; }
+
+.card { background: #fff; border: 1px solid var(--line); border-radius: 20px; }
+.error { color: #9B1C1C; font-size: 14px; font-weight: 600; }
+.toast { position: fixed; left: 50%; bottom: 96px; transform: translateX(-50%); background: var(--ink); color: var(--paper); padding: 12px 18px; border-radius: 999px; font-size: 14px; font-weight: 600; z-index: 1000; max-width: 90vw; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+}

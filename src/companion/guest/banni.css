@@ -1,0 +1,99 @@
+.banni { position: fixed; inset: 0; overflow: hidden; background: var(--sky, #F6E3C8); color: var(--ink);
+  --sky: #F6E3C8; --sage: #C9D6C3; --sage2: #9FB59A; --leaf: #5E7F55; --sand: #EAD9BC; --gold-l: #F3C85A; --gold-xl: #F6D98E;
+  --primary-d: color-mix(in srgb, var(--primary) 72%, #000); --deep-l: color-mix(in srgb, var(--deep) 82%, #fff);
+  --night: color-mix(in srgb, var(--deep) 78%, #000); --night2: #1E2A22; --night3: #243329; }
+.banni-frame { position: relative; height: 100%; max-width: 480px; margin: 0 auto; overflow: hidden; }
+
+/* colour slots for the world art */
+.f-sky { fill: var(--sky) } .f-sage { fill: var(--sage) } .f-sage2 { fill: var(--sage2) } .f-leaf { fill: var(--leaf) }
+.f-sand { fill: var(--sand) } .f-card { fill: var(--card) } .f-paper { fill: var(--paper) } .f-gold { fill: var(--akshate) }
+.f-gold-l { fill: var(--gold-l) } .f-gold-xl { fill: var(--gold-xl) } .f-primary { fill: var(--primary) } .f-primary-d { fill: var(--primary-d) }
+.f-deep { fill: var(--deep) } .f-deep-l { fill: var(--deep-l) } .f-night { fill: var(--night) } .f-night2 { fill: var(--night2) } .f-night3 { fill: var(--night3) }
+.s-gold { stroke: var(--akshate) } .s-primary { stroke: var(--primary) }
+
+.world { position: absolute; inset: 0; overflow: hidden; z-index: 1; }
+.st { position: absolute; inset: 0; will-change: transform, opacity; }
+.arch-window { position: absolute; left: 50%; top: 70px; width: min(290px, 74%); aspect-ratio: 29 / 36; transform: translateX(-50%);
+  border-radius: 999px 999px 0 0; overflow: hidden; border: 10px solid var(--deep); }
+.arch-window img { width: 100%; height: 100%; object-fit: cover; }
+
+.scroller { position: absolute; inset: 0; overflow-y: auto; scroll-snap-type: y mandatory; scrollbar-width: none; z-index: 2; }
+.scroller::-webkit-scrollbar { display: none; }
+.scene { height: var(--h, 100dvh); scroll-snap-align: start; scroll-snap-stop: always; position: relative; display: flex; flex-direction: column;
+  justify-content: flex-end; gap: 12px; padding: 40px 24px calc(76px + env(safe-area-inset-bottom)); }
+.scene.center { align-items: center; text-align: center; }
+.scene.dark { color: var(--paper); }
+.scene.dark .eb { color: #E6D9C2; }
+.scene h2.kn-h { font-size: clamp(32px, 9vw, 52px); }
+.sub-serif { margin: 0; font-family: var(--serif); font-size: 24px; line-height: 1.15; }
+.scene.dark .sub-serif { color: #F3E3C3; }
+
+.rv { opacity: 0; transform: translateY(32px); filter: blur(8px);
+  transition: opacity .9s var(--ease), transform 1s var(--ease), filter .9s ease; }
+.on .rv { opacity: 1; transform: none; filter: blur(0); }
+.d1 { transition-delay: .15s } .d2 { transition-delay: .3s } .d3 { transition-delay: .45s } .d4 { transition-delay: .65s } .d5 { transition-delay: .85s }
+
+.answer { min-height: 76px; border-radius: 22px; border: 2px solid var(--line); background: #fff; color: var(--ink); text-align: left;
+  padding: 12px 20px; display: flex; flex-direction: column; gap: 2px; cursor: pointer; transition: transform .12s, background-color .3s, border-color .3s; }
+.answer:active { transform: scale(.97); }
+.answer[aria-pressed="true"] { background: var(--primary); border-color: var(--primary); color: var(--primary-ink); }
+.answer .kn { font-family: var(--kn-sans); font-size: 22px; font-weight: 700; }
+.answer .en { font-size: 15px; }
+.answer.small { min-height: 60px; border-radius: 16px; padding: 10px 12px; align-items: center; text-align: center; }
+.answer.small .kn { font-size: 16px; } .answer.small .en { font-size: 13px; }
+.answer.gold[aria-pressed="true"] { background: #FBE7C2; border-color: var(--akshate); color: #2B1A12; }
+.grid2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.grid3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.grid4 { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+.linkbtn { min-height: 44px; border: 0; background: transparent; font-weight: 600; font-size: 15px; color: var(--primary); text-decoration: underline; cursor: pointer; }
+.scene.dark .linkbtn { color: #F3E3C3; }
+
+.note { background: rgba(255,255,255,.85); border: 1px solid var(--line); border-radius: 14px; padding: 10px 12px; font-size: 14px; line-height: 1.45; color: var(--ink); }
+
+.cover { position: absolute; inset: 0; z-index: 5; pointer-events: none; display: flex; }
+.cover > div { width: 50%; height: 100%; background: var(--deep); }
+.cover > div:first-child { border-right: 2px solid var(--akshate); }
+.cover > div:last-child { border-left: 2px solid var(--akshate); }
+.cover-text { position: absolute; inset: 0; z-index: 6; pointer-events: none; display: flex; flex-direction: column; align-items: center;
+  justify-content: space-between; padding: 12vh 24px 8vh; color: var(--paper); text-align: center; }
+.seal { width: 116px; height: 116px; border-radius: 50%; background: var(--primary); border: 4px solid color-mix(in srgb, var(--primary) 70%, #fff);
+  display: flex; align-items: center; justify-content: center; }
+.seal img { width: 64px; height: 64px; filter: brightness(0) invert(1); }
+
+.garland { position: absolute; top: calc(14px + env(safe-area-inset-top)); left: 0; right: 0; z-index: 4; display: flex; justify-content: center; gap: 10px; pointer-events: none; }
+.garland span { width: 16px; height: 16px; border-radius: 50%; border: 2px solid var(--akshate); transition: background-color .4s; }
+.chapter-bar { position: absolute; left: 20px; right: 20px; bottom: calc(20px + env(safe-area-inset-bottom)); z-index: 4; display: flex;
+  justify-content: space-between; align-items: center; pointer-events: none; font-size: 13px; font-weight: 600; letter-spacing: .08em; }
+
+.road { position: relative; width: 100%; max-width: 350px; height: 120px; margin: 0 auto; }
+.road svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+.car { position: absolute; left: 0; top: 0; width: 34px; height: 34px; margin: -17px 0 0 -17px; border-radius: 50%; background: var(--akshate);
+  display: flex; align-items: center; justify-content: center; offset-path: path('M 20 92 C 110 8, 220 160, 350 48'); offset-rotate: 0deg;
+  transition: offset-distance 1.8s cubic-bezier(.65,0,.35,1); }
+
+.portrait-round { width: 196px; height: 196px; border-radius: 50%; overflow: hidden; border: 4px solid var(--akshate); flex-shrink: 0; }
+.portrait-round img { width: 100%; height: 100%; object-fit: cover; }
+
+@keyframes fallA { 0% { transform: translateY(-40px) rotate(0) } 100% { transform: translateY(110vh) rotate(240deg) } }
+@keyframes fallB { 0% { transform: translateY(-40px) rotate(0) } 100% { transform: translateY(110vh) rotate(-200deg) } }
+.grain { position: absolute; top: 0; width: 6px; height: 12px; border-radius: 50%; background: var(--akshate); animation: fallA 1.8s cubic-bezier(.3,.1,.6,1) forwards; pointer-events: none; z-index: 7; }
+.grain.k2 { background: var(--gold-l); animation-name: fallB; }
+@keyframes drift { 0% { transform: translate(0, -40px) rotate(0) } 100% { transform: translate(40px, 110vh) rotate(320deg) } }
+.petal { position: absolute; top: 0; width: 11px; height: 16px; border-radius: 60% 0 60% 0; background: var(--primary); opacity: .8; animation: drift 7s linear infinite; pointer-events: none; }
+.petal.k2 { background: var(--akshate); animation-duration: 9s; }
+@keyframes flicker { 0%, 100% { transform: scaleY(1); opacity: 1 } 50% { transform: scaleY(.84); opacity: .82 } }
+.flame { transform-box: fill-box; transform-origin: 50% 100%; animation: flicker 1.4s ease-in-out infinite; }
+@keyframes sway { 0%, 100% { transform: rotate(-2deg) } 50% { transform: rotate(2deg) } }
+.sway { transform-box: fill-box; transform-origin: 50% 0; animation: sway 4s ease-in-out infinite; }
+@keyframes twinkle { 0%, 100% { opacity: .9 } 50% { opacity: .3 } }
+.tw { animation: twinkle 2.6s ease-in-out infinite; }
+@keyframes bob { 0%, 100% { transform: translateY(0) } 50% { transform: translateY(5px) } }
+.cue { animation: bob 1.6s ease-in-out infinite; }
+@keyframes pop { 0% { transform: scale(0) } 70% { transform: scale(1.2) } 100% { transform: scale(1) } }
+.bloom { animation: pop .5s var(--ease) both; }
+
+@media (prefers-reduced-motion: reduce) {
+  .rv { transition: none; opacity: 1; transform: none; filter: none; }
+  .grain, .petal { display: none; }
+  .car { transition: none; }
+}
