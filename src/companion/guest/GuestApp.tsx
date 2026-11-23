@@ -43,7 +43,7 @@ export default function GuestApp() {
     };
   }, [reload]);
 
-  if (!s) return <div className="phone guest-welcome" lang="en"><WeddingBrand /><h1 className="serif">Welcome to Anand and Susmita's wedding</h1><p>Open your family's invitation link, or use the wedding PIN to find your family.</p><a className="btn btn-deep" href="/rsvp">Find my family</a><p><a href="/invitation">Photos &amp; wishes</a> · <a href="/">Wedding invitation</a></p></div>;
+  if (!s) return <div className="phone guest-welcome" lang="en"><WeddingBrand /><h1 className="serif">Welcome to Anand and Susmita's wedding</h1><p>Open your family's invitation link, or use the wedding PIN to find your family.</p><a className="btn btn-deep" href="/rsvp">Find my family</a><p><a href="/invitation/feed">Feed</a> · <a href="/">Wedding invitation</a></p></div>;
   if (!data) return <div className="phone guest-welcome" lang="en"><WeddingBrand />{err ? <p className="error" role="alert">{err}</p> : <p role="status">Opening your wedding companion…</p>}</div>;
 
   const { bundle: b, settings } = data;

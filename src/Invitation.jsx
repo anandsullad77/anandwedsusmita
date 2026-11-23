@@ -1,5 +1,5 @@
 import React from 'react';
-import { Divider, Ganesha, Icon, Kolam, Monogram, Temple, TextileBorder } from './Ornaments';
+import { Divider, Ganesha, Icon, Kolam, Monogram, PortraitSprig, Temple, TextileBorder } from './Ornaments';
 
 export default function Invitation({ countdown, menuOpen, setMenuOpen, mapUrl, onReplayOpening }) {
   const closeMenu = () => setMenuOpen(false);
@@ -27,7 +27,7 @@ export default function Invitation({ countdown, menuOpen, setMenuOpen, mapUrl, o
           <h1 id="couple-names"><span>Anand</span><span className="names-join"><i />and<i /></span><span>Susmita</span></h1>
           <p className="hero-message">Two hearts. One sacred bond.</p>
           <div className="hero-date"><span>29 November 2026</span><i /><span>Sunday</span><i /><span>12:28 PM</span></div>
-          <a className="button button-primary" href="#muhurtha">View Wedding Details <Icon name="arrow" size={19} /></a>
+          <a className="button button-primary" href="/invitation">Join the celebration <Icon name="arrow" size={19} /></a>
         </div>
         <TextileBorder className="hero-border" />
       </section>
@@ -37,7 +37,10 @@ export default function Invitation({ countdown, menuOpen, setMenuOpen, mapUrl, o
         <div className="couple-details reveal">
           <article className="person person-groom"><span className="person-label">The Groom</span><h3><small>Chi.</small> Anand</h3><p>Mrs. Hema and<br />Mr. Vishnu Lakkappa Sullad</p><p className="person-detail">Their beloved son</p><Kolam className="person-ornament" /></article>
           <article className="person person-bride"><span className="person-label">The Bride</span><h3><small>Chi. Sou. Kan.</small> Susmita</h3><p>Mrs. Poornima and<br />Mr. Ramaling Ramappa Pitagi</p><p className="person-detail">Their third daughter</p><Kolam className="person-ornament" /></article>
-          <figure className="couple-portrait"><div className="portrait-window"><div className="portrait-frame"><img src="/images/wedding-couple-pink-green.png" alt="A South Indian bride and groom in traditional attire, holding hands among flowers" width="1254" height="1254" loading="lazy" decoding="async" /></div></div></figure>
+          <figure className="couple-portrait"><div className="portrait-window"><div className="portrait-frame">
+            <div className="portrait-photo"><img src="/images/anand-susmita-portrait.jpg" alt="Anand and Susmita holding hands, their foreheads gently touching beneath green leaves" width="1795" height="2297" loading="lazy" decoding="async" /></div>
+            <PortraitSprig className="portrait-sprig-left" /><PortraitSprig className="portrait-sprig-right" />
+          </div></div></figure>
         </div>
         <p className="invitation-note reveal">Join us with your family and bless our new beginning.</p>
         <Divider />

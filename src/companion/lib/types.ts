@@ -77,6 +77,8 @@ export type Change = { byName: string; summary: string; at: string };
 
 export type Photo = {
   id: string;
+  postId?: string | null;
+  postPosition?: number | null;
   uploaderName: string;
   url: string;
   moment?: string | null;
@@ -92,6 +94,8 @@ export type Photo = {
 };
 
 export type Announcement = { id: string; body: string; at: string };
+export type PhotoMeta = { moment?: string; questId?: string; caption?: string; uploaderName: string; personId: string | null };
+export type PostImage = { id: string; blob: Blob };
 export type PhotoQuestSummary = { contributions: number; completedQuestIds: string[]; counts: Record<string, number> };
 
 export type RsvpPayload = {
@@ -150,6 +154,7 @@ export interface Backend {
   listPhotos(eventId: string, options?: { questId?: string; includeHidden?: boolean }): Promise<Photo[]>;
   photoQuestSummary(eventId: string): Promise<PhotoQuestSummary>;
   uploadPhoto(eventId: string, blob: Blob, meta: { moment?: string; questId?: string; caption?: string; uploaderName: string; personId: string | null }): Promise<void>;
+  uploadPhotoPost(eventId: string, postId: string, images: PostImage[], meta: PhotoMeta): Promise<void>;
   toggleAkshate(photoId: string): Promise<void>;
   // Send a report/removal request for host review; never hide or delete the photo.
   flagPhoto(photoId: string, reason: string, removal: boolean): Promise<void>;

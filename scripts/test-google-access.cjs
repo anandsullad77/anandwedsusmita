@@ -125,6 +125,34 @@ async function main() {
     assert.deepEqual((await rows('photos')).map(row => row.id), [id(32)]);
     assert.deepEqual((await rows('guestbook_messages')).map(row => row.id), [id(42)]);
     console.log('PASS: other weddings in a shared Supabase project retain their original access rules');
+
+    await asUser(google);
+    const post = id(70);
+    const postRow = (photoId, position, postId = post) => db.query(`insert into photos
+      (id,event_id,storage_path,uploader_name,post_id,post_position)
+      values ($1,$2,$3,'Google guest',$4,$5)`, [photoId, wedding, `${wedding}/${photoId}.webp`, postId, position]);
+    await postRow(id(71), 0);
+    await postRow(id(72), 1);
+    assert.equal((await db.query('select * from photos where post_id=$1 order by post_position', [post])).rows.length, 2);
+    await assert.rejects(postRow(id(73), 1), /duplicate key/);
+    await assert.rejects(postRow(id(74), 10), /check constraint/);
+    await assert.rejects(postRow(id(75), null), /check constraint/);
+    await db.exec('reset role');
+    assert.equal((await db.query('select post_id from photos where id=$1', [id(30)])).rows[0].post_id, null, 'Legacy photos remain ungrouped');
+    await asUser(outsider);
+    await db.query('select open_wedding_invite()');
+    await assert.rejects(postRow(id(76), 2), /same wedding and uploader/);
+    await asUser(google);
+    const atomicPost = id(80);
+    await assert.rejects(db.query(`insert into photos
+      (id,event_id,storage_path,uploader_name,post_id,post_position) values
+      ($1,$3,'atomic-0','Guest',$4,0), ($2,$3,'atomic-invalid','Guest',$4,10)`, [id(81), id(82), wedding, atomicPost]), /check constraint/);
+    assert.equal((await db.query('select * from photos where post_id=$1', [atomicPost])).rows.length, 0);
+    await db.exec('reset role');
+    // Mirror auth.users ON DELETE SET NULL without changing the fixture's FK.
+    await db.query('update photos set uploaded_by=null where post_id=$1', [post]);
+    assert.equal((await db.query('select * from photos where post_id=$1 and uploaded_by is null', [post])).rows.length, 2);
+    console.log('PASS: grouped posts preserve legacy data, enforce image positions and ownership, and publish atomically');
   } finally { await db.close(); }
 }
 main().catch(error => { console.error(error); process.exitCode = 1; });

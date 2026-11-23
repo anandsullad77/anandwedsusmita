@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { api, clearSession, setSession } from '../lib/backend';
 import { supabase } from '../lib/supabaseClient';
-import { clearAuthReturn, pendingAuthReturn, refreshGuestAuth, requireGuestSignIn } from '../lib/guestAuth';
+import { clearAuthReturn, pendingAuthReturn, refreshGuestAuth, requireGuestSignIn, saveAuthResume } from '../lib/guestAuth';
 import WeddingBrand from '../components/WeddingBrand';
 import { GoogleSignIn } from '../components/GoogleSignIn';
 
@@ -23,6 +23,7 @@ function finish(code: string, flowId: string | null): Promise<string> {
         setSession(saved.family);
       } catch { clearSession(); }
     }
+    saveAuthResume(saved);
     clearAuthReturn();
     await refreshGuestAuth();
     return saved.path;
@@ -45,7 +46,7 @@ export default function AuthCallback() {
     return () => { active = false; };
   }, [code, flowId, cancelled, navigate]);
   return <div className="guest-sign-in-screen"><WeddingBrand /><h1>{error ? 'Let’s try that again' : 'Welcome to the celebration'}</h1>
-    {error ? <><p role="alert">{error}</p><GoogleSignIn returnTo={pendingAuthReturn().path} /><Link to="/invitation">Back to the invitation</Link></>
+    {error ? <><p role="alert">{error}</p><GoogleSignIn returnTo={pendingAuthReturn().path} /><Link to={pendingAuthReturn().path}>Back to where you left off</Link></>
       : <p role="status">Finishing your Google sign-in…</p>}
   </div>;
 }

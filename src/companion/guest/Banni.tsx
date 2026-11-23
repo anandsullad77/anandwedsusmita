@@ -380,7 +380,7 @@ export default function Banni() {
               <p className="eb rv" lang="en">{fmtTime(b.event.startsAt)} · {new Date(b.event.startsAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}</p>
               <h2 className="rv d1" lang="en" style={{ margin: 0, fontFamily: 'var(--serif)', fontSize: 40, lineHeight: 1.05 }}>Be there, <i>from afar.</i></h2>
               <p className="rv d2" lang="en" style={{ margin: 0, fontSize: 16, color: '#D6E0D8' }}>Watch the photos come in live on Scene and shower akshate from wherever you are.</p>
-              <button className="btn btn-gold rv d3" onClick={() => nav('/app/scene')} lang="en">Open Scene</button>
+              <button className="btn btn-gold rv d3" onClick={() => nav('/app/feed')} lang="en">Open Feed</button>
             </section>
           )}
         </div>

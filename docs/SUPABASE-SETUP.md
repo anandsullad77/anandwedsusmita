@@ -8,8 +8,8 @@ The original invitation remains at `/`. Its design, text, artwork, countdown, ma
 | --- | --- |
 | `/` | Existing Wedding invitation |
 | `/invitation` | Wedding companion: photos, wishes, quests, host updates, and invitation downloads |
-| `/invitation/scene` | Shared photo feed |
-| `/invitation/haaku` | Upload photos, including an offline queue |
+| `/invitation/feed` | Photos and approved wishes, newest first |
+| `/invitation/create` | Choose Send a Wish or Upload Photos, including an offline queue |
 | `/rsvp` | Wedding PIN, find your family, or join as a new family |
 | `/i/<family-token>` | Personal family invitation and RSVP story |
 | `/app` | Linked family's RSVP, travel, stay, arrival, and shared guest features |
@@ -22,7 +22,9 @@ Existing `/e/anand-susmita` and `/g/<general-token>` links still work. Old `/cel
 1. Use an existing Supabase project for this wedding, or create one. Choose a region close to your guests if creating a project.
 2. In **Authentication → Sign In / Providers**, enable **Anonymous Sign-Ins** for guests. Guests do not enter an email or receive an OTP. Their anonymous account is remembered in their browser. See [Supabase anonymous sign-ins](https://supabase.com/docs/guides/auth/auth-anonymous).
 3. Keep **Email** authentication enabled for hosts. The app uses **email and password**, not an email OTP. In **Authentication → Users**, add each host with their real email and a strong password; ensure the user is confirmed. There is no public host sign-up screen. See [Supabase password authentication](https://supabase.com/docs/guides/auth/passwords).
-4. Set the Auth **Site URL** to `https://anandwedsusmita.vercel.app`, or your final public domain, and save. Under **Redirect URLs**, add `https://anandwedsusmita.vercel.app/auth/callback` and `http://127.0.0.1:5174/auth/callback` for Google sign-in. Keep any redirects still needed by the other app. Use the public domain rather than a protected Vercel deployment URL; see [the Google sign-in guide](GOOGLE-SIGN-IN.md).
+4. Set the Auth **Site URL** to `https://anandwedsusmita.in`, and save. Under **Redirect URLs**, add `https://anandwedsusmita.in/auth/callback` and `http://127.0.0.1:5174/auth/callback` for Google sign-in. Keep any redirects still needed by the other app. Use the public domain rather than a protected Vercel deployment URL; see [the Google sign-in guide](GOOGLE-SIGN-IN.md).
+
+For custom-domain rollout and the new Feed, follow [the current Google and Feed setup guide](GOOGLE-SIGN-IN.md), including migration 0010.
 
 ## 2. Run the SQL migrations
 
@@ -37,8 +39,9 @@ Use the Supabase **SQL Editor** and run each file in `supabase/migrations/` in t
 7. `0007_shared_invitation.sql` — shared features for linked family guests.
 8. `0008_single_wedding.sql` — `/invitation` opens only this wedding; PIN crypto functions support Supabase's extensions schema; hosts can remove photo files from private Storage.
 9. `0009_google_guest_access.sql` — Google sign-in is required for this wedding's photos, uploads and wishes, with host access preserved.
+10. `0010_photo_posts.sql` — adds grouping and positions for multi-image posts while retaining legacy photos.
 
-**If the project already has migrations 0001–0008, run only 0009.** If it has only earlier migrations, run just the missing files in order. These migrations are not a database reset script; rerunning `0001` against existing tables will fail. Follow [the Google sign-in guide](GOOGLE-SIGN-IN.md) to allow the application callback URLs before publishing. The original Jothe Jotheyali source folder has not been changed.
+**Run only missing migrations, in order.** A project with 0001–0008 needs 0009 and 0010; a project already on 0009 needs only 0010. These migrations are not a database reset script; rerunning `0001` against existing tables will fail. Follow [the Google sign-in guide](GOOGLE-SIGN-IN.md) to configure the custom domain and application callback before publishing. The original Jothe Jotheyali source folder has not been changed.
 
 ## 3. Configure the wedding and host access
 
@@ -73,7 +76,7 @@ Restart the dev server after changing environment files. With both URL and key e
 
 ## 5. Deploy the Wedding project
 
-For your existing Vercel project serving `anandwedsusmita.vercel.app`:
+For the existing Vercel project serving `anandwedsusmita.in`:
 
 1. Deploy **this Wedding project**, with its `package.json`, `vercel.json`, `src`, `public`, and `supabase` files. If the repository root is the Wedding project itself, leave Vercel's Root Directory at the repository root. If it is a parent repository, set it to `Wedding`.
 2. Choose the **Vite** framework, build command `npm run build`, output directory `dist`.

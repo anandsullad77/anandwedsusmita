@@ -3,6 +3,9 @@ import { VitePWA } from 'vite-plugin-pwa';
 
 export default defineConfig(({ mode }) => {
   const env = { ...loadEnv(mode, process.cwd(), ''), ...process.env };
+  if (env.VITE_SITE_URL && env.VITE_SITE_URL !== 'https://anandwedsusmita.in') {
+    throw new Error('VITE_SITE_URL must be https://anandwedsusmita.in. Local OAuth callbacks use the local origin automatically.');
+  }
   const url = env.VITE_SUPABASE_URL || env.NEXT_PUBLIC_SUPABASE_URL || env.SUPABASE_URL || '';
   const key = env.VITE_SUPABASE_PUBLISHABLE_KEY || env.VITE_SUPABASE_ANON_KEY
     || env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || env.NEXT_PUBLIC_SUPABASE_ANON_KEY
@@ -33,7 +36,7 @@ export default defineConfig(({ mode }) => {
     workbox: {
       navigateFallback: '/index.html',
       // Invitation assets + application bundles; unused large artwork stays on demand.
-      globPatterns: ['**/*.{js,css,html,woff2}', 'images/*.svg', 'images/wedding-couple-pink-green.png'],
+      globPatterns: ['**/*.{js,css,html,woff2}', 'images/*.svg', 'images/wedding-couple-pink-green.png', 'images/anand-susmita-portrait.jpg', 'images/anand-susmita-invitation.jpg'],
       globIgnores: ['**/*-{cyrillic,cyrillic-ext,greek,greek-ext,vietnamese,devanagari}-*'],
       maximumFileSizeToCacheInBytes: 4 * 1024 * 1024,
       skipWaiting: true,

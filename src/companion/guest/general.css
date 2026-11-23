@@ -10,7 +10,9 @@
 .general-nav a { min-height: 46px; display: flex; align-items: center; justify-content: center; gap: 7px; padding: 0 14px; color: var(--muted); font-size: 13px; font-weight: 600; border-radius: 10px; text-decoration: none; }
 .general-nav a svg { width: 18px; height: 18px; }
 .general-nav a:hover, .general-nav a.active { background: var(--card); color: var(--deep); }
-.general-nav a.general-upload-link { margin-left: 8px; background: var(--deep); color: var(--paper); }
+.general-nav a.general-upload-link { margin-inline: 8px; border-radius: 999px; background: var(--deep); color: var(--paper); font-weight: 700; box-shadow: 0 3px 10px #283A2D26; }
+.general-nav a.general-upload-link:hover { background: color-mix(in srgb, var(--deep) 88%, black); }
+.general-nav a.general-upload-link.active { background: var(--deep); color: var(--paper); box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--paper) 60%, transparent), 0 3px 10px #283A2D26; }
 .general-skip { position: fixed; z-index: 200; left: 16px; top: -100px; padding: 14px 20px; background: var(--deep); color: var(--paper); border-radius: 8px; }
 .general-skip:focus { top: 16px; }
 .general-shell main.general-main { width: min(100%, 1200px); margin: 0 auto; padding: 32px 28px 0; gap: 0; min-width: 0; }
@@ -41,9 +43,19 @@
 .general-welcome { margin: 14px auto 0; max-width: 42ch; color: var(--muted); font-size: 14px; line-height: 1.75; white-space: pre-wrap; overflow-wrap: anywhere; }
 .general-hero-flourish { display: none; }
 .general-portrait { margin-top: 22px; width: min(100%, 250px); height: 224px; padding: 6px; border: 1px solid color-mix(in srgb, var(--primary) 28%, var(--line)); border-radius: 140px 140px 18px 18px; overflow: hidden; background: var(--paper); }
+.general-portrait-window { position: relative; width: 100%; height: 100%; border-radius: inherit; overflow: hidden; }
 .general-portrait img { width: 100%; height: 100%; border-radius: inherit; object-fit: cover; object-position: 50% 15%; }
-.general-portrait.general-portrait-photo { width: min(100%, 280px); height: auto; aspect-ratio: 4 / 5; }
-.general-portrait-photo img { object-position: 50% 48%; }
+.general-portrait.general-portrait-photo { position: relative; isolation: isolate; width: min(calc(100% - 24px), 280px); height: auto; aspect-ratio: 3 / 4; margin-top: 34px; margin-bottom: 10px; padding: 0; border: 0; border-radius: 48% 48% 18px 18px; overflow: visible; background: transparent; }
+.general-portrait-photo::before, .general-portrait-photo::after { content: ''; position: absolute; pointer-events: none; border-radius: inherit; }
+.general-portrait-photo::before { inset: -8px; border: 1px solid color-mix(in srgb, var(--primary) 25%, transparent); }
+.general-portrait-photo::after { inset: -14px 8px; border: 1px solid color-mix(in srgb, var(--deep) 15%, transparent); z-index: -1; }
+.general-portrait-photo .general-portrait-window { background: var(--card); box-shadow: 0 12px 30px #283a2d14; }
+.general-portrait-photo .general-portrait-window::after { content: ''; position: absolute; inset: 0; pointer-events: none; background: linear-gradient(to bottom, transparent 77%, color-mix(in srgb, var(--card) 25%, transparent) 88%, var(--card) 100%); }
+.general-portrait-photo img { object-position: 50% 22%; }
+.general-portrait .portrait-sprig { position: absolute; z-index: 1; width: clamp(44px, 6cqi, 64px); height: auto; bottom: -10px; color: var(--deep); pointer-events: none; }
+.general-portrait-sprig-left { left: -22px; }
+.general-portrait-sprig-right { right: -22px; transform: scaleX(-1); }
+.general-portrait .portrait-blossoms { color: var(--primary); }
 .general-event-details { display: grid; gap: 18px; width: 100%; margin-top: 24px; padding-top: 22px; border-top: 1px solid var(--line); }
 .general-event-detail { display: flex; align-items: flex-start; gap: 12px; min-width: 0; text-align: left; }
 .general-event-detail > div { min-width: 0; }
@@ -66,7 +78,7 @@
   .general-portrait { width: 100%; max-width: 330px; height: auto; aspect-ratio: 33 / 37; margin: 0; padding: 8px; border-radius: 180px 180px 20px 20px; align-self: center; }
   .general-portrait img { object-position: 50% 40%; }
   .general-portrait.general-portrait-photo { width: 100%; max-width: 360px; }
-  .general-portrait-photo img { object-position: 50% 48%; }
+  .general-portrait-photo img { object-position: 50% 22%; }
   .general-event-details { grid-column: 1 / -1; grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr); gap: 32px; margin-top: 34px; padding-top: 24px; }
   .general-event-detail + .general-event-detail { border-left: 1px solid var(--line); padding-left: 32px; }
   .general-date, .general-venue { font-size: 15px; }
@@ -170,9 +182,11 @@
   .general-nav { position: fixed; bottom: 0; left: 0; right: 0; z-index: 50; display: grid; padding: 6px 10px calc(8px + env(safe-area-inset-bottom)); gap: 4px; background: var(--paper); border-top: 1px solid var(--line); }
   .general-nav a { min-height: 52px; border-radius: 10px; flex-direction: column; gap: 4px; padding: 6px 2px; font-size: 11px; line-height: 1.4; }
   .general-nav a svg { width: 20px; height: 20px; }
-  .general-nav a.general-upload-link { margin: 0; background: transparent; color: var(--muted); }
+  .general-nav a.general-upload-link { margin: -18px auto 0; width: 80px; max-width: calc(100% - 8px); min-height: 80px; border-radius: 50%; outline: 4px solid var(--paper); background: var(--deep); color: var(--paper); font-size: 11px; gap: 3px; box-shadow: 0 6px 16px #283A2D33; }
+  .general-nav a.general-upload-link.active { box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--paper) 60%, transparent), 0 6px 16px #283A2D33; }
+  .general-nav a.general-upload-link svg { width: 24px; height: 24px; }
   .general-nav a.active { color: var(--primary); background: var(--card); }
-  .general-shell main.general-main { padding: 4px 18px 80px; }
+  .general-shell main.general-main { padding: 4px 18px 100px; }
   .general-shell main.general-main-scene { padding-top: 20px; padding-bottom: 100px; }
   .general-shell main.general-main-family { padding-top: 20px; padding-bottom: 100px; }
   .general-family-plan { grid-template-columns: minmax(0, 1fr); gap: 24px; }

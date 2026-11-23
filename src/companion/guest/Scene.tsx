@@ -4,21 +4,26 @@ import { api } from '../lib/backend';
 import { ago, shortDate } from '../lib/format';
 import { framedCopy } from '../lib/image';
 import { onQueueChange, pendingCount } from '../lib/uploadQueue';
-import type { Photo, PhotoContext } from '../lib/types';
+import type { Photo, PhotoContext, Wish } from '../lib/types';
+import { weddingFeed } from '../lib/feed';
+import PhotoPost from './PhotoPost';
 import { Icon } from './Icon';
 import MomentTag from './MomentTag';
 import { photoQuest, PHOTO_QUESTS } from '../lib/photoQuests';
 import { usePhotoQuestSummary } from './usePhotoQuestSummary';
 import './photo-quests.css';
+import './feed.css';
 
 const getVar = (n: string) => getComputedStyle(document.documentElement).getPropertyValue(n).trim() || '#283A2D';
 
-export default function Scene({ ctx, canUpload = true }: { ctx: PhotoContext; canUpload?: boolean }) {
+export default function Scene({ ctx, canUpload = true, canWish = true, showPhotos = true }: { ctx: PhotoContext; canUpload?: boolean; canWish?: boolean; showPhotos?: boolean }) {
   const { b } = ctx;
   const [search, setSearch] = useSearchParams();
-  const quest = photoQuest(search.get('quest'));
+  const quest = showPhotos && ctx.questsEnabled !== false ? photoQuest(search.get('quest')) : undefined;
   const { summary } = usePhotoQuestSummary(b.event.id);
   const [photos, setPhotos] = useState<Photo[]>([]);
+  const [wishes, setWishes] = useState<Wish[]>([]);
+  const [visible, setVisible] = useState(12);
   const [pending, setPending] = useState(0);
   const [menu, setMenu] = useState<string | null>(null);
   const [filter, setFilter] = useState<'all' | 'mine'>('all');
@@ -32,25 +37,26 @@ export default function Scene({ ctx, canUpload = true }: { ctx: PhotoContext; ca
   const load = useCallback(async () => {
     const generation = ++loadGeneration.current;
     try {
-      const nextPhotos = await api.listPhotos(b.event.id, quest ? { questId: quest.id } : undefined);
+      const [nextPhotos, nextWishes] = await Promise.all([
+        showPhotos ? api.listPhotos(b.event.id, quest ? { questId: quest.id } : undefined) : Promise.resolve([]),
+        canWish && !quest ? api.listWishes(b.event.id) : Promise.resolve([]),
+      ]);
       if (generation !== loadGeneration.current) return;
-      setPhotos(nextPhotos); setLoadError(false); setLoaded(true);
+      setPhotos(nextPhotos); setWishes(nextWishes); setLoadError(false); setLoaded(true);
     } catch {
       if (generation !== loadGeneration.current) return;
       setLoadError(true); setLoaded(true);
     }
-  }, [b.event.id, quest?.id]);
-  const uploadBase = ctx.scenePath?.endsWith('/scene')
-    ? `${ctx.scenePath.slice(0, -6)}/haaku`
-    : ctx.generalToken ? `/g/${encodeURIComponent(ctx.generalToken)}/haaku` : '/app/haaku';
-  const uploadPath = quest && ctx.questsEnabled !== false ? `${uploadBase}?quest=${quest.id}` : uploadBase;
+  }, [b.event.id, quest?.id, canWish, showPhotos]);
+  const createBase = ctx.scenePath?.endsWith('/feed') ? `${ctx.scenePath.slice(0, -5)}/create` : '/app/create';
+  const uploadPath = quest && ctx.questsEnabled !== false ? `${createBase}?type=photos&quest=${quest.id}` : createBase;
   const selectCollection = (id: string) => { setSearch(previous => { if (id) previous.set('quest', id); else previous.delete('quest'); return previous; }); window.scrollTo({ top: 0, behavior: 'instant' }); };
 
   useEffect(() => {
-    setLoaded(false); setPhotos([]); setMenu(null);
+    setLoaded(false); setPhotos([]); setWishes([]); setMenu(null); setVisible(12);
     void load();
-    pendingCount().then(setPending);
-    const off = onQueueChange(n => { setPending(n); void load(); });
+    pendingCount(b.event.id).then(setPending);
+    const off = onQueueChange(() => { void pendingCount(b.event.id).then(setPending); void load(); });
     const t = setInterval(load, 20_000);
     const h = () => void load();
     window.addEventListener('as-wedding-db', h);
@@ -87,15 +93,15 @@ export default function Scene({ ctx, canUpload = true }: { ctx: PhotoContext; ca
     }
   }
 
-  const shown = filter === 'mine' ? photos.filter(p => p.uploadedByMe) : photos;
+  const shown = weddingFeed(filter === 'mine' ? photos.filter(p => p.uploadedByMe) : photos, filter === 'mine' ? [] : wishes);
 
   return (
     <>
-      <header className="guest-page-heading scene-heading" lang="en"><div><p className="guest-eyebrow">The shared wedding album</p><h1>Scene</h1><p>A collection of little moments, from all of us.</p></div><span className="scene-count">{photos.length} {photos.length === 1 ? 'photo' : 'photos'}</span></header>
+      <header className="guest-page-heading scene-heading" lang="en"><div><p className="guest-eyebrow">Our memories &amp; blessings</p><h1>Feed</h1><p>Photos and wishes, together. Newest moments first.</p></div><span className="scene-count">{shown.length} {shown.length === 1 ? 'post' : 'posts'}</span></header>
       <div className="scene-toolbar" lang="en"><div className="scene-filters">
         <button className="chip" aria-pressed={filter === 'all'} onClick={() => setFilter('all')}>All</button>
-        <button className="chip" aria-pressed={filter === 'mine'} onClick={() => setFilter('mine')}>Mine</button>
-      </div>{canUpload && <Link className="btn btn-deep" to={uploadPath}><Icon size={18} d="M12 5v14M5 12h14" />Add photos</Link>}</div>
+        {showPhotos && <button className="chip" aria-pressed={filter === 'mine'} onClick={() => setFilter('mine')}>My photos</button>}
+      </div>{(canUpload || canWish) && <Link className="btn btn-deep" to={uploadPath}><Icon size={18} d="M12 5v14M5 12h14" />Create Post</Link>}</div>
       {(quest || photos.some(p => p.questId) || Object.keys(summary?.counts ?? {}).length > 0) && <div className="quest-collection-picker"><label htmlFor="photo-collection">Photo quest collection</label><select id="photo-collection" className="input" value={quest?.id ?? ''} onChange={e => selectCollection(e.target.value)}><option value="">All photos</option>{PHOTO_QUESTS.map(q => <option key={q.id} value={q.id}>{q.tag}{summary?.counts[q.id] ? ` (${summary.counts[q.id]})` : ''}</option>)}</select>{quest && <div className="quest-selected-collection"><MomentTag label={quest.tag} /><p>{quest.prompt}</p><button className="guest-text-link" onClick={() => selectCollection('')}>Back to all photos</button></div>}</div>}
 
       {notice && <div className="card" role="status" lang="en" style={{ padding: '10px 12px' }}>{notice}</div>}
@@ -108,13 +114,18 @@ export default function Scene({ ctx, canUpload = true }: { ctx: PhotoContext; ca
         </div>
       )}
 
-      {loadError && <div className="scene-empty card" role="alert"><p>Could not load the photos.</p><button className="btn btn-ghost" onClick={() => void load()}>Try loading photos again</button></div>}
+      {loadError && <div className="scene-empty card" role="alert"><p>Could not load the Feed.</p><button className="btn btn-ghost" onClick={() => void load()}>Try again</button></div>}
       {!loaded && <p className="guest-meta" role="status">Gathering the memories…</p>}
-      {loaded && !loadError && !shown.length && <div className="scene-empty card" lang="en"><Icon size={32} d="M3 6h18v14H3zM21 16l-5-5-9 9" /><h2>{quest ? 'This collection is waiting for its first memory.' : filter === 'mine' ? 'Your moments belong here.' : 'The first memories are on their way.'}</h2><p>{quest ? 'Your photo could start this collection.' : filter === 'mine' ? 'The photos you share will appear in this view.' : 'A shared album of the people and moments that make this day special.'}</p>{canUpload && <Link className="btn btn-primary" to={uploadPath}>Share your first photo</Link>}</div>}
-      {loaded && photos.length === 200 && <p className="guest-meta">Showing the latest 200 photos in this view.</p>}
+      {loaded && !loadError && !shown.length && <div className="scene-empty card" lang="en"><Icon size={32} d="M3 6h18v14H3zM21 16l-5-5-9 9" /><h2>{quest ? 'This collection is waiting for its first memory.' : filter === 'mine' ? 'Your moments belong here.' : 'The first posts are on their way.'}</h2><p>Photos and wishes from the people who make this day special.</p>{(canUpload || canWish) && <Link className="btn btn-primary" to={uploadPath}>Create Post</Link>}</div>}
+      {loaded && (photos.length >= 200 || wishes.length === 50) && <p className="guest-meta">Showing the latest photos and up to 50 approved wishes.</p>}
 
-      {shown.map(p => (
-        <article key={p.id} className="post" style={{ position: 'relative' }}>
+      {!loadError && shown.slice(0, visible).map(post => post.kind === 'wish' ? (
+        <article key={post.id} className="post feed-post feed-wish" data-post-type="wish">
+          <div className="post-header"><div className="post-avatar" aria-hidden="true">{post.wish.name.slice(0, 2).toUpperCase()}</div><div className="post-author"><b className="post-author-name">{post.wish.name}</b><div className="post-metadata"><MomentTag label="Wish & blessing" /><time className="post-timestamp" dateTime={post.createdAt}>{ago(post.createdAt)}</time></div></div></div>
+          <p className="feed-wish-message">{post.wish.message}</p>
+        </article>
+      ) : (
+        <PhotoPost key={post.id} photos={post.photos}>{(p, carousel) => <>
           <div className="post-header" lang="en">
             <div className="post-avatar" aria-hidden="true">{p.uploaderName.slice(0, 2).toUpperCase()}</div>
             <div className="post-author">
@@ -134,16 +145,9 @@ export default function Scene({ ctx, canUpload = true }: { ctx: PhotoContext; ca
               <button disabled={flagging} onClick={() => flag(p, false)}>Report this photo</button>
             </div>
           )}
-          <div className="post-photo">
-            <img src={p.url} alt={p.caption ?? `Photo by ${p.uploaderName}`} loading="lazy" />
-            <div className="frame-band">
-              {b.event.theme.monogram && <img src={b.event.theme.monogram} alt="" />}
-              <span lang="en" style={{ fontFamily: 'var(--serif)', fontSize: 16, fontWeight: 700, flex: 1 }}>{b.event.coupleA} &amp; {b.event.coupleB}</span>
-              <span style={{ fontSize: 12, letterSpacing: '.1em' }}>{shortDate(b.event.startsAt)}</span>
-            </div>
-          </div>
+          {carousel}
           <div style={{ padding: '10px 14px 12px', display: 'flex', flexDirection: 'column', gap: 10 }}>
-            {p.caption && <p lang="en" style={{ margin: 0, fontSize: 15, lineHeight: 1.45 }}>{p.caption}</p>}
+            {p.caption && <p className="post-caption" lang="en" style={{ margin: 0, fontSize: 15, lineHeight: 1.45 }}>{p.caption}</p>}
             <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
               <button className="akshate-btn" aria-pressed={p.mine} onClick={() => akshate(p)}>
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="var(--akshate)" aria-hidden="true"><ellipse cx="8" cy="9" rx="2" ry="3.2" transform="rotate(-25 8 9)" /><ellipse cx="15" cy="7" rx="2" ry="3.2" transform="rotate(20 15 7)" /><ellipse cx="12" cy="15" rx="2" ry="3.2" transform="rotate(-5 12 15)" /></svg>
@@ -157,8 +161,9 @@ export default function Scene({ ctx, canUpload = true }: { ctx: PhotoContext; ca
               <button className="chip" onClick={() => share(p)} style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }} lang="en"><Icon size={18} d="M4 20l1.3-3.9A8 8 0 1 1 8 19z" />Share</button>
             </div>
           </div>
-        </article>
+        </>}</PhotoPost>
       ))}
+      {visible < shown.length && <button className="btn btn-ghost" onClick={() => setVisible(n => n + 12)}>Load more posts</button>}
     </>
   );
 }

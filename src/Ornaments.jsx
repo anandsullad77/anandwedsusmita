@@ -35,6 +35,8 @@ export function Divider() {
   return <div className="ornament-divider" aria-hidden="true"><span /><Kolam /><span /></div>;
 }
 
+export { default as PortraitSprig } from './PortraitSprig';
+
 export function Ganesha() {
   return <svg className="ganesha" viewBox="0 0 88 90" fill="none" aria-hidden="true"><g stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M32 25c-1-12 25-12 24 0M29 22l6-11 9-6 9 6 6 11M35 13h18M29 30c-20-14-29 16-13 26 4 2 10-1 12-8M59 30c20-14 29 16 13 26-4 2-10-1-12-8M30 30c-4 11 2 22 11 23v14c0 13 19 11 17-1-1-5-7-5-7-1M58 30c4 11-2 22-11 23M35 37h2m14 0h2M32 56c-12 4-15 17-8 22h40c7-5 4-18-8-22M25 67l-9 11M63 67l9 11M20 83h48" /><path d="m42 27 2 4 2-4" /></g></svg>;
 }

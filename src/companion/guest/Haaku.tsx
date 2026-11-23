@@ -1,7 +1,7 @@
 ﻿import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { compressImage } from '../lib/image';
-import { enqueue } from '../lib/uploadQueue';
+import { enqueuePost } from '../lib/uploadQueue';
 import type { PhotoContext } from '../lib/types';
 import { Icon } from './Icon';
 import { useVisibleViewport } from '../lib/useVisibleViewport';
@@ -10,10 +10,13 @@ import MomentTag from './MomentTag';
 import './photo-quests.css';
 import { WeddingMark } from '../components/WeddingBrand';
 import { requireGuestSignIn } from '../lib/guestAuth';
+import { useGuestAuth } from '../lib/useGuestAuth';
+import { get, set, del } from 'idb-keyval';
 
 const MOMENTS = ['Getting ready', 'Oota', 'Candid', 'Family'];
 export default function Haaku({ ctx }: { ctx: PhotoContext }) {
   const { b, me } = ctx;
+  const { user } = useGuestAuth();
   const nav = useNavigate();
   const [search] = useSearchParams();
   const initialQuest = ctx.questsEnabled !== false ? photoQuest(search.get('quest')) : undefined;
@@ -28,13 +31,32 @@ export default function Haaku({ ctx }: { ctx: PhotoContext }) {
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [name, setName] = useState(me?.name ?? '');
+  const [draftReady, setDraftReady] = useState(false);
+  const draftKey = `as-wedding-photo-draft:${b.event.id}:${user?.id}:${initialQuest?.id || 'all'}`;
+  const pickedForQuest = useRef(files.length > 0);
+  const draftWrites = useRef<Promise<unknown>>(Promise.resolve());
   const lock = useRef(false);
   const general = !!ctx.prepareUpload;
-  const scenePath = ctx.scenePath ?? '/app/scene';
+  const scenePath = ctx.scenePath ?? '/app/feed';
   const camRef = useRef<HTMLInputElement>(null);
   const galRef = useRef<HTMLInputElement>(null);
   const viewportRoot = useRef<HTMLDivElement>(null);
   useVisibleViewport(viewportRoot);
+  useEffect(() => {
+    let alive = true;
+    get<{ files: File[]; caption: string; name: string; moment: string; questId: string; at: number }>(draftKey).then(saved => {
+      if (!alive) return;
+      if (saved && !pickedForQuest.current && Date.now() - saved.at < 24 * 60 * 60_000) {
+        setFiles(saved.files); setCaption(saved.caption); setName(saved.name); setMoment(saved.moment); setQuestId(saved.questId);
+      }
+    }).catch(() => {}).finally(() => { if (alive) setDraftReady(true); });
+    return () => { alive = false; };
+  }, [draftKey]);
+  useEffect(() => {
+    if (!draftReady) return;
+    draftWrites.current = draftWrites.current.catch(() => {}).then(() => set(draftKey, { files, caption, name, moment, questId, at: Date.now() }));
+    void draftWrites.current.catch(() => {});
+  }, [draftReady, draftKey, files, caption, name, moment, questId]);
   useEffect(() => { clearQuestDraft(search.get('draft')); }, [search]);
   useEffect(() => {
     const urls = files.map(f => URL.createObjectURL(f));
@@ -54,15 +76,19 @@ export default function Haaku({ ctx }: { ctx: PhotoContext }) {
     try {
       const account = await requireGuestSignIn();
       if (general) await ctx.prepareUpload!(name.trim());
-      const items = [];
-      for (const f of files) items.push({ eventId: b.event.id, blob: await compressImage(f), moment, questId: selectedQuest?.id, caption: caption.trim() || undefined, uploaderName: general ? name.trim() : me!.name, personId: general ? null : me!.id, generalToken: ctx.generalToken, authUserId: account.id });
-      await enqueue(items); nav(selectedQuest && scenePath.endsWith('/scene') ? `${scenePath}?quest=${selectedQuest.id}` : scenePath);
+      const images = [];
+      for (const f of files) images.push(await compressImage(f));
+      await enqueuePost(b.event.id, images, { moment, questId: selectedQuest?.id, caption: caption.trim() || undefined, uploaderName: general ? name.trim() : me!.name, personId: general ? null : me!.id, generalToken: ctx.generalToken, authUserId: account.id });
+      await draftWrites.current.catch(() => {});
+      await del(draftKey).catch(() => {});
+      nav(selectedQuest && scenePath.endsWith('/feed') ? `${scenePath}?quest=${selectedQuest.id}` : scenePath);
     } catch (e) { setErr((e as Error).message); }
     finally { lock.current = false; setBusy(false); }
   }
   const moments = [...new Set([...b.functions.map(f => f.nameEn), ...MOMENTS])];
+  if (!draftReady) return <p role="status">Opening your photo draft…</p>;
   return <div ref={viewportRoot} className="haaku-screen" aria-busy={busy} lang="en">
-    <header className="upload-header"><Link to={scenePath} aria-label="Close" className="upload-close"><Icon size={20} d="M6 6l12 12M18 6L6 18" /></Link><div className="upload-wedding-heading"><a href="/" aria-label="Anand and Susmita — wedding invitation"><WeddingMark size={40} /></a><div><span className="guest-eyebrow" lang="kn">ಫೋಟೋ ಹಾಕಿ</span><h1>Share a moment</h1></div></div><span className="upload-count">{files.length}/10</span></header>
+    <header className="upload-header"><Link to={scenePath} aria-label="Close" className="upload-close"><Icon size={20} d="M6 6l12 12M18 6L6 18" /></Link><div className="upload-wedding-heading"><a href="/" aria-label="Anand and Susmita — wedding invitation"><WeddingMark size={40} /></a><div><span className="guest-eyebrow">Create Post</span><h1>Upload Photos</h1></div></div><span className="upload-count">{files.length}/10</span></header>
     <div className="upload-body">
       <p className="upload-intro">A little of the day, through your eyes. Choose up to 10 photos.</p>
       <input ref={camRef} type="file" accept="image/*" capture="environment" aria-label="Take a photo" hidden disabled={busy} onChange={e => { add(e.target.files); e.target.value = ''; }} />
@@ -78,6 +104,6 @@ export default function Haaku({ ctx }: { ctx: PhotoContext }) {
       <div className="field"><label htmlFor="cap">Caption (optional)</label><textarea id="cap" rows={2} className="input" disabled={busy} placeholder="The story behind the moment…" value={caption} onChange={e => setCaption(e.target.value)} /></div>
       {err && <p className="error" role="alert">{err}</p>}
     </div>
-    <footer className="upload-actions"><button className="btn btn-primary btn-block" disabled={busy || !files.length || (general && !name.trim())} onClick={post}>{busy ? 'Getting them ready…' : files.length ? `Post ${files.length} photo${files.length > 1 ? 's' : ''}${scenePath.endsWith('/scene') ? ' to Scene' : ''}` : 'Pick a photo first'}</button><p>Weak signal? We’ll keep your photos and post when you’re back online.</p></footer>
+    <footer className="upload-actions"><button className="btn btn-primary btn-block" disabled={busy || !files.length || (general && !name.trim())} onClick={post}>{busy ? 'Getting them ready…' : files.length ? `Create Post · ${files.length} photo${files.length > 1 ? 's' : ''}` : 'Pick a photo first'}</button><p>Weak signal? We’ll keep your post and share it when you’re back online.</p></footer>
   </div>;
 }

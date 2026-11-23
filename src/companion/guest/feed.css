@@ -1,0 +1,38 @@
+.feed-post { position: relative; }
+.feed-wish { padding: 0 22px 28px; }
+.feed-wish .post-header { padding-inline: 0; }
+.feed-wish-message { margin: 10px 0 0; white-space: pre-wrap; overflow-wrap: anywhere; color: var(--deep); font: 500 clamp(24px, 4vw, 32px)/1.5 var(--serif); }
+.feed-post .post-caption { white-space: pre-wrap; overflow-wrap: anywhere; }
+.photo-carousel { position: relative; background: var(--card); }
+.carousel-track { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; overscroll-behavior-x: contain; }
+.carousel-track::-webkit-scrollbar { display: none; }
+.carousel-slide { flex: 0 0 100%; min-width: 0; scroll-snap-align: center; scroll-snap-stop: always; }
+.carousel-slide img { width: 100%; aspect-ratio: 1; object-fit: contain; }
+.carousel-control { position: absolute; top: calc(50% - 36px); width: 44px; height: 44px; display: grid; place-items: center; border: 1px solid var(--line); border-radius: 50%; background: var(--paper); color: var(--deep); cursor: pointer; box-shadow: 0 2px 8px #0002; }
+.carousel-control:disabled { visibility: hidden; }
+.carousel-prev { left: 12px; }
+.carousel-next { right: 12px; }
+.carousel-count { position: absolute; top: 12px; right: 12px; padding: 5px 10px; border-radius: 20px; background: var(--deep); color: var(--paper); font-size: 14px; pointer-events: none; }
+.carousel-pagination { display: flex; justify-content: center; flex-wrap: wrap; padding: 2px 10px; background: #fff; }
+.carousel-pagination button { width: 32px; height: 40px; border: 0; display: grid; place-items: center; background: transparent; cursor: pointer; }
+.carousel-pagination button span { width: 7px; height: 7px; background: color-mix(in srgb, var(--deep) 28%, white); border-radius: 50%; }
+.carousel-pagination button[aria-current=true] span { background: var(--primary); width: 9px; height: 9px; }
+.post-composer { width: 100%; max-width: 640px; margin: 0 auto; padding-bottom: 40px; }
+.post-composer h1 { margin: 8px 0 12px; color: var(--deep); font: 500 40px/1.15 var(--serif); }
+.post-composer > p:not(.guest-eyebrow) { color: var(--muted); line-height: 1.7; }
+.create-post-options { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; margin: 28px 0; }
+.create-post-option { min-height: 190px; padding: 22px 14px; border: 1px solid var(--line); border-radius: 18px; background: var(--card); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; text-align: center; text-decoration: none; color: var(--primary); }
+.create-post-option b { font-size: 16px; color: var(--deep); }
+.create-post-option span { color: var(--muted); font-size: 14px; line-height: 1.5; }
+.create-post-option:hover { border-color: var(--primary); }
+.composer-receipt { padding: 24px; line-height: 1.8; }
+.general-main .haaku-screen { min-height: auto; }
+.scene-filters { flex-wrap: wrap; }
+@media (max-width: 767px) {
+  .general-main .upload-actions { bottom: max(var(--keyboard-bottom, 0px), calc(100px + env(safe-area-inset-bottom))); }
+}
+@media (max-width: 400px) {
+  .create-post-options { grid-template-columns: 1fr; gap: 12px; }
+  .create-post-option { min-height: 150px; }
+  .scene-toolbar { flex-wrap: wrap; }
+}

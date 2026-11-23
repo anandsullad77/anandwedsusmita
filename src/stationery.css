@@ -80,8 +80,18 @@ img { display: block; max-width: 100%; }
 .person > .person-detail { font-family: var(--font-display); font-size: .6875rem; font-style: italic; line-height: 1.6; color: var(--muted); margin-top: 8px; }
 .person-ornament { width: 33px; height: 33px; color: var(--deep); margin: 24px auto 0; }
 .couple-portrait { grid-area: portrait; min-width: 0; margin: 0; }
-.portrait-frame { padding: 0; border: 0; position: relative; background: var(--ivory); }
-.portrait-frame img { width: 100%; height: auto; mix-blend-mode: darken; mask-image: linear-gradient(to bottom, transparent, #000 1.5%, #000 98.5%, transparent), linear-gradient(to right, transparent, #000 1.5%, #000 98.5%, transparent); mask-composite: intersect; }
+.portrait-window { display: grid; place-items: center; padding: 18px 20px; background: radial-gradient(ellipse at 50% 60%, #a530510a, transparent 70%); }
+.portrait-frame { width: 100%; max-width: 320px; aspect-ratio: 4 / 5; padding: 0; border: 0; position: relative; isolation: isolate; border-radius: 48% 48% 18px 18px; background: var(--ivory); }
+.portrait-frame::before, .portrait-frame::after { content: ''; position: absolute; pointer-events: none; border-radius: inherit; }
+.portrait-frame::before { inset: -8px; border: 1px solid #a5305140; }
+.portrait-frame::after { inset: -14px 8px; border: 1px solid #283a2d24; z-index: -1; }
+.portrait-photo { height: 100%; position: relative; overflow: hidden; border-radius: inherit; background: var(--paper); box-shadow: 0 12px 30px #283a2d14; }
+.portrait-frame img { width: 100%; height: 100%; object-fit: cover; object-position: 50% 40%; transform: scale(1.12); }
+.portrait-photo::after { content: ''; position: absolute; inset: 0; pointer-events: none; background: linear-gradient(to bottom, transparent 76%, #fff7eb33 88%, var(--ivory) 100%); }
+.portrait-sprig { position: absolute; z-index: 1; width: clamp(46px, 5.5vw, 68px); height: auto; bottom: -12px; color: var(--deep); pointer-events: none; }
+.portrait-sprig-left { left: -28px; }
+.portrait-sprig-right { right: -28px; transform: scaleX(-1); }
+.portrait-blossoms { color: var(--rose); }
 .invitation-note { max-width: 560px; margin-inline: auto; text-align: center; font-size: .875rem; line-height: 1.65; color: var(--muted); }
 .ornament-divider { display: flex; align-items: center; justify-content: center; gap: 23px; color: var(--deep); margin-top: 28px; }
 .ornament-divider span { height: 1px; width: 80px; background: var(--line); }
@@ -185,17 +195,16 @@ img { display: block; max-width: 100%; }
   .invitation-section .heading-ornament { display: none; }
   .section-heading h2 { font-size: 2rem; line-height: 1.2; margin-top: 6px; }
   .section-heading .invitation-intro { font-size: .75rem; line-height: 1.5; margin-top: 8px; }
-  .couple-details { container: couple / inline-size; grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-rows: auto minmax(180px, 1fr); grid-template-areas: 'groom bride' 'portrait portrait'; min-height: min-content; height: 100%; width: 100%; max-width: 560px; align-items: start; gap: 14px 16px; margin: 0 auto; }
+  .couple-details { container: couple / inline-size; grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-rows: auto minmax(260px, 1fr); grid-template-areas: 'groom bride' 'portrait portrait'; min-height: min-content; height: 100%; width: 100%; max-width: 560px; align-items: start; gap: 14px 16px; margin: 0 auto; }
   .person { padding: 0; }
   .person h3 { font-size: clamp(1.5rem, 6.4vw, 1.9375rem); line-height: 1.3; margin: 6px 0 8px; }
   .person h3 small { font-size: .36em; }
   .person > p { font-size: .75rem; line-height: 1.65; }
   .person > .person-detail { line-height: 1.5; margin-top: 6px; }
   .person-ornament { display: none; }
-  .couple-portrait { min-height: 180px; height: 100%; width: 100%; }
-  .portrait-window { display: grid; place-items: center; container-type: size; min-height: 180px; height: 100%; width: 100%; }
-  .portrait-frame { width: min(100cqw, 100cqh); height: min(100cqw, 100cqh); }
-  .portrait-frame img { width: 100%; height: 100%; object-fit: contain; aspect-ratio: 1; }
+  .couple-portrait { min-height: 260px; height: 100%; width: 100%; }
+  .portrait-window { display: grid; place-items: center; container-type: size; min-height: 260px; height: 100%; width: 100%; padding: 16px 22px; }
+  .portrait-frame { width: min(100cqw, calc(100cqh * .8), 300px); height: auto; }
   .invitation-note { font-size: .875rem; line-height: 1.6; }
   .invitation-section > .ornament-divider { margin: 0; }
   .invitation-section > .ornament-divider .kolam { width: 18px; height: 18px; }

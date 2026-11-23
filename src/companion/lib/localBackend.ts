@@ -299,7 +299,7 @@ export const localBackend: Backend = {
     const personId = db.devices.find(d => d.device === me && d.eventId === eventId)?.personId;
     const rows = db.photos.filter(p => p.eventId === eventId && (options?.includeHidden || !p.hidden) && (!options?.questId || p.questId === options.questId)).sort((a, b) => Number(b.pinned) - Number(a.pinned) || b.createdAt.localeCompare(a.createdAt));
     return Promise.all(rows.map(async p => ({
-      id: p.id, uploaderName: p.uploaderName, moment: p.moment, questId: p.questId, caption: p.caption, createdAt: p.createdAt, pinned: p.pinned, hidden: p.hidden, flags: options?.includeHidden ? p.flaggedBy.length : undefined,
+      id: p.id, postId: p.postId, postPosition: p.postPosition, uploaderName: p.uploaderName, moment: p.moment, questId: p.questId, caption: p.caption, createdAt: p.createdAt, pinned: p.pinned, hidden: p.hidden, flags: options?.includeHidden ? p.flaggedBy.length : undefined,
       akshate: p.akshateBy.length, mine: p.akshateBy.includes(me),
       uploadedByMe: p.uploadedBy ? p.uploadedBy === me : !!p.personId && p.personId === personId, url: await photoUrl(p.id)
     })));
@@ -339,6 +339,21 @@ export const localBackend: Backend = {
     const db = load();
     db.photos.push({ id, eventId, personId: meta.personId, uploadedBy: device(), uploaderName: meta.uploaderName, moment: meta.moment ?? null, questId: meta.questId ?? null, caption: meta.caption ?? null,
       createdAt: now(), pinned: false, hidden: false, akshateBy: [], flaggedBy: [] });
+    save(db);
+  },
+
+  async uploadPhotoPost(eventId, postId, images, meta) {
+    if (!images.length || images.length > 10) throw new Error('Choose between 1 and 10 photos.');
+    if (meta.questId && !photoQuest(meta.questId)) throw new Error('Choose a valid photo quest');
+    const access = load();
+    requirePhotoGuest(access, eventId);
+    if (!hostEmail && meta.personId && myDevice(access, eventId).personId !== meta.personId) throw new Error('Upload as the guest linked to this phone');
+    if (!hostEmail && !meta.personId && !access.visitors.some(v => v.device === device() && v.eventId === eventId && v.name)) throw new Error('Add your name before posting');
+    if (images.every(image => access.photos.some(p => p.id === image.id))) return;
+    for (const image of images) await idbSet('photo-' + image.id, image.blob);
+    const db = load(), createdAt = now();
+    images.forEach((image, postPosition) => db.photos.push({ ...meta, id: image.id, postId, postPosition, eventId, uploadedBy: device(),
+      createdAt, pinned: false, hidden: false, akshateBy: [], flaggedBy: [] }));
     save(db);
   },
 

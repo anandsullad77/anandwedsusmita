@@ -43,7 +43,16 @@ async function photosFor(eventId: string, includeHidden: boolean, questId?: stri
   let q = sb().from('photos').select('*').eq('event_id', eventId);
   if (!includeHidden) q = q.eq('hidden', false);
   if (questId) q = q.eq('quest_id', questId);
-  const rows = must(await q.order('pinned', { ascending: false }).order('created_at', { ascending: false }).limit(200)) as any[];
+  if (includeHidden) q = q.order('pinned', { ascending: false });
+  const rows = must(await q.order('created_at', { ascending: false }).limit(200)) as any[];
+  // Complete carousels even when a post straddles the latest-photo limit.
+  const postIds = [...new Set(rows.map(r => r.post_id).filter(Boolean))];
+  if (postIds.length) {
+    let grouped = sb().from('photos').select('*').eq('event_id', eventId).in('post_id', postIds);
+    if (!includeHidden) grouped = grouped.eq('hidden', false);
+    if (questId) grouped = grouped.eq('quest_id', questId);
+    for (const row of must(await grouped) as any[]) if (!rows.some(r => r.id === row.id)) rows.push(row);
+  }
   const ids = rows.map(r => r.id);
   const ak = ids.length ? must(await sb().from('akshate').select('photo_id,user_id').in('photo_id', ids)) as any[] : [];
   const flags = includeHidden && ids.length ? must(await sb().from('photo_flags').select('photo_id').in('photo_id', ids)) as any[] : [];
@@ -51,7 +60,7 @@ async function photosFor(eventId: string, includeHidden: boolean, questId?: stri
   const device = me ? must(await sb().from('devices').select('person_id').eq('event_id', eventId).eq('user_id', me).maybeSingle()) as { person_id: string } | null : null;
   const urls = await signedUrls(rows.map(r => r.storage_path));
   return rows.map(r => ({
-    id: r.id, uploaderName: r.uploader_name, moment: r.moment, questId: r.quest_id, caption: r.caption, createdAt: r.created_at, pinned: r.pinned, hidden: r.hidden, flags: includeHidden ? flags.filter(f => f.photo_id === r.id).length : undefined,
+    id: r.id, postId: r.post_id, postPosition: r.post_position, uploaderName: r.uploader_name, moment: r.moment, questId: r.quest_id, caption: r.caption, createdAt: r.created_at, pinned: r.pinned, hidden: r.hidden, flags: includeHidden ? flags.filter(f => f.photo_id === r.id).length : undefined,
     akshate: ak.filter(a => a.photo_id === r.id).length, mine: ak.some(a => a.photo_id === r.id && a.user_id === me),
     uploadedByMe: r.uploaded_by ? r.uploaded_by === me : !!r.person_id && r.person_id === device?.person_id,
     url: urls.get(r.storage_path) ?? ''
@@ -158,6 +167,24 @@ export const supabaseBackend: Backend = {
     must(await sb().storage.from('photos').upload(path, blob, { contentType: blob.type || 'image/webp' }));
     must(await sb().from('photos').insert({ event_id: eventId, person_id: meta.personId, uploader_name: meta.uploaderName, storage_path: path,
       moment: meta.moment ?? null, ...(meta.questId ? { quest_id: meta.questId } : {}), caption: meta.caption ?? null }));
+  },
+  async uploadPhotoPost(eventId, postId, images, meta) {
+    if (!images.length || images.length > 10) throw new Error('Choose between 1 and 10 photos.');
+    if (meta.questId && !photoQuest(meta.questId)) throw new Error('Choose a valid photo quest');
+    // Stable IDs make a retry safe after a lost response or interrupted upload.
+    const existing = must(await sb().from('photos').select('id').eq('event_id', eventId).eq('post_id', postId)) as { id: string }[];
+    if (images.every(image => existing.some(row => row.id === image.id))) return;
+    const rows = [];
+    for (const [position, image] of images.entries()) {
+      const path = `${eventId}/${postId}/${image.id}.webp`;
+      const { error } = await sb().storage.from('photos').upload(path, image.blob, { contentType: image.blob.type || 'image/webp' });
+      if (error && !('statusCode' in error && String(error.statusCode) === '409')) throw error;
+      rows.push({ id: image.id, event_id: eventId, post_id: postId, post_position: position, person_id: meta.personId,
+        uploader_name: meta.uploaderName, storage_path: path, moment: meta.moment ?? null,
+        quest_id: meta.questId ?? null, caption: meta.caption ?? null });
+    }
+    // A single database statement publishes every image together.
+    must(await sb().from('photos').insert(rows));
   },
   async toggleAkshate(photoId) {
     const me = (await sb().auth.getUser()).data.user?.id;

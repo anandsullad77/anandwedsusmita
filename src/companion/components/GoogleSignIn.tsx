@@ -1,8 +1,9 @@
-import { useState, type ReactNode } from 'react';
+import { useEffect, useId, useRef, useState, type ReactNode } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { signInWithGoogle, signOutGuest } from '../lib/guestAuth';
+import { signInWithGoogle, signOutGuest, type GuestIdentity } from '../lib/guestAuth';
 import { useGuestAuth } from '../lib/useGuestAuth';
 import WeddingBrand from './WeddingBrand';
+import { Icon } from '../guest/Icon';
 import './google-sign-in.css';
 
 export function GoogleSignIn({ returnTo, purpose = 'share in the celebration' }: { returnTo: string; purpose?: string }) {
@@ -31,13 +32,60 @@ export function GuestContentGate({ children, base, purpose, standalone = false }
   </div>;
 }
 
-export function GuestAccount() {
+function GuestAvatar({ user }: { user: GuestIdentity }) {
+  const [failedUrl, setFailedUrl] = useState<string | null>(null);
+  const names = user.name.trim().split(/\s+/).filter(Boolean);
+  const initials = [names[0]?.[0], names.length > 1 ? names.at(-1)?.[0] : ''].join('').toLocaleUpperCase() || 'G';
+  return <span className="guest-avatar" aria-hidden="true">
+    {user.avatarUrl && failedUrl !== user.avatarUrl
+      ? <img src={user.avatarUrl} alt="" referrerPolicy="no-referrer" onError={() => setFailedUrl(user.avatarUrl!)} />
+      : initials}
+  </span>;
+}
+
+export function GuestAccount({ base = '/invitation' }: { base?: string }) {
   const { user } = useGuestAuth();
+  const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const container = useRef<HTMLDivElement>(null);
+  const trigger = useRef<HTMLButtonElement>(null);
+  const panelId = useId();
+  const current = useLocation();
+
+  useEffect(() => { setOpen(false); }, [current.pathname, current.search, current.hash, user?.id]);
+  useEffect(() => {
+    if (!open) return;
+    const closeOutside = (event: Event) => {
+      if (!container.current?.contains(event.target as Node)) setOpen(false);
+    };
+    document.addEventListener('pointerdown', closeOutside);
+    document.addEventListener('focusin', closeOutside);
+    return () => {
+      document.removeEventListener('pointerdown', closeOutside);
+      document.removeEventListener('focusin', closeOutside);
+    };
+  }, [open]);
+
   if (!user) return null;
-  return <div className="guest-account"><span>Signed in as <b>{user.name}</b></span><button disabled={busy} onClick={async () => {
-    setBusy(true); setError(null);
-    try { await signOutGuest(); } catch (error) { setError((error as Error).message); setBusy(false); }
-  }}>{busy ? 'Signing out…' : 'Sign out'}</button>{error && <span className="error" role="alert">{error}</span>}</div>;
+  return <div className="guest-account" ref={container} onKeyDown={event => {
+    if (event.key === 'Escape' && open) {
+      event.preventDefault(); event.stopPropagation(); setOpen(false); trigger.current?.focus();
+    }
+  }}>
+    <button ref={trigger} type="button" className="guest-account-trigger" aria-label={`Account menu for ${user.name}`} aria-expanded={open} aria-controls={panelId} onClick={() => setOpen(value => !value)}>
+      <GuestAvatar key={user.id} user={user} />
+    </button>
+    {open && <div className="guest-account-panel" id={panelId}>
+      <div className="guest-account-details"><GuestAvatar user={user} /><div><b>{user.name}</b>{user.email && <span>{user.email}</span>}</div></div>
+      <div className="guest-account-actions">
+        <Link to={base} onClick={() => setOpen(false)}><Icon size={18} d="M3 5h18v14H3zM3 5l9 7 9-7" />Wedding invitation</Link>
+        <button type="button" disabled={busy} onClick={async () => {
+          setBusy(true); setError(null);
+          try { await signOutGuest(); } catch (error) { setError((error as Error).message); setBusy(false); }
+        }}><Icon size={18} d="M9 4H4v16h5M14 8l4 4-4 4M8 12h13" />{busy ? 'Signing out…' : 'Sign out'}</button>
+      </div>
+      {error && <p className="error guest-account-error" role="alert">{error}</p>}
+    </div>}
+  </div>;
 }

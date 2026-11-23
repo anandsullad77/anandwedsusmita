@@ -21,7 +21,7 @@ export default function PhotoQuests({ eventId, base, showCollections }: { eventI
     try { localStorage.setItem(`as-wedding-photo-quests:${eventId}`, JSON.stringify(featured.map(q => q.id))); } catch { /* The quests remain usable without storage. */ }
   }, [eventId, featured]);
   const pick = (quest: PhotoQuest, source: 'camera' | 'gallery') => {
-    if (!canAccess) { nav(`${base}/haaku?quest=${encodeURIComponent(quest.id)}`); return; }
+    if (!canAccess) { nav(`${base}/create?type=photos&quest=${encodeURIComponent(quest.id)}`); return; }
     selected.current = quest;
     (source === 'camera' ? camera : gallery).current?.click();
   };
@@ -30,13 +30,13 @@ export default function PhotoQuests({ eventId, base, showCollections }: { eventI
     const images = Array.from(files ?? []).filter(f => f.type.startsWith('image/'));
     if (!quest || !images.length) return;
     const draft = stashQuestPhotos(eventId, quest.id, images);
-    nav(`${base}/haaku?quest=${encodeURIComponent(quest.id)}&draft=${encodeURIComponent(draft)}`);
+    nav(`${base}/create?type=photos&quest=${encodeURIComponent(quest.id)}&draft=${encodeURIComponent(draft)}`);
   };
   const card = (quest: PhotoQuest, compact = false) => <article className={`photo-quest-card ${compact ? 'quest-card-compact' : ''}`} key={quest.id} data-quest-id={quest.id} aria-label={quest.title}>
     <div className="quest-card-top"><span className={`quest-mood ${quest.mood}`}><Icon size={14} d={quest.mood === 'heartfelt' ? 'M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1.1-1.1a5.5 5.5 0 0 0-7.8 7.8L12 21l8.8-8.6a5.5 5.5 0 0 0 0-7.8z' : 'M12 3l2.5 6.5L21 12l-6.5 2.5L12 21l-2.5-6.5L3 12l6.5-2.5L12 3z'} />{quest.mood === 'heartfelt' ? 'Heartfelt' : 'Playful'}{quest.easy && ' · Easy'}</span>{summary?.completedQuestIds.includes(quest.id) && <span className="quest-complete"><Icon size={13} d="M5 12l4 4L19 6" />Memory added</span>}</div>
     <h3>{quest.title}</h3><p>{quest.prompt}</p><MomentTag label={quest.tag} />
     <div className="quest-card-actions"><button className="btn btn-deep" onClick={() => pick(quest, 'camera')}><Icon size={16} d="M4 8h3l2-3h6l2 3h3v11H4zM12 16.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7z" />Take photo</button><button className="btn btn-ghost" onClick={() => pick(quest, 'gallery')}>Choose from gallery</button></div>
-    {showCollections && <Link className="quest-collection-link" to={`${base}/scene?quest=${quest.id}`}>View collection{summary?.counts[quest.id] ? ` · ${summary.counts[quest.id]}` : ''}<Icon size={14} d="M5 12h14m-6-6l6 6-6 6" /></Link>}
+    {showCollections && <Link className="quest-collection-link" to={`${base}/feed?quest=${quest.id}`}>View collection{summary?.counts[quest.id] ? ` · ${summary.counts[quest.id]}` : ''}<Icon size={14} d="M5 12h14m-6-6l6 6-6 6" /></Link>}
   </article>;
   const all = PHOTO_QUESTS.filter(q => filter === 'all' || (filter === 'easy' ? q.easy : q.mood === filter));
   return <section id="photo-quests" tabIndex={-1} className="general-section photo-quests" aria-labelledby="photo-quests-title" lang="en">

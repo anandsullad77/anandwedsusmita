@@ -1,9 +1,10 @@
 import { fmtDate, fmtTime } from '../lib/format';
 import type { EventInfo, GeneralInvitationSettings } from '../lib/types';
 import { Icon } from './Icon';
+import PortraitSprig from '../../PortraitSprig';
 
 export default function InvitationHero({ event, settings }: { event: EventInfo; settings: GeneralInvitationSettings }) {
-  const cover = settings.coverUrl ?? '/images/invitation-couple.webp';
+  const cover = settings.coverUrl ?? '/images/anand-susmita-invitation.jpg';
   const originalPortrait = !settings.coverUrl;
   const hasCover = settings.sections.cover && !!cover;
   return <div className="general-hero-frame">
@@ -15,7 +16,10 @@ export default function InvitationHero({ event, settings }: { event: EventInfo; 
         <p className="general-welcome">{settings.welcomeMessage}</p>
         <span className="general-hero-flourish" aria-hidden="true">✦</span>
       </div>
-      {hasCover && <div className={`general-portrait${originalPortrait ? ' general-portrait-photo' : ''}`}><img src={cover} alt={`${event.coupleA} and ${event.coupleB}`} width={originalPortrait ? 941 : undefined} height={originalPortrait ? 1672 : undefined} fetchPriority="high" decoding="async" /></div>}
+      {hasCover && <div className={`general-portrait${originalPortrait ? ' general-portrait-photo' : ''}`}>
+        <div className="general-portrait-window"><img src={cover} alt={originalPortrait ? `${event.coupleA} and ${event.coupleB} smiling at each other beneath green leaves` : `${event.coupleA} and ${event.coupleB}`} width={originalPortrait ? 1810 : undefined} height={originalPortrait ? 2673 : undefined} fetchPriority="high" decoding="async" /></div>
+        {originalPortrait && <><PortraitSprig className="general-portrait-sprig-left" /><PortraitSprig className="general-portrait-sprig-right" /></>}
+      </div>}
       <div className="general-event-details" lang="en">
         <div className="general-event-detail">
           <span className="general-detail-icon"><Icon d="M8 2v4m8-4v4M3 10h18M5 4h14a2 2 0 0 1 2 2v14H3V6a2 2 0 0 1 2-2" size={22} /></span>

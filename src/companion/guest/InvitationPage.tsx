@@ -7,10 +7,8 @@ import type { Announcement, GeneralInviteBundle, Photo } from '../lib/types';
 import { Icon } from './Icon';
 import InvitationHero from './InvitationHero';
 import InvitationDownloads from './InvitationDownloads';
-import Wishes from './Wishes';
 import PhotoQuests from './PhotoQuests';
 import { WeddingSignoff } from '../components/WeddingBrand';
-import { GoogleSignIn } from '../components/GoogleSignIn';
 import { useGuestAuth } from '../lib/useGuestAuth';
 
 export default function InvitationPage({ bundle, base, token, invitationPath, children }: { bundle: GeneralInviteBundle; base: string; token: string; invitationPath: string; children?: ReactNode }) {
@@ -54,15 +52,15 @@ export default function InvitationPage({ bundle, base, token, invitationPath, ch
       <div className="general-schedule-list">{functions.map((f, i) => <article key={f.id}><span className="general-schedule-number">{String(i + 1).padStart(2, '0')}</span><div><h3>{f.nameEn}</h3><time dateTime={f.startsAt}>{fmtDate(f.startsAt)} · {fmtTime(f.startsAt)} IST</time>{f.venue && <p>{f.venue}</p>}</div></article>)}</div>
     </section>}
 
-    {(sections.photos || sections.uploads) && <section id="moments" className="general-section general-moments" lang="en" aria-labelledby="moments-title">
-      <div className="general-section-heading"><p className="general-eyebrow">Our shared album</p><h2 id="moments-title">Every moment,<br /> together.</h2>
-        <p>{sections.photos && sections.uploads ? 'The little moments. The happy tears. See the day through everyone’s eyes, and share a few memories of your own.' : sections.photos ? 'See the celebration through the eyes of the people who made it special.' : 'Your favourite moments belong here. Share your photos with the couple.'}</p>
+    {(sections.photos || sections.uploads || sections.guestbook) && <section id="moments" tabIndex={-1} className="general-section general-moments" lang="en" aria-labelledby="moments-title">
+      <div className="general-section-heading"><p className="general-eyebrow">Our shared Feed</p><h2 id="moments-title">Every moment,<br /> together.</h2>
+        <p>The little moments. The happy tears. Photos and wishes from everyone who makes this celebration special.</p>
         <div className="general-actions">
-          {sections.photos && <Link to={`${base}/scene`} className="btn btn-deep" aria-label="View photos on Scene">View photos <Icon size={18} d="M5 12h14m-6-6l6 6-6 6" /></Link>}
-          {sections.uploads && <Link to={`${base}/haaku`} className="btn btn-ghost">Share your photos</Link>}
+          {(sections.photos || sections.guestbook) && <Link to={`${base}/feed`} className="btn btn-deep">Feed</Link>}
+          {(sections.uploads || sections.guestbook) && <Link to={`${base}/create`} className="btn btn-ghost">Create Post</Link>}
         </div>
       </div>
-      {sections.photos && canAccess && photos.length > 0 ? <Link to={`${base}/scene`} aria-label="View latest wedding photos" className="general-photo-preview">
+      {sections.photos && canAccess && photos.length > 0 ? <Link to={`${base}/feed`} aria-label="View latest wedding posts" className="general-photo-preview">
         {photos.slice(0, 3).map((p, i) => <img key={p.id} src={p.url} alt={p.caption ?? `Photo by ${p.uploaderName}`} loading="lazy" className={`general-photo-${i + 1}`} />)}
         <span className="general-photo-caption">{photos.length} {photos.length === 1 ? 'memory' : 'memories'} shared <Icon size={16} d="M5 12h14m-6-6l6 6-6 6" /></span>
       </Link> : <div className="general-photo-empty" aria-label="Shared wedding album">
@@ -71,11 +69,6 @@ export default function InvitationPage({ bundle, base, token, invitationPath, ch
       </div>}
     </section>}
     {sections.quests && sections.uploads && <PhotoQuests eventId={event.id} base={base} showCollections={sections.photos} />}
-    {sections.guestbook && (canAccess ? <Wishes key={user!.id} eventId={event.id} token={token} guestName={bundle.guestName || user!.name} />
-      : <section id="wishes" tabIndex={-1} className="general-section guestbook locked-wishes" aria-labelledby="wishes-title">
-        <div className="general-section-heading"><p className="general-eyebrow">Words to treasure</p><h2 id="wishes-title">Wishes &amp; blessings</h2></div>
-        <GoogleSignIn returnTo={`${base}#wishes`} purpose="read and share wishes for Anand and Susmita" />
-      </section>)}
     {sections.download && <InvitationDownloads bundle={bundle} settings={settings} link={`${location.origin}${invitationPath}`} />}
     <WeddingSignoff />
   </>);
