@@ -25,20 +25,26 @@ const { scenario, origin } = require('./test-wedding-browser.cjs');
       assert.deepEqual(run.errors, []); await run.context.close();
     }
     const fresh = await scenario(browser);
-    for (const route of ['/rsvp', '/e/anand-susmita', '/i/family-private?edit=1', '/app/family']) {
+    for (const route of ['/rsvp', '/e/anand-susmita']) {
       await fresh.page.goto(origin + route);
-      await fresh.page.getByRole('button', { name: 'Continue with Google', exact: true }).waitFor();
-      assert.equal(await fresh.page.locator('.rsvp-fields').count(), 0);
+      await fresh.page.getByLabel('Wedding PIN', { exact: true }).waitFor();
+      assert.equal(await fresh.page.getByRole('button', { name: 'Continue with Google', exact: true }).count(), 0);
     }
-    await fresh.page.getByRole('button', { name: 'Continue with Google', exact: true }).click();
-    await fresh.page.waitForURL(origin + '/app/family');
+    await fresh.page.goto(origin + '/i/family-private?edit=1');
+    await fresh.page.getByRole('heading', { name: 'Will you join us?', exact: true }).waitFor();
+    assert.equal(await fresh.page.getByRole('button', { name: 'Continue with Google', exact: true }).count(), 0);
+    await fresh.page.goto(origin + '/app/feed');
     await fresh.page.getByRole('link', { name: 'Find my family', exact: true }).waitFor();
+    await fresh.page.goto(origin + '/invitation/feed');
+    await fresh.page.getByRole('button', { name: 'Continue with Google', exact: true }).waitFor();
+    await fresh.page.getByRole('button', { name: 'Continue with Google', exact: true }).click();
+    await fresh.page.waitForURL(origin + '/invitation/feed');
     await fresh.context.close();
     const unlinked = await scenario(browser, { initial: 'google' });
     await unlinked.page.goto(origin + '/invitation');
     await unlinked.page.getByRole('button', { name: 'Account menu for Google guest', exact: true }).click();
     assert.equal(await unlinked.page.locator('.guest-account-panel').getByRole('link', { name: 'Family RSVP', exact: true }).count(), 0);
     await unlinked.context.close();
-    console.log('PASS: profile family link at desktop/390/320px, general and family routes, unlinked account, Google gates and OAuth return');
+    console.log('PASS: profile family link at desktop/390/320px, public family entry, unlinked account, feed Google gate and OAuth return');
   } finally { await browser.close(); }
 })().catch(error => { console.error(error); process.exitCode = 1; });

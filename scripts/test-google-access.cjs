@@ -436,6 +436,34 @@ async function main() {
     assert.equal((await db.query('select host_team_add($1,$2,$3,$4,$5) as added', [host,wedding,memoryC,'cohost','Changed'])).rows[0].added, false, 'Retry does not change an existing role');
     await asUser(memoryC); assert.equal((await team()).canManage, true);
     console.log('PASS: host-team listing, owner-only additions, server-only grants, co-owner rights and retry role preservation');
+    await db.exec('reset role');
+    await db.query("insert into households (id,event_id,name,token,cap,function_ids) values ($1,$2,'Capacity family','capacity-test',3,'{}')", [id(99000), wedding]);
+    await db.query("insert into people (id,event_id,household_id,name) values ($1,$2,$3,'Original member')", [id(99001), wedding, id(99000)]);
+    await asUser(family);
+    await db.query('select claim_person($1,$2)', ['capacity-test', id(99001)]);
+    const capacityReply = { requestId: id(99002), coming: 'yes', add: [{ name: 'Second member', functionIds: [] }, { name: 'Child member', isChild: true, functionIds: [] }], summary: 'Family of three' };
+    await db.query('select save_rsvp($1,$2::jsonb)', [wedding, JSON.stringify(capacityReply)]);
+    await db.query('select save_rsvp($1,$2::jsonb)', [wedding, JSON.stringify(capacityReply)]);
+    await assert.rejects(db.query('select save_rsvp($1,$2::jsonb)', [wedding, JSON.stringify({ ...capacityReply, requestId: id(99003), add: [{ name: 'Over capacity', functionIds: [] }] })]), /family is full/i);
+    await db.exec('reset role');
+    assert.equal((await db.query('select count(*)::int as n from people where household_id=$1', [id(99000)])).rows[0].n, 3);
+    console.log('PASS: family RSVP without Google adds members up to host capacity, retries do not duplicate, and excess additions are rejected atomically');
+    await asUser(host);
+    const importFunctions = (await db.query('select id from event_functions where event_id=$1', [wedding])).rows.map(f => f.id);
+    const personal = { name: 'Individual guest', invitationType: 'individual', cap: 1, side: null, invitedBy: null, functionIds: importFunctions, people: [{ name: 'Individual guest', phone: null, isChild: false }] };
+    await db.query('select import_households($1,$2::jsonb)', [wedding, JSON.stringify([personal])]);
+    const savedIndividual = (await db.query("select * from households where name='Individual guest'")).rows[0];
+    assert.equal(savedIndividual.invitation_type, 'individual'); assert.equal(savedIndividual.cap, 1);
+    const personalBundle = (await db.query('select invite_bundle($1) as data', [savedIndividual.token])).rows[0].data;
+    assert.equal(personalBundle.household.invitationType, 'individual');
+    await assert.rejects(db.query('select import_households($1,$2::jsonb)', [wedding, JSON.stringify([{ ...personal, name: 'Bad individual', cap: 2 }])]), /one person and one place/);
+    await assert.rejects(db.query("insert into people (event_id,household_id,name) values ($1,$2,'Extra guest')", [wedding, savedIndividual.id]), /one person only/);
+    await assert.rejects(db.query("update households set cap=2 where id=$1", [savedIndividual.id]), /individual_invite_capacity/);
+    await assert.rejects(db.query("update households set invitation_type='individual',cap=1 where id=$1", [id(99000)]), /multiple people/);
+    await db.query("update households set invitation_type='family',cap=6 where id=$1", [savedIndividual.id]);
+    await db.query("insert into people (event_id,household_id,name) values ($1,$2,'Additional family member')", [wedding, savedIndividual.id]);
+    assert.equal((await db.query('select invite_bundle($1) as data', [savedIndividual.token])).rows[0].data.household.invitationType, 'family');
+    console.log('PASS: individual import/type persistence, one-place enforcement, second-person rejection, safe family switching and no destructive multi-person conversion');
   } finally { await db.close(); }
 }
 main().catch(error => { console.error(error); process.exitCode = 1; });

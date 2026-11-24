@@ -9,6 +9,7 @@ import { Icon } from './Icon';
 const SEEN = 'as-wedding-changes-seen';
 export default function FamilyPlan({ ctx }: { ctx: Ctx }) {
   const { b, me } = ctx;
+  const individual = b.household.invitationType === 'individual';
   const [changes, setChanges] = useState<Change[]>([]);
   const [seen, setSeen] = useState(localStorage.getItem(SEEN) ?? '');
   const [arrived, setArrived] = useState(!!me?.arrivedAt);
@@ -34,11 +35,11 @@ export default function FamilyPlan({ ctx }: { ctx: Ctx }) {
     finally { setArriving(false); }
   }
   return <section className="general-section general-family-plan" aria-labelledby="personal-plan-title">
-    <header className="general-section-heading"><p className="general-eyebrow" lang="kn">ನಮಸ್ಕಾರ</p><h2 id="personal-plan-title">Welcome, {me?.name ?? b.household.name}.</h2><p>{days > 0 ? `${days} days to go.` : isToday ? 'Today’s the day.' : 'A day to remember.'} Your family’s plans, all in one place.</p></header>
+    <header className="general-section-heading"><p className="general-eyebrow" lang="kn">ನಮಸ್ಕಾರ</p><h2 id="personal-plan-title">Welcome, {me?.name ?? b.household.name}.</h2><p>{days > 0 ? `${days} days to go.` : isToday ? 'Today’s the day.' : 'A day to remember.'} {individual ? "Your plans, all in one place." : "Your family\u2019s plans, all in one place."}</p></header>
     <div className="guest-personal-plan">
-    {unseen.length > 0 && <div className="banner gold guest-plan-notice" role="status"><p><b>{unseen[0].byName}</b> changed your family’s plan: {unseen[0].summary}{unseen.length > 1 && ` (+${unseen.length - 1} more)`}</p><button className="chip" onClick={() => { localStorage.setItem(SEEN, changes[0].at); setSeen(changes[0].at); }}>OK</button></div>}
+    {unseen.length > 0 && <div className="banner gold guest-plan-notice" role="status"><p><b>{unseen[0].byName}</b> changed {individual ? "your plan" : "your family\u2019s plan"}: {unseen[0].summary}{unseen.length > 1 && ` (+${unseen.length - 1} more)`}</p><button className="chip" onClick={() => { localStorage.setItem(SEEN, changes[0].at); setSeen(changes[0].at); }}>OK</button></div>}
       <section className="guest-plan-card card" aria-labelledby="family-plan-title">
-        <div className="guest-section-heading"><h2 id="family-plan-title">Your family’s plan</h2><span className={`guest-status ${b.household.coming ? 'answered' : ''}`}>{b.household.coming === 'no' ? 'Not coming' : b.household.coming === 'yes' ? 'Confirmed' : 'RSVP pending'}</span></div>
+        <div className="guest-section-heading"><h2 id="family-plan-title">{individual ? "Your plans" : "Your family\u2019s plan"}</h2><span className={`guest-status ${b.household.coming ? 'answered' : ''}`}>{b.household.coming === 'no' ? 'Not coming' : b.household.coming === 'yes' ? 'Confirmed' : 'RSVP pending'}</span></div>
         <p className="guest-plan-family">{b.household.name}</p>
         <div className="guest-plan-summary">
           {b.household.coming === 'no' ? <p>We’ll miss you. Your blessing is with the family.</p> : <>
@@ -47,7 +48,7 @@ export default function FamilyPlan({ ctx }: { ctx: Ctx }) {
             {b.household.stay && <p><Icon size={18} d="M3 18V9m18 9V9M3 14h18M7 14v-4h10v4" /><span>{b.household.stay.manage ? 'Arranging your own stay' : b.household.stay.nights.length ? `Stay: ${b.household.stay.nights.join(', ')}` : 'No stay requested'}</span></p>}
           </>}
         </div>
-        <Link to={`/i/${ctx.s.householdToken}?edit=1`} className={`btn ${b.household.coming ? 'btn-ghost' : 'btn-primary'} btn-block`}>{b.household.coming ? 'Update family RSVP' : 'Complete your RSVP'}<Icon size={16} d="M5 12h14m-6-6l6 6-6 6" /></Link>
+        <Link to={`/i/${ctx.s.householdToken}?edit=1`} className={`btn ${b.household.coming ? 'btn-ghost' : 'btn-primary'} btn-block`}>{b.household.coming ? individual ? 'Update my RSVP' : 'Update family RSVP' : 'Complete your RSVP'}<Icon size={16} d="M5 12h14m-6-6l6 6-6 6" /></Link>
       </section>
     {showArrive && b.household.coming === 'yes' && (arrived ? <div className="banner gold" role="status">You’ve arrived. Enjoy the celebration!</div> : <button className="btn btn-gold btn-block" disabled={arriving} onClick={arrive}>{arriving ? 'Checking in…' : 'We’ve arrived'}</button>)}
     </div>

@@ -39,6 +39,7 @@ export type Travel = { mode: 'train' | 'bus' | 'car' | 'flight' | 'near'; point?
 export type Stay = { nights: string[]; manage: boolean };
 
 export type Household = {
+  invitationType?: 'individual' | 'family';
   id: string;
   name: string;
   token?: string;
@@ -72,7 +73,7 @@ export type PhotoContext = {
   prepareUpload?: (name: string) => Promise<void>;
 };
 
-export type Session = { eventId: string; slug: string; householdToken: string; personId: string };
+export type Session = { eventId: string; slug: string; householdToken: string; personId: string; invitationType?: 'individual' | 'family' };
 
 export type Change = { byName: string; summary: string; at: string };
 
@@ -145,6 +146,7 @@ export type HostTeamAction = { action: 'invite'; name: string; email: string; ro
 export type HostTeamResult = { accessAdded: boolean; emailSent: boolean; message: string };
 
 export type HouseholdImport = {
+  invitationType?: 'individual' | 'family';
   name: string;
   side: string | null;
   invitedBy: string | null;

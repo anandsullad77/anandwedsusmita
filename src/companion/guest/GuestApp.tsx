@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { api, getSession } from '../lib/backend';
+import { api, getSession, setSession } from '../lib/backend';
 import { applyTheme } from '../lib/theme';
 import type { GeneralInvitationSettings, InviteBundle } from '../lib/types';
 import type { Ctx } from './context';
@@ -22,6 +22,8 @@ export default function GuestApp() {
     try {
       const bundle = await api.inviteBundle(token);
       if (!bundle) throw new Error('Invitation not found. Ask the hosts to send your family link again.');
+      const linked = getSession();
+      if (linked?.householdToken === token) setSession({ ...linked, invitationType: bundle.household.invitationType ?? 'family' });
       const settings = await api.generalSettings(bundle.event.id);
       if (request !== generation.current) return;
       applyTheme(bundle.event);

@@ -10,6 +10,8 @@ export function validateHouseholdImport(households: HouseholdImport[], functions
   const functionIds = new Set(functions.map(f => f.id));
   let people = 0;
   for (const h of households) {
+    if (h.invitationType && !['individual', 'family'].includes(h.invitationType)) throw new Error('Choose Individual or Family.');
+    if (h.invitationType === 'individual' && (h.cap !== 1 || h.people.length !== 1)) throw new Error('An individual invitation must have exactly one person and one place.');
     if (!h.name.trim() || h.name.length > 200) throw new Error('Family names must contain 1–200 characters.');
     if (names.has(familyKey(h.name))) throw new Error(`Duplicate family: ${h.name}.`);
     names.add(familyKey(h.name));

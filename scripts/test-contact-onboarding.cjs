@@ -68,6 +68,8 @@ async function fits(page) {
       await dialog.getByRole('region', { name: 'Contact 4', exact: true }).getByRole('checkbox').uncheck();
       await dialog.getByRole('region', { name: 'Contact 5', exact: true }).getByRole('checkbox').uncheck();
       const first = dialog.getByRole('region', { name: 'Contact 1', exact: true });
+      assert.equal(await first.getByRole('button', { name: 'Individual', exact: true }).getAttribute('aria-pressed'), 'true');
+      await first.getByRole('button', { name: 'Family', exact: true }).click();
       assert.equal(await first.getByLabel('WhatsApp number (optional)', { exact: true }).inputValue(), '+919876543211');
       assert.equal(await first.locator('datalist option').count(), 2);
       await first.getByLabel('Family name', { exact: true }).fill('Reviewed family');
@@ -79,21 +81,21 @@ async function fits(page) {
       }
       await fits(page);
       await page.screenshot({ path: path.join(artifacts, `contacts-review-${width}.png`), fullPage: true });
-      await dialog.getByRole('button', { name: 'Import 1 family', exact: true }).click();
+      await dialog.getByRole('button', { name: 'Import 1 invitation', exact: true }).click();
       await dialog.getByRole('alert').filter({ hasText: 'Temporary import failure' }).waitFor();
       assert.equal(await first.getByLabel('Family name', { exact: true }).inputValue(), 'Reviewed family', 'Failed import keeps edits');
       fail = false;
-      await dialog.getByRole('button', { name: 'Import 1 family', exact: true }).click();
+      await dialog.getByRole('button', { name: 'Import 1 invitation', exact: true }).click();
       await wait(() => !!release, 'Import request pending');
       assert.ok(await dialog.getByRole('button', { name: 'Cancel', exact: true }).isDisabled());
       await page.keyboard.press('Escape'); assert.equal(await dialog.count(), 1);
       await dialog.locator('form').evaluate(form => form.requestSubmit());
       assert.equal(submissions.length, 2, 'A pending import cannot be submitted twice');
       release();
-      await page.getByRole('status').filter({ hasText: 'Created 1 family from contacts.' }).waitFor();
+      await page.getByRole('status').filter({ hasText: 'Created 1 invitation from contacts.' }).waitFor();
       await page.getByRole('row').filter({ hasText: 'Reviewed family' }).waitFor();
       assert.equal(await trigger.evaluate(button => button === document.activeElement), true, 'Closing returns focus');
-      assert.deepEqual(submissions[1].p_households, [{ name: 'Reviewed family', side: null, invitedBy: null, cap: 6, functionIds: [id(3)], people: [{ name: 'Test Guest', phone: '+919876543211', isChild: false }] }]);
+      assert.deepEqual(submissions[1].p_households, [{ name: 'Reviewed family', invitationType: 'family', side: null, invitedBy: null, cap: 6, functionIds: [id(3)], people: [{ name: 'Test Guest', phone: '+919876543211', isChild: false }] }]);
       const pickerCalls = await page.evaluate(() => window.pickerCalls);
       assert.deepEqual(pickerCalls[2].properties, ['name', 'tel']);
       assert.equal(pickerCalls[2].options.multiple, true); assert.equal(pickerCalls[2].activated, true);
@@ -113,9 +115,9 @@ async function fits(page) {
         await trigger.click(); await upload(dialog, vcard);
         await dialog.getByRole('heading', { name: 'Review contacts' }).waitFor();
         release = null;
-        await dialog.getByRole('button', { name: 'Import 1 family', exact: true }).click();
+        await dialog.getByRole('button', { name: 'Import 1 invitation', exact: true }).click();
         await wait(() => !!release, 'Contact-file save pending'); release();
-        await page.getByRole('row').filter({ hasText: "File Guest's family" }).waitFor();
+        await page.getByRole('row').filter({ hasText: 'File Guest' }).waitFor();
         assert.equal(submissions.length, 3, 'Contact-file imports save through the host-only import RPC');
       }
       assert.deepEqual(run.errors, []);
@@ -138,7 +140,7 @@ async function fits(page) {
     console.log('PASS: vCard 2.1/3/4, Kannada, folded lines, country codes and import limits');
 
     for (const width of [1440, 390, 320]) {
-      const run = await scenario(browser, { width, initial: 'google' }); runs.push(run);
+      const run = await scenario(browser, { width }); runs.push(run);
       const { page, context } = run;
       let searches = 0, joins = [], requests = [], rsvps = [];
       await context.route(url => url.pathname === '/rest/v1/rpc/invite_bundle', route => json(route, {

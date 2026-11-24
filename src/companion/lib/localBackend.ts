@@ -512,13 +512,14 @@ export const localBackend: Backend = {
   async saveHousehold(eventId, hh, people) {
     const db = load();
     let h = hh.id ? db.households.find(x => x.id === hh.id) : undefined;
+    if (hh.invitationType === 'individual' && (people.filter(p => p.name?.trim()).length !== 1 || (h?.people.length ?? 0) > 1)) throw new Error('An individual invitation must have exactly one person.');
     if (!h) {
-      h = { id: 'hh-' + uid(), eventId, name: hh.name, token: uid() + uid(), cap: hh.cap ?? 6, coming: null, travel: null, stay: null, updatedAt: now(),
+      h = { id: 'hh-' + uid(), eventId, name: hh.name, invitationType: hh.invitationType ?? 'family', token: uid() + uid(), cap: hh.invitationType === 'individual' ? 1 : hh.cap ?? 6, coming: null, travel: null, stay: null, updatedAt: now(),
         side: hh.side ?? null, invitedBy: hh.invitedBy ?? null, inviteStatus: 'not_sent', source: 'list',
         functionIds: hh.functionIds ?? db.functions.filter(f => f.eventId === eventId).map(f => f.id), people: [] };
       db.households.push(h);
     } else {
-      Object.assign(h, { name: hh.name, cap: hh.cap ?? h.cap, side: hh.side ?? h.side, invitedBy: hh.invitedBy ?? h.invitedBy, functionIds: hh.functionIds ?? h.functionIds });
+      Object.assign(h, { name: hh.name, invitationType: hh.invitationType ?? h.invitationType ?? 'family', cap: hh.invitationType === 'individual' ? 1 : hh.cap ?? h.cap, side: hh.side ?? h.side, invitedBy: hh.invitedBy ?? h.invitedBy, functionIds: hh.functionIds ?? h.functionIds });
     }
     for (const p of people) {
       const ex = p.id ? h.people.find(x => x.id === p.id) : undefined;

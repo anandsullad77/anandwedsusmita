@@ -43,6 +43,7 @@ const toPerson = (p: Record<string, any>): Person => ({
   addedBy: p.added_by, arrivedAt: p.arrived_at
 });
 const toHousehold = (h: Record<string, any>): Household => ({
+  invitationType: h.invitation_type ?? 'family',
   id: h.id, name: h.name, token: h.token, cap: h.cap ?? 6, coming: h.coming, travel: h.travel, stay: h.stay, blessing: h.blessing,
   updatedAt: h.updated_at, side: h.side, invitedBy: h.invited_by, inviteStatus: h.invite_status, source: h.source, functionIds: h.function_ids
 });
@@ -363,7 +364,7 @@ export const supabaseBackend: Backend = {
     return { ...result, posts: result.posts.map(post => ({ ...post, photos: post.photos.map(photo => ({ ...photo, url: urls.get(photo.path) })) })) };
   },
   async saveHousehold(eventId, hh, people) {
-    const row = { event_id: eventId, name: hh.name, cap: hh.cap ?? null, side: hh.side ?? null, invited_by: hh.invitedBy ?? null,
+    const row = { event_id: eventId, name: hh.name, cap: hh.invitationType === 'individual' ? 1 : hh.cap ?? null, invitation_type: hh.invitationType ?? 'family', side: hh.side ?? null, invited_by: hh.invitedBy ?? null,
       ...(hh.functionIds ? { function_ids: hh.functionIds } : {}) };
     const saved = hh.id
       ? must(await sb().from('households').update(row).eq('id', hh.id).select().single()) as any

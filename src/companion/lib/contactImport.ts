@@ -2,7 +2,7 @@ import { IMPORT_LIMITS, familyKey } from './familyImport';
 import type { AdminHousehold } from './types';
 
 export type SharedContact = { name?: string[]; tel?: string[] };
-export type ContactDraft = { id: string; selected: boolean; name: string; family: string; phone: string; phones: string[] };
+export type ContactDraft = { id: string; selected: boolean; name: string; family: string; phone: string; phones: string[]; invitationType: 'individual' | 'family' };
 type ContactPicker = { select(properties: string[], options: { multiple: boolean }): Promise<SharedContact[]> };
 
 export function contactPicker(): ContactPicker | null {
@@ -27,7 +27,7 @@ export function contactDrafts(contacts: SharedContact[]): ContactDraft[] {
   return contacts.map(contact => {
     const name = contact.name?.find(n => n.trim())?.trim() ?? '';
     const phones = [...new Set((contact.tel ?? []).map(contactPhone).filter(Boolean))];
-    return { id: crypto.randomUUID(), selected: true, name, family: name ? `${name}'s family` : '', phone: phones[0] ?? '', phones };
+    return { id: crypto.randomUUID(), selected: true, name, family: name, phone: phones[0] ?? '', phones, invitationType: 'individual' };
   });
 }
 

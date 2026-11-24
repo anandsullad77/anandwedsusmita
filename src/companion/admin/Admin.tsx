@@ -5,6 +5,7 @@ import { ago, inviteMessage, waLink } from '../lib/format';
 import type { AdminData, AdminHousehold, EventInfo, Person, Photo } from '../lib/types';
 import FamilyExcelImport from './FamilyExcelImport';
 import FamilyContactImport from './FamilyContactImport';
+import InvitationTypeSwitch from './InvitationTypeSwitch';
 import GeneralInvitationAdmin from './GeneralInvitationAdmin';
 import AdminNavigation from './AdminNavigation';
 import Analytics from './Analytics';
@@ -180,14 +181,14 @@ function Families({ d, reload }: { d: AdminData; reload: () => void }) {
   const link = (h: AdminHousehold) => `${location.origin}/i/${h.token}`;
   const send = (h: AdminHousehold) => {
     const phone = h.people.find(p => p.phone)?.phone ?? '';
-    const text = h.inviteStatus === 'not_sent' ? inviteMessage(h.name, couple, link(h), d.pin) : `Namaskara! Gentle reminder to RSVP for ${couple}'s wedding: ${link(h)}`;
+    const text = h.inviteStatus === 'not_sent' ? inviteMessage(h.name, couple, link(h), d.pin, h.invitationType === 'individual') : `Namaskara! Gentle reminder to RSVP for ${couple}'s wedding: ${link(h)}`;
     window.open(waLink(phone, text), '_blank');
     void api.setInviteStatus(h.id, 'sent').then(reload).catch(e => setActionError(e.message));
   };
   return (<>
     <header style={{ display: 'flex', flexWrap: 'wrap', gap: 12, justifyContent: 'space-between', alignItems: 'center' }}>
       <div><h1 className="h1">Families &amp; invites</h1><span style={{ color: 'var(--p-muted)', fontSize: 14 }}>{d.households.length} families · personal invitations and replies</span></div>
-      <div className="family-header-actions"><button className="abtn" onClick={() => setImportContacts(true)}><Icon size={18} d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8M20 8v6m-3-3h6" />Import contacts</button><button className="abtn red" onClick={() => setEdit('new')}>+ Add family</button></div>
+      <div className="family-header-actions"><button className="abtn" onClick={() => setImportContacts(true)}><Icon size={18} d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8M20 8v6m-3-3h6" />Import contacts</button><button className="abtn red" onClick={() => setEdit('new')}>+ Add invitation</button></div>
     </header>
     <div className="family-toolbar">
       <label htmlFor="fq" className="sr-only">Search</label>
@@ -206,7 +207,7 @@ function Families({ d, reload }: { d: AdminData; reload: () => void }) {
             const coming = h.people.filter(p => p.attending.length);
             return (
               <tr key={h.id}>
-                <td><b>{h.name}</b>{h.source === 'open' && <span className="pill wait" style={{ marginLeft: 6 }}>open link</span>}<br /><span style={{ color: 'var(--p-muted)' }}>{h.people.map(p => p.name).join(', ')}</span></td>
+                <td><b>{h.name}</b><span className="pill off" style={{ marginLeft: 6 }}>{h.invitationType === "individual" ? "Individual" : "Family"}</span>{h.source === 'open' && <span className="pill wait" style={{ marginLeft: 6 }}>open link</span>}<br /><span style={{ color: 'var(--p-muted)' }}>{h.people.map(p => p.name).join(', ')}</span></td>
                 <td data-label="Side · invited by">{[h.side, h.invitedBy].filter(Boolean).join(' · ') || '—'}</td>
                 <td data-label="Status">{statusPill(h)}</td>
                 <td data-label="Coming">{coming.length || '—'}{coming.some(p => p.addedBy === 'guest') && <span title="Includes people added by the family" style={{ color: 'var(--p-muted)' }}> +added</span>}</td>
@@ -271,6 +272,7 @@ function DeleteFamily({ eventId, h, onClose, onDeleted }: { eventId: string; h: 
 }
 
 function EditFamily({ d, h, onClose }: { d: AdminData; h: AdminHousehold | null; onClose: () => void }) {
+  const [invitationType, setInvitationType] = useState<'individual' | 'family'>(h?.invitationType ?? 'family');
   const [name, setName] = useState(h?.name ?? '');
   const [side, setSide] = useState(h?.side ?? '');
   const [invitedBy, setInvitedBy] = useState(h?.invitedBy ?? '');
@@ -294,29 +296,33 @@ function EditFamily({ d, h, onClose }: { d: AdminData; h: AdminHousehold | null;
     if (lock.current) return;
     lock.current = true; setSaving(true); setErr(null);
     try {
-      const clean = people.filter(p => p.name?.trim()).map(p => ({ ...p, name: p.name!.trim(), phone: p.phone?.replace(/[^\d+]/g, '') || null }));
-      if (!Number.isInteger(cap) || cap < 1 || cap > 20 || cap < clean.length) throw new Error('Max people must be 1–20 and cover everyone listed.');
-      await api.saveHousehold(d.event.id, { id: h?.id, name: name.trim(), side: side || null, invitedBy: invitedBy.trim() || null, cap, functionIds: fns }, clean);
+      const sourcePeople = invitationType === 'individual' ? [{ ...people[0], name: name.trim() }] : people;
+      const clean = sourcePeople.filter(p => p.name?.trim()).map(p => ({ ...p, name: p.name!.trim(), phone: p.phone?.replace(/[^\d+]/g, '') || null }));
+      const limit = invitationType === 'individual' ? 1 : cap;
+      if (!Number.isInteger(limit) || limit < 1 || limit > 20 || limit < clean.length) throw new Error('Max people must be 1–20 and cover everyone listed.');
+      await api.saveHousehold(d.event.id, { id: h?.id, name: name.trim(), invitationType, side: side || null, invitedBy: invitedBy.trim() || null, cap: limit, functionIds: fns }, clean);
       onClose();
     } catch (e) { setErr((e as Error).message); setSaving(false); lock.current = false; }
   };
-  return <dialog ref={sheet} className="family-dialog" aria-label={h ? `Edit ${h.name}` : 'Add a family'} onCancel={e => { e.preventDefault(); if (!saving) onClose(); }}>
+  return <dialog ref={sheet} className="family-dialog" aria-label={h ? `Edit ${h.name}` : 'Add invitation'} onCancel={e => { e.preventDefault(); if (!saving) onClose(); }}>
     <form className="family-edit-form" onSubmit={e => { e.preventDefault(); void save(); }}>
-      <header className="family-edit-header"><div><p className="admin-eyebrow">Personal invitation</p><h2>{h ? 'Edit family' : 'Add a family'}</h2></div><button type="button" className="admin-icon-button" disabled={saving} aria-label="Close family editor" onClick={onClose}><Icon d="M6 6l12 12M18 6L6 18" /></button></header>
+      <header className="family-edit-header"><div><p className="admin-eyebrow">Personal invitation</p><h2>{h ? 'Edit invitation' : 'Add invitation'}</h2></div><button type="button" className="admin-icon-button" disabled={saving} aria-label="Close family editor" onClick={onClose}><Icon d="M6 6l12 12M18 6L6 18" /></button></header>
       <div className="family-edit-scroll"><fieldset className="family-edit-body" disabled={saving}>
-        <div className="field"><label htmlFor="fn">Family name</label><input autoFocus required id="fn" className="input" value={name} onChange={e => setName(e.target.value)} placeholder="Kulkarni family" /></div>
+        <InvitationTypeSwitch value={invitationType} individualDisabled={people.length > 1} onChange={kind => { setInvitationType(kind); if (kind === 'individual') { setName(people[0]?.name || name); } else if (cap === 1) setCap(6); }} />
+        <p className="import-help">{invitationType === 'individual' ? 'A personal link for one guest. No family onboarding or extra people.' : 'One shared link for a family, with the maximum people you choose.'}{people.length > 1 && ' This invitation already lists multiple people, so it must remain a family invitation.'}</p>
+        <div className="field"><label htmlFor="fn">{invitationType === 'individual' ? 'Guest name' : 'Family name'}</label><input autoFocus required id="fn" className="input" value={name} onChange={e => setName(e.target.value)} placeholder={invitationType === 'individual' ? 'Full name' : 'Kulkarni family'} /></div>
         <div className="family-meta-fields">
           <div className="field"><label htmlFor="sd">Side</label><select id="sd" className="input" value={side} onChange={e => setSide(e.target.value)}><option value="">Choose a side</option><option>Bride</option><option>Groom</option><option>Both</option></select></div>
           <div className="field"><label htmlFor="ib">Invited by</label><input id="ib" className="input" value={invitedBy} onChange={e => setInvitedBy(e.target.value)} /></div>
-          <div className="field"><label htmlFor="cp">Max people</label><input id="cp" className="input" type="number" inputMode="numeric" min={1} max={20} value={cap} onChange={e => setCap(Number(e.target.value))} /></div>
+          {invitationType === 'family' && <div className="field"><label htmlFor="cp">Max people</label><input id="cp" className="input" type="number" inputMode="numeric" min={1} max={20} value={cap} onChange={e => setCap(Number(e.target.value))} /></div>}
         </div>
         {d.functions.length > 1 && <div><b>Invited to</b><div className="import-actions">{d.functions.map(f => <button type="button" key={f.id} className="chip" aria-pressed={fns.includes(f.id)} onClick={() => setFns(s => s.includes(f.id) ? s.filter(x => x !== f.id) : [...s, f.id])}>{f.nameEn}</button>)}</div></div>}
         <div className="family-people-heading"><b>People</b><span className="import-help">Names and WhatsApp numbers</span></div>
-        {people.map((p, i) => <div key={p.id ?? i} className="family-person-fields"><div className="field"><label htmlFor={`person-${i}`}>Person {i + 1} name</label><input id={`person-${i}`} className="input" placeholder="Full name" value={p.name ?? ''} onChange={e => upd(i, { name: e.target.value })} /></div><div className="field"><label htmlFor={`phone-${i}`}>Person {i + 1} WhatsApp number</label><input id={`phone-${i}`} className="input" placeholder="Optional · include country code" inputMode="tel" value={p.phone ?? ''} onChange={e => upd(i, { phone: e.target.value })} /></div><label className="family-child-field"><input type="checkbox" checked={!!p.isChild} onChange={e => upd(i, { isChild: e.target.checked })} />Child</label></div>)}
-        <button type="button" className="abtn" disabled={people.length >= 20} onClick={() => setPeople(ps => [...ps, { name: '', phone: '' }])}>+ Add person</button>
+        {people.map((p, i) => <div key={p.id ?? i} className="family-person-fields">{invitationType === "family" && <div className="field"><label htmlFor={`person-${i}`}>Person {i + 1} name</label><input id={`person-${i}`} className="input" placeholder="Full name" value={p.name ?? ''} onChange={e => upd(i, { name: e.target.value })} /></div>}<div className="field"><label htmlFor={`phone-${i}`}>Person {i + 1} WhatsApp number</label><input id={`phone-${i}`} className="input" placeholder="Optional · include country code" inputMode="tel" value={p.phone ?? ''} onChange={e => upd(i, { phone: e.target.value })} /></div><label className="family-child-field"><input type="checkbox" checked={!!p.isChild} onChange={e => upd(i, { isChild: e.target.checked })} />Child</label></div>)}
+        {invitationType === 'family' && <button type="button" className="abtn" disabled={people.length >= 20} onClick={() => setPeople(ps => [...ps, { name: '', phone: '' }])}>+ Add person</button>}
         {err && <p className="error" role="alert">{err}</p>}
       </fieldset></div>
-      <footer className="family-edit-actions"><button type="button" className="abtn" disabled={saving} onClick={onClose}>Cancel</button><button className="abtn red" disabled={!name.trim() || saving}>{saving ? 'Saving…' : 'Save family'}</button></footer>
+      <footer className="family-edit-actions"><button type="button" className="abtn" disabled={saving} onClick={onClose}>Cancel</button><button className="abtn red" disabled={!name.trim() || saving}>{saving ? 'Saving…' : 'Save invitation'}</button></footer>
     </form>
   </dialog>;
 }

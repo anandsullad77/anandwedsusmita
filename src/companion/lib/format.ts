@@ -19,5 +19,5 @@ export const shortDate = (iso: string) =>
 export const waLink = (phone: string | undefined, text: string) =>
   `https://wa.me/${(phone ?? '').replace(/\D/g, '')}?text=${encodeURIComponent(text)}`;
 
-export const inviteMessage = (familyName: string, couple: string, link: string, pin: string) =>
-  `Namaskara! ${couple} warmly invite the ${familyName} to their wedding. Open your invitation here: ${link}\n\nIf you open it on another phone later, the wedding PIN is ${pin}.`;
+export const inviteMessage = (familyName: string, couple: string, link: string, pin: string, individual = false) =>
+  `Namaskara! ${couple} warmly invite ${individual ? familyName : `the ${familyName}`} to their wedding. Open your invitation here: ${link}\n\nIf you open it on another phone later, the wedding PIN is ${pin}.`;

@@ -1,7 +1,7 @@
 import type { Photo, ReactionCounts, ReactionKind } from './types';
 
 export const REACTIONS: { id: ReactionKind; label: string; emoji: string; color: string }[] = [
-  { id: 'akshate', label: 'Blessings', emoji: '🌾', color: '#9b6200' },
+  { id: 'akshate', label: 'Blessings', emoji: '', color: '#9b6200' },
   { id: 'love', label: 'Love', emoji: '❤️', color: '#a53051' },
   { id: 'wow', label: 'Wow', emoji: '😮', color: '#8c620c' },
   { id: 'celebrate', label: 'Celebrate', emoji: '🎉', color: '#6850a1' },

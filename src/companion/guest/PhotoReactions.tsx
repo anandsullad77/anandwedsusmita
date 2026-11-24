@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import type { Photo, ReactionKind } from '../lib/types';
 import { REACTIONS } from '../lib/reactions';
 import './reactions.css';
+import ReactionSymbol from './ReactionSymbol';
 
 export default function PhotoReactions({ photo, pending, onChange }: { photo: Photo; pending: boolean; onChange: (kind: ReactionKind | null) => Promise<void> }) {
   const [open, setOpen] = useState(false);
@@ -80,10 +81,10 @@ export default function PhotoReactions({ photo, pending, onChange }: { photo: Ph
       }} onPointerUp={cancelHold} onPointerCancel={() => { cancelHold(); held.current = false; }} onPointerMove={event => { if (event.pointerType !== 'mouse' && event.buttons && Math.abs(event.movementY) > 8) cancelHold(); }} onContextMenu={event => event.preventDefault()} onKeyDown={event => {
         if (event.key === 'ArrowDown' || event.key === 'ArrowUp') { event.preventDefault(); setOpen(true); requestAnimationFrame(() => focusItem(event.key === 'ArrowUp' ? 3 : 0)); }
       }}>
-        <span className="reaction-trigger-emoji" aria-hidden="true">{current?.emoji ?? '♡'}</span><span>{pending ? 'Saving…' : current?.label ?? 'React'}</span>
+        <span className="reaction-trigger-emoji" aria-hidden="true">{current ? <ReactionSymbol kind={current.id} /> : '♡'}</span><span>{pending ? 'Saving…' : current?.label ?? 'React'}</span>
       </button>
       {!!total && <span className="reaction-summary" role="img" aria-label={used.map(r => `${photo.reactionCounts[r.id]} ${r.label}`).join(', ')}>
-        <span className="reaction-summary-icons" aria-hidden="true">{used.map(r => <span key={r.id} title={`${r.label}: ${photo.reactionCounts[r.id]}`}>{r.emoji}</span>)}</span><span aria-hidden="true">{total}</span>
+        <span className="reaction-summary-icons" aria-hidden="true">{used.map(r => <span key={r.id} title={`${r.label}: ${photo.reactionCounts[r.id]}`}><ReactionSymbol kind={r.id} /></span>)}</span><span aria-hidden="true">{total}</span>
       </span>}
     </div>
     {open && createPortal(<div ref={menu} id={menuId} className="reaction-picker" style={{ left: position?.left ?? 0, top: position?.top ?? 0, visibility: position ? 'visible' : 'hidden' }} role="menu" aria-label="Choose a photo reaction" onPointerEnter={cancelLeave} onPointerLeave={event => {
@@ -96,7 +97,7 @@ export default function PhotoReactions({ photo, pending, onChange }: { photo: Ph
         focusItem(event.key === 'Home' ? 0 : event.key === 'End' ? 3 : (index + (['ArrowRight', 'ArrowDown'].includes(event.key) ? 1 : -1) + 4) % 4);
       }
       if (event.key === 'Tab') requestAnimationFrame(() => close());
-    }}>{REACTIONS.map(reaction => <button key={reaction.id} type="button" role="menuitemradio" aria-label={reaction.label} aria-checked={photo.myReaction === reaction.id} disabled={pending} tabIndex={-1} style={{ color: reaction.color }} onClick={() => void choose(reaction.id)}><span aria-hidden="true">{reaction.emoji}</span><b>{reaction.label}</b></button>)}</div>, document.body)}
+    }}>{REACTIONS.map(reaction => <button key={reaction.id} type="button" role="menuitemradio" aria-label={reaction.label} aria-checked={photo.myReaction === reaction.id} disabled={pending} tabIndex={-1} style={{ color: reaction.color }} onClick={() => void choose(reaction.id)}><span aria-hidden="true"><ReactionSymbol kind={reaction.id} /></span><b>{reaction.label}</b></button>)}</div>, document.body)}
     {error && <p className="reaction-error error" role="alert">{error}</p>}
     <span className="sr-only" role="status">{current ? `${current.label} selected for this photo.` : 'No reaction selected for this photo.'}</span>
   </div>;

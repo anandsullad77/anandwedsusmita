@@ -72,24 +72,26 @@ export function GuestAccount({ base = '/invitation' }: { base?: string }) {
     };
   }, [open]);
 
-  if (!user) return null;
+  if (!user && !hasFamily) return null;
+  const individual = family?.invitationType === 'individual';
+  const account = user ?? { id: 'family-session', name: individual ? 'Guest' : 'Family', host: false };
   return <div className="guest-account" ref={container} onKeyDown={event => {
     if (event.key === 'Escape' && open) {
       event.preventDefault(); event.stopPropagation(); setOpen(false); trigger.current?.focus();
     }
   }}>
-    <button ref={trigger} type="button" className="guest-account-trigger" aria-label={`Account menu for ${user.name}`} aria-expanded={open} aria-controls={panelId} onClick={() => setOpen(value => !value)}>
-      <GuestAvatar key={user.id} user={user} />
+    <button ref={trigger} type="button" className="guest-account-trigger" aria-label={`Account menu for ${account.name}`} aria-expanded={open} aria-controls={panelId} onClick={() => setOpen(value => !value)}>
+      <GuestAvatar key={account.id} user={account} />
     </button>
     {open && <div className="guest-account-panel" id={panelId}>
-      <div className="guest-account-details"><GuestAvatar user={user} /><div><b>{user.name}</b>{user.email && <span>{user.email}</span>}</div></div>
+      <div className="guest-account-details"><GuestAvatar user={account} /><div><b>{user ? user.name : individual ? 'Your invitation' : 'Your family invitation'}</b>{user?.email && <span>{user.email}</span>}</div></div>
       <div className="guest-account-actions">
         <Link to={base} onClick={() => setOpen(false)}><Icon size={18} d="M3 5h18v14H3zM3 5l9 7 9-7" />Wedding invitation</Link>
-        {hasFamily && <Link to="/app/family" onClick={() => setOpen(false)}><Icon size={18} d="M8 12a3 3 0 1 0 0-6 3 3 0 0 0 0 6M16 12a3 3 0 1 0 0-6 3 3 0 0 0 0 6M3 20a5 5 0 0 1 10 0M13 16a5 5 0 0 1 8 4" />Family RSVP</Link>}
-        <button type="button" disabled={busy} onClick={async () => {
+        {hasFamily && <Link to="/app/family" onClick={() => setOpen(false)}><Icon size={18} d="M8 12a3 3 0 1 0 0-6 3 3 0 0 0 0 6M16 12a3 3 0 1 0 0-6 3 3 0 0 0 0 6M3 20a5 5 0 0 1 10 0M13 16a5 5 0 0 1 8 4" />{individual ? 'My RSVP' : 'Family RSVP'}</Link>}
+        {user && <button type="button" disabled={busy} onClick={async () => {
           setBusy(true); setError(null);
           try { await signOutGuest(); } catch (error) { setError((error as Error).message); setBusy(false); }
-        }}><Icon size={18} d="M9 4H4v16h5M14 8l4 4-4 4M8 12h13" />{busy ? 'Signing out…' : 'Sign out'}</button>
+        }}><Icon size={18} d="M9 4H4v16h5M14 8l4 4-4 4M8 12h13" />{busy ? 'Signing out…' : 'Sign out'}</button>}
       </div>
       {error && <p className="error guest-account-error" role="alert">{error}</p>}
     </div>}

@@ -16,6 +16,8 @@
     "test:recovery": "node scripts/test-host-recovery.cjs",
     "test:hosts": "node scripts/test-host-team.cjs",
     "test:family-profile": "node scripts/test-family-profile.cjs",
+    "test:family-capacity": "node scripts/test-family-capacity.cjs",
+    "test:individuals": "node scripts/test-individual-invites.cjs",
     "test:browser": "node scripts/test-wedding-browser.cjs",
     "test:feed": "node scripts/test-feed-performance.cjs",
     "test:previews": "node scripts/test-invitation-previews.cjs",
