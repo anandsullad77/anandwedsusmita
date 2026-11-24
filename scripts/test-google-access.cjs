@@ -186,6 +186,45 @@ async function main() {
     await asUser(anonymous);
     assert.equal((await rows('storage.objects')).filter(row => row.bucket_id === 'invitation-previews').length, 0, 'Hidden photo sections do not allow new preview signatures');
     console.log('PASS: hosts manage up to three previews; public visitors see only selected images; guest photos stay private; hidden/removed previews and invalid writes are blocked');
+    // Family removal uses the existing host-only DELETE policy and FK cascades.
+    await db.exec('reset role');
+    const removedFamily = id(400), removedPerson = id(401), keptPhoto = id(402), linkedUser = id(403), keptWish = id(405);
+    await db.query('insert into auth.users values ($1,$2)', [linkedUser, 'family-delete@example.com']);
+    await db.query("insert into households (id,event_id,name,token,coming) values ($1,$2,'Delete this family','delete-family-token','yes'),($3,$4,'Other wedding family','other-family-token',null)", [removedFamily, wedding, id(410), other]);
+    await db.query("insert into people (id,event_id,household_id,name) values ($1,$2,$3,'Family member')", [removedPerson, wedding, removedFamily]);
+    await db.query('insert into devices (user_id,event_id,household_id,person_id) values ($1,$2,$3,$4)', [linkedUser, wedding, removedFamily, removedPerson]);
+    await db.query("insert into household_changes (household_id,by_name,summary) values ($1,'Family member','RSVP received')", [removedFamily]);
+    await db.query("insert into photos (id,event_id,person_id,storage_path,uploader_name,uploaded_by,post_id,post_position) values ($1,$2,$3,$4,'Family member',$5,$6,0)", [keptPhoto, wedding, removedPerson, `${wedding}/${keptPhoto}.webp`, linkedUser, id(404)]);
+    await db.query("insert into storage.objects (bucket_id,name) values ('photos',$1)", [`${wedding}/${keptPhoto}.webp`]);
+    await db.query("insert into guestbook_messages (id,event_id,user_id,request_id,name,message,status) values ($1,$2,$3,$1,'Family member','Best wishes!','approved')", [keptWish, wedding, linkedUser]);
+    const removeFamily = (household = removedFamily, event = wedding) => db.query('delete from households where event_id=$1 and id=$2 returning id', [event, household]);
+    for (const user of [anonymous, google, outsider, linkedUser]) {
+      await asUser(user);
+      assert.equal((await removeFamily()).rows.length, 0, 'Guests cannot delete a family, including their own');
+    }
+    await asUser(null);
+    await assert.rejects(removeFamily(), /permission denied/);
+    await asUser(host);
+    assert.equal((await removeFamily(id(410), other)).rows.length, 0, 'A host cannot delete families from another wedding');
+    assert.equal((await removeFamily(removedFamily, other)).rows.length, 0, 'A mismatched event never deletes a family');
+    assert.deepEqual((await removeFamily()).rows, [{ id: removedFamily }]);
+    assert.equal((await removeFamily()).rows.length, 0, 'A missing family returns no deleted row');
+    await db.exec('reset role');
+    for (const [table, column, value] of [['households', 'id', removedFamily], ['people', 'household_id', removedFamily], ['devices', 'household_id', removedFamily], ['household_changes', 'household_id', removedFamily]]) {
+      assert.equal((await db.query(`select * from ${table} where ${column}=$1`, [value])).rows.length, 0, table + ' records are removed');
+    }
+    const preservedPhoto = (await db.query('select * from photos where id=$1', [keptPhoto])).rows[0];
+    assert.equal(preservedPhoto.person_id, null);
+    assert.equal(preservedPhoto.uploader_name, 'Family member');
+    assert.equal(preservedPhoto.post_id, id(404));
+    assert.equal((await db.query('select * from storage.objects where name=$1', [preservedPhoto.storage_path])).rows.length, 1);
+    assert.equal((await db.query('select * from guestbook_messages where id=$1', [keptWish])).rows.length, 1);
+    assert.equal((await db.query('select * from households where id in ($1,$2)', [id(20), id(410)])).rows.length, 2, 'Other families stay intact');
+    await asUser(linkedUser);
+    assert.equal((await db.query('select is_guest($1) as allowed', [wedding])).rows[0].allowed, false, 'Deleted family devices lose family access');
+    assert.equal((await db.query("select invite_bundle('delete-family-token') as bundle")).rows[0].bundle, null, 'Deleted invitation tokens stop working');
+    console.log('PASS: only wedding hosts can delete families; members, devices and RSVP history cascade; photos, files, wishes and other families remain; personal invite access is revoked');
+
     await db.exec('reset role; grant usage on schema public to service_role;');
     const recoveryHosts = [];
     for (const [index, role] of ['owner', 'cohost', 'planner', 'photographer'].entries()) {
@@ -207,6 +246,72 @@ async function main() {
     await asUser(host);
     await assert.rejects(db.query('select host_password_reset_email($1)', [recoveryHosts[0]]), /permission denied/);
     console.log('PASS: recovery lookup accepts wedding owners/hosts only; guests, other weddings and public callers cannot look up host emails');
+
+    const analytics = async (event = wedding) => (await db.query('select admin_wedding_analytics($1) as data', [event])).rows[0].data;
+    const beforeAnalytics = await analytics();
+    await asUser(null);
+    await db.query('select record_wedding_visit($1)', [id(9000)]);
+    await db.query('select record_wedding_visit($1)', [id(9000)]);
+    await assert.rejects(analytics(), /permission denied/);
+    await assert.rejects(db.query('select * from wedding_analytics_visits'), /permission denied/);
+    await assert.rejects(db.query('select record_wedding_signin($1)', [id(9000)]), /permission denied/);
+    for (const user of [anonymous, email, family]) {
+      await asUser(user);
+      await assert.rejects(db.query('select record_wedding_signin($1)', [id(9000)]), /Sign in with Google/);
+      await assert.rejects(analytics(), /Only hosts/);
+      assert.deepEqual(await rows('wedding_analytics_visits'), []);
+      assert.deepEqual(await rows('wedding_analytics_signins'), []);
+      await assert.rejects(db.query('insert into wedding_analytics_signins (event_id,user_id) values ($1,$2)', [wedding, user]), /row-level security/);
+    }
+    await db.exec('reset role');
+    const freshGoogle = id(850), legacyGoogle = id(851), googleHost = id(852);
+    for (const user of [freshGoogle, legacyGoogle, googleHost]) {
+      await db.query('insert into auth.users values ($1,$2)', [user, `${user}@example.com`]);
+      await db.query("insert into auth.identities values ($1,'google')", [user]);
+    }
+    await db.query("insert into hosts (event_id,user_id,role) values ($1,$2,'cohost')", [wedding, googleHost]);
+    await db.query('insert into event_visitors (event_id,user_id) values ($1,$2)', [wedding, legacyGoogle]);
+    await db.query('insert into devices (user_id,event_id,household_id,person_id) values ($1,$2,$3,$4)', [legacyGoogle, wedding, id(20), id(21)]);
+    await asUser(freshGoogle);
+    for (const visitor of [id(9000), id(9000), id(9001)]) await db.query('select record_wedding_signin($1)', [visitor]);
+    await assert.rejects(analytics(), /Only hosts/);
+    await asUser(googleHost);
+    await db.query('select record_wedding_signin($1)', [id(9002)]);
+    const signInCounts = await analytics();
+    assert.equal(signInCounts.visitors, 2, 'Repeated page opens and sign-ins do not count the same browser twice');
+    assert.equal(signInCounts.signedIn, beforeAnalytics.signedIn + 2, 'Accounts count once across devices; existing visitor/family sign-ins count once; hosts do not count');
+    await asUser(host);
+    await assert.rejects(analytics(other), /Only hosts/);
+    await db.exec('reset role');
+    for (const position of [2, 0, 1]) {
+      await db.query(`insert into photos (id,event_id,storage_path,uploader_name,caption,post_id,post_position,hidden,created_at)
+        values ($1,$2,$3,'Carousel guest','Three photos in one post',$4,$5,$6,now() + interval '2 days')`,
+      [id(860 + position), wedding, `${wedding}/analytics-${position}.webp`, id(870), position, position === 2]);
+    }
+    await db.query(`insert into photos (event_id,storage_path,uploader_name,created_at)
+      select $1,'analytics-' || n,'Earlier guest',now() from generate_series(1,205) n`, [wedding]);
+    for (const [wishId, status, days] of [[id(880), 'pending', 3], [id(881), 'rejected', 4]]) {
+      await db.query(`insert into guestbook_messages (id,event_id,user_id,request_id,name,message,status,created_at)
+        values ($1,$2,$3,$1,'Analytics guest','Wishing you joy!',$4,now() + $5 * interval '1 day')`, [wishId, wedding, freshGoogle, status, days]);
+    }
+    const expectedPhotos = Number((await db.query('select count(distinct coalesce(post_id,id)) as n from photos where event_id=$1', [wedding])).rows[0].n);
+    const expectedWishes = Number((await db.query('select count(*) as n from guestbook_messages where event_id=$1', [wedding])).rows[0].n);
+    await asUser(host);
+    const summary = await analytics();
+    assert.equal(summary.photoPosts, expectedPhotos, 'Totals include posts beyond the feed limit of 200');
+    assert.equal(summary.wishes, expectedWishes, 'Totals include pending/rejected wishes and stay event-scoped');
+    assert.equal(summary.photoPosts, beforeAnalytics.photoPosts + 206, 'Three carousel images count as one post');
+    assert.equal(summary.recentPosts.length, 20);
+    assert.equal(summary.recentPosts[0].status, 'rejected');
+    assert.equal(summary.recentPosts[1].status, 'pending');
+    const carousel = summary.recentPosts.find(post => post.id === id(870));
+    assert.equal(carousel.photos, 3); assert.equal(carousel.status, 'partly_hidden');
+    assert.equal(carousel.photoPath, `${wedding}/analytics-0.webp`, 'The first slide is the thumbnail');
+    assert.equal(carousel.text, 'Three photos in one post');
+    await asUser(outsider);
+    const otherAnalytics = await analytics(other);
+    assert.equal(otherAnalytics.visitors, 0); assert.equal(otherAnalytics.photoPosts, 1); assert.equal(otherAnalytics.wishes, 1);
+    console.log('PASS: analytics deduplicate browsers/accounts, include existing guest sign-ins, exclude hosts, group carousels, count all posts, protect private activity and isolate weddings');
   } finally { await db.close(); }
 }
 main().catch(error => { console.error(error); process.exitCode = 1; });

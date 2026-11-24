@@ -5,8 +5,9 @@ import { DEMO_PIN, demoEvent, demoFunctions, demoHouseholds } from './demoSeed';
 import { familyKey, validateHouseholdImport } from './familyImport';
 import { defaultGeneralSettings, normalizeGeneralSettings, validateGeneralSettings, validateWish } from './generalInvitation';
 import { photoQuest } from './photoQuests';
+import { demoVisitorCount } from './visitAnalytics';
 import type {
-  AdminData, AdminHousehold, Announcement, Backend, Change, EventInfo, Fn, GeneralInvitationSettings, Household, InviteBundle, ListMatch, Person, Photo, RsvpPayload, Wish
+  AdminData, AdminHousehold, AnalyticsPost, Announcement, Backend, Change, EventInfo, Fn, GeneralInvitationSettings, Household, InviteBundle, ListMatch, Person, Photo, RsvpPayload, Wish
 } from './types';
 
 type DBPhoto = Omit<Photo, 'url' | 'mine' | 'akshate' | 'uploadedByMe'> & { eventId: string; personId: string | null; uploadedBy?: string; akshateBy: string[]; flaggedBy: string[] };
@@ -18,7 +19,7 @@ type DB = {
   visitors: { device: string; eventId: string; name: string | null }[];
   generalSettings: Record<string, GeneralInvitationSettings>;
   wishes: (Wish & { eventId: string; device: string; requestId: string })[];
-  changes: (Change & { householdId: string })[];
+  changes: (Change & { householdId: string; requestId?: string })[];
   photos: DBPhoto[];
   announcements: (Announcement & { eventId: string })[];
   requests: { id: string; eventId: string; name: string; phone?: string; note?: string; status: string; at: string }[];
@@ -286,20 +287,27 @@ export const localBackend: Backend = {
     const d = myDevice(db, eventId);
     const h = db.households.find(x => x.id === d.householdId)!;
     const me = h.people.find(p => p.id === d.personId);
+    if (payload.requestId && db.changes.some(c => c.householdId === h.id && c.requestId === payload.requestId)) return;
+    const allowed = new Set(h.functionIds ?? []);
+    for (const item of [...(payload.add ?? []), ...(payload.attendance ?? [])]) {
+      if (item.functionIds?.some(id => !allowed.has(id))) throw new Error('Choose only the events on your invitation');
+    }
+    if (payload.attendance?.some(a => !h.people.some(p => p.id === a.personId))) throw new Error('A family member has changed. Reload your invitation and try again.');
     for (const a of payload.add ?? []) {
       if (h.people.length >= h.cap) throw new Error('Your family is full — ask the hosts');
-      h.people.push({ id: 'pp-' + uid(), name: a.name, relation: a.relation ?? null, isChild: !!a.isChild, attending: [], addedBy: 'guest' });
+      if (!a.name.trim() || a.name.trim().length > 80) throw new Error('Enter a name between 1 and 80 characters');
+      h.people.push({ id: 'pp-' + uid(), name: a.name.trim(), relation: a.relation ?? null, isChild: !!a.isChild, attending: a.functionIds ?? [], addedBy: 'guest' });
     }
     for (const a of payload.attendance ?? []) {
       const p = h.people.find(x => x.id === a.personId); if (p) p.attending = a.functionIds;
     }
     if (payload.coming) h.coming = payload.coming;
-    if (payload.travel) h.travel = payload.travel;
-    if (payload.stay) h.stay = payload.stay;
-    if (payload.blessing) h.blessing = payload.blessing;
-    h.inviteStatus = 'responded';
+    if (payload.travel !== undefined) h.travel = payload.travel;
+    if (payload.stay !== undefined) h.stay = payload.stay;
+    if (payload.blessing !== undefined) h.blessing = payload.blessing;
+    if (payload.coming) h.inviteStatus = 'responded';
     h.updatedAt = now();
-    db.changes.push({ householdId: h.id, byName: me?.name ?? 'Someone', summary: payload.summary, at: now() });
+    db.changes.push({ householdId: h.id, byName: me?.name ?? 'Someone', summary: payload.summary, at: now(), requestId: payload.requestId });
     save(db);
   },
 
@@ -434,6 +442,29 @@ export const localBackend: Backend = {
       requests: db.requests.filter(r => r.eventId === eventId)
     } satisfies AdminData;
   },
+  async adminAnalytics(eventId) {
+    if (!hostEmail) throw new Error('Only hosts can view analytics');
+    const db = load();
+    if (!db.events.some(e => e.id === eventId)) throw new Error('Event not found');
+    const groups = new Map<string, DBPhoto[]>();
+    for (const photo of db.photos.filter(p => p.eventId === eventId)) {
+      const key = photo.postId ?? photo.id;
+      groups.set(key, [...(groups.get(key) ?? []), photo]);
+    }
+    const photoPosts: (AnalyticsPost & { previewId?: string })[] = [...groups].map(([id, photos]) => {
+      photos.sort((a, b) => (a.postPosition ?? 0) - (b.postPosition ?? 0));
+      const first = photos[0];
+      return { id, kind: 'photo', name: first.uploaderName, text: first.caption ?? null, photos: photos.length,
+        createdAt: photos.map(p => p.createdAt).sort().at(-1)!, previewId: first.id,
+        status: photos.every(p => p.hidden) ? 'hidden' : photos.some(p => p.hidden) ? 'partly_hidden' : 'shared' };
+    });
+    const wishes: AnalyticsPost[] = db.wishes.filter(w => w.eventId === eventId).map(w => ({
+      id: w.id, kind: 'wish', name: w.name, text: w.message, photos: 0, createdAt: w.createdAt, status: w.status,
+    }));
+    const recentPosts = await Promise.all([...photoPosts, ...wishes].sort((a, b) => b.createdAt.localeCompare(a.createdAt)).slice(0, 20)
+      .map(async post => { const { previewId, ...row } = post as AnalyticsPost & { previewId?: string }; return { ...row, url: previewId ? await photoUrl(previewId) : undefined }; }));
+    return { visitors: demoVisitorCount(), signedIn: 0, photoPosts: groups.size, wishes: wishes.length, recentPosts };
+  },
   async saveHousehold(eventId, hh, people) {
     const db = load();
     let h = hh.id ? db.households.find(x => x.id === hh.id) : undefined;
@@ -450,6 +481,18 @@ export const localBackend: Backend = {
       if (ex) Object.assign(ex, p);
       else if (p.name) h.people.push({ id: 'pp-' + uid(), name: p.name, relation: p.relation ?? null, isChild: !!p.isChild, attending: [], addedBy: 'host', phone: p.phone ?? null });
     }
+    save(db);
+  },
+  async deleteHousehold(eventId, householdId) {
+    if (!hostEmail) throw new Error('Only hosts can delete families');
+    const db = load();
+    const h = db.households.find(x => x.id === householdId && x.eventId === eventId);
+    if (!h) throw new Error('Family not found. Refresh the list and try again.');
+    const people = new Set(h.people.map(p => p.id));
+    db.households = db.households.filter(x => x.id !== h.id);
+    db.devices = db.devices.filter(x => x.householdId !== h.id);
+    db.changes = db.changes.filter(x => x.householdId !== h.id);
+    for (const photo of db.photos) if (photo.personId && people.has(photo.personId)) photo.personId = null;
     save(db);
   },
   async importHouseholds(eventId, households) {

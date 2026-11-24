@@ -48,6 +48,8 @@ Use the Supabase **SQL Editor** and run each file in `supabase/migrations/` in t
 
 For owner and host password recovery, apply `0012_host_password_recovery.sql` next and complete [the recovery function and email setup](HOST-PASSWORD-RECOVERY.md). The SQL migration alone does not enable recovery emails.
 
+For the **Admin → Analytics** tab, apply `0013_wedding_analytics.sql` after 0012, before deploying the updated app. It adds unique browser visits, verified Google guest sign-ins, and a host-only summary of all photo posts and wishes. Existing sign-ins and posts are included; visit counts start when tracking is enabled. No extra credentials or third-party analytics account are needed. Run `npm.cmd run test:access` for database checks and `npm.cmd run test:analytics` with the local dev server on port 5175 for browser checks.
+
 ## 3. Configure the wedding and host access
 
 Open `supabase/seed_anand_susmita.sql`. Edit the three values at the top:
@@ -120,3 +122,5 @@ Local SQL fixtures and browser demo tests cannot verify your project's Auth sett
 - Confirm Kannada wording and any placeholder Banni story artwork before sharing.
 
 No live Supabase changes or production deployment were made as part of the local integration.
+
+For the streamlined family RSVP, apply `0014_streamlined_rsvp.sql` after 0013 before deploying the updated app. The migration makes retries safe and allows uncertain travel and stay details to be cleared.

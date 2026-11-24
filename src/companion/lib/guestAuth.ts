@@ -4,6 +4,7 @@ import { clearSession, getSession } from './familySession';
 import type { Session } from './types';
 import { WEDDING_SLUG } from './wedding';
 import { siteOrigin } from '../../siteOrigin';
+import { trackGuestSignIn } from './visitAnalytics';
 
 export type GuestIdentity = { id: string; name: string; email?: string; avatarUrl?: string; host: boolean };
 type AuthState = { ready: boolean; user: GuestIdentity | null };
@@ -55,7 +56,10 @@ export async function refreshGuestAuth() {
   const request = ++revision;
   try {
     const user = await readGuestIdentity();
-    if (request === revision) publish({ ready: true, user });
+    if (request === revision) {
+      publish({ ready: true, user });
+      if (user && !user.host) void trackGuestSignIn(user.id);
+    }
   } catch { if (request === revision) publish({ ready: true, user: null }); }
 }
 

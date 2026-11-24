@@ -102,16 +102,23 @@ export type PhotoQuestSummary = { contributions: number; completedQuestIds: stri
 export type RsvpPayload = {
   coming?: 'yes' | 'no';
   attendance?: { personId: string; functionIds: string[] }[];
-  add?: { name: string; relation?: string; isChild?: boolean }[];
-  travel?: Travel;
-  stay?: Stay;
+  add?: { name: string; relation?: string; isChild?: boolean; functionIds?: string[] }[];
+  travel?: Travel | null;
+  stay?: Stay | null;
   blessing?: string;
+  requestId?: string;
   summary: string;
 };
 
 export type ListMatch = { personId: string; name: string; household: string; householdToken: string };
 
 export type AdminHousehold = Household & { people: Person[] };
+
+export type AnalyticsPost = {
+  id: string; kind: 'photo' | 'wish'; name: string; text: string | null;
+  photos: number; createdAt: string; status: string; url?: string;
+};
+export type AdminAnalytics = { visitors: number; signedIn: number; photoPosts: number; wishes: number; recentPosts: AnalyticsPost[] };
 
 export type HouseholdImport = {
   name: string;
@@ -165,7 +172,9 @@ export interface Backend {
   hostSignIn(email: string, password: string): Promise<boolean>;
   hostEvents(): Promise<EventInfo[]>;
   adminData(eventId: string): Promise<AdminData>;
+  adminAnalytics(eventId: string): Promise<AdminAnalytics>;
   saveHousehold(eventId: string, hh: Partial<AdminHousehold> & { name: string }, people: Partial<Person>[]): Promise<void>;
+  deleteHousehold(eventId: string, householdId: string): Promise<void>;
   importHouseholds(eventId: string, households: HouseholdImport[]): Promise<HouseholdImportResult>;
   setInviteStatus(householdId: string, status: Household['inviteStatus']): Promise<void>;
   setPhoto(photoId: string, patch: { hidden?: boolean; pinned?: boolean }): Promise<void>;

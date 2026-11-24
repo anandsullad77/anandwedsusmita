@@ -6,6 +6,7 @@ import type { AdminData, AdminHousehold, EventInfo, Person, Photo } from '../lib
 import FamilyExcelImport from './FamilyExcelImport';
 import GeneralInvitationAdmin from './GeneralInvitationAdmin';
 import AdminNavigation from './AdminNavigation';
+import Analytics from './Analytics';
 import { Icon } from '../guest/Icon';
 import { useVisibleViewport } from '../lib/useVisibleViewport';
 import MomentTag from '../guest/MomentTag';
@@ -45,6 +46,7 @@ export default function Admin() {
             <Route path="families" element={<Families d={data} reload={reload} />} />
             <Route path="general" element={<GeneralInvitationAdmin d={data} />} />
             <Route path="photos" element={<Photos d={data} reload={reload} />} />
+            <Route path="analytics" element={<Analytics eventId={data.event.id} />} />
             <Route path="updates" element={<Updates d={data} reload={reload} />} />
             <Route path="settings" element={<Settings d={data} reload={reload} />} />
           </Routes>
@@ -164,6 +166,7 @@ function Families({ d, reload }: { d: AdminData; reload: () => void }) {
   const [q, setQ] = useState('');
   const [filter, setFilter] = useState<'all' | 'not_sent' | 'waiting' | 'open'>('all');
   const [edit, setEdit] = useState<AdminHousehold | 'new' | null>(null);
+  const [remove, setRemove] = useState<AdminHousehold | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const couple = `${d.event.coupleA} & ${d.event.coupleB}`;
@@ -209,6 +212,7 @@ function Families({ d, reload }: { d: AdminData; reload: () => void }) {
                   {h.inviteStatus !== 'responded' && <button className={`abtn ${h.inviteStatus === 'not_sent' ? 'red' : 'solid'}`} onClick={() => send(h)}>{h.inviteStatus === 'not_sent' ? 'Send on WhatsApp' : 'Nudge'}</button>}
                   <button className="abtn" onClick={async () => { setActionError(null); try { await navigator.clipboard.writeText(link(h)); setNotice(`Invitation link copied for ${h.name}.`); } catch { setActionError('Could not copy the invitation link. Please try again.'); } }}>Copy link</button>
                   <button className="abtn" onClick={() => setEdit(h)}>Edit</button>
+                  <button className="abtn danger" aria-label={`Delete ${h.name}`} onClick={() => { setNotice(null); setActionError(null); setRemove(h); }}>Delete</button>
                 </td>
               </tr>
             );
@@ -218,7 +222,47 @@ function Families({ d, reload }: { d: AdminData; reload: () => void }) {
       </table>
     </div>
     {edit && <EditFamily d={d} h={edit === 'new' ? null : edit} onClose={() => { setEdit(null); reload(); }} />}
+    {remove && <DeleteFamily eventId={d.event.id} h={remove} onClose={() => setRemove(null)} onDeleted={() => { setNotice(`${remove.name} deleted.`); setRemove(null); reload(); }} />}
   </>);
+}
+
+function DeleteFamily({ eventId, h, onClose, onDeleted }: { eventId: string; h: AdminHousehold; onClose: () => void; onDeleted: () => void }) {
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+  const sheet = useRef<HTMLDialogElement>(null);
+  const lock = useRef(false);
+  const deleted = useRef(false);
+  const returnFocus = useRef<HTMLElement | null>(null);
+  useVisibleViewport(sheet);
+  useEffect(() => {
+    returnFocus.current ??= document.activeElement as HTMLElement | null;
+    const dialog = sheet.current;
+    dialog?.showModal();
+    return () => {
+      dialog?.close();
+      (deleted.current ? document.getElementById('fq') : returnFocus.current)?.focus({ preventScroll: true });
+    };
+  }, []);
+  const remove = async () => {
+    if (lock.current) return;
+    lock.current = true; setBusy(true); setErr(null);
+    try {
+      await api.deleteHousehold(eventId, h.id);
+      deleted.current = true;
+      onDeleted();
+    } catch (e) { setErr((e as Error).message); setBusy(false); lock.current = false; }
+  };
+  return <dialog ref={sheet} className="family-dialog family-delete-dialog" role="alertdialog" aria-labelledby="delete-family-title" aria-describedby="delete-family-description" onCancel={e => { e.preventDefault(); if (!lock.current) onClose(); }}>
+    <form className="family-edit-form" onSubmit={e => { e.preventDefault(); void remove(); }}>
+      <header className="family-edit-header"><h2 id="delete-family-title">Delete family?</h2></header>
+      <div className="family-edit-scroll"><div className="family-edit-body">
+        <p id="delete-family-description">This will permanently delete <b>{h.name}</b>, all {h.people.length} family {h.people.length === 1 ? 'member' : 'members'}, and their RSVP, travel and stay details. Their personal invitation link will stop working. This cannot be undone.</p>
+        <p>Photos and wishes already shared will be kept.</p>
+        {err && <p className="error" role="alert">{err}</p>}
+      </div></div>
+      <footer className="family-edit-actions"><button autoFocus type="button" className="abtn" disabled={busy} onClick={onClose}>Cancel</button><button className="abtn red" disabled={busy}>{busy ? 'Deleting…' : 'Delete family'}</button></footer>
+    </form>
+  </dialog>;
 }
 
 function EditFamily({ d, h, onClose }: { d: AdminData; h: AdminHousehold | null; onClose: () => void }) {

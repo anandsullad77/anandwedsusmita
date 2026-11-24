@@ -1,7 +1,7 @@
 // Supabase backend — talks to the schema in supabase/migrations/0001_init.sql.
 // Guests use anonymous auth (a silent device session). Hosts use email/password.
 import { supabase as sb } from './supabaseClient';
-import type { AdminData, AdminHousehold, Backend, EventInfo, GeneralInviteBundle, GeneralInvitationSettings, Household, Person, Photo, PhotoQuestSummary, Wish } from './types';
+import type { AdminAnalytics, AdminData, AdminHousehold, Backend, EventInfo, GeneralInviteBundle, GeneralInvitationSettings, Household, Person, Photo, PhotoQuestSummary, Wish } from './types';
 import { defaultGeneralSettings, normalizeGeneralSettings, validateGeneralSettings, validateWish } from './generalInvitation';
 import { photoQuest } from './photoQuests';
 
@@ -300,6 +300,17 @@ export const supabaseBackend: Backend = {
       requests: req.map(r => ({ id: String(r.id), name: r.name, phone: r.phone, note: r.note, status: r.status, at: r.created_at }))
     } satisfies AdminData;
   },
+  async adminAnalytics(eventId) {
+    const { data, error } = await sb().rpc('admin_wedding_analytics', { p_event: eventId });
+    if (error) throw new Error(error.code === 'PGRST202'
+      ? 'Analytics is not enabled yet. Apply the 0013_wedding_analytics.sql database migration, then refresh.' : error.message);
+    const result = data as Omit<AdminAnalytics, 'recentPosts'> & { recentPosts: (AdminAnalytics['recentPosts'][number] & { photoPath?: string })[] };
+    const { data: { session } } = await sb().auth.getSession();
+    const paths = result.recentPosts.flatMap(post => post.photoPath ? [post.photoPath] : []);
+    // A temporary thumbnail failure should not hide the counts or post text.
+    const urls = await signedUrls(paths, session?.user.id ?? '').catch(() => new Map<string, string>());
+    return { ...result, recentPosts: result.recentPosts.map(({ photoPath, ...post }) => ({ ...post, url: photoPath ? urls.get(photoPath) : undefined })) };
+  },
   async saveHousehold(eventId, hh, people) {
     const row = { event_id: eventId, name: hh.name, cap: hh.cap ?? null, side: hh.side ?? null, invited_by: hh.invitedBy ?? null,
       ...(hh.functionIds ? { function_ids: hh.functionIds } : {}) };
@@ -311,6 +322,12 @@ export const supabaseBackend: Backend = {
       if (p.id) must(await sb().from('people').update(pr).eq('id', p.id));
       else if (p.name) must(await sb().from('people').insert({ ...pr, added_by: 'host' }));
     }
+  },
+  async deleteHousehold(eventId, householdId) {
+    // Host-only RLS and foreign keys remove people, device links and RSVP history
+    // atomically. Shared photos survive with their person_id cleared.
+    const deleted = must(await sb().from('households').delete().eq('event_id', eventId).eq('id', householdId).select('id').maybeSingle());
+    if (!deleted) throw new Error('Family not found or you do not have permission to delete it. Refresh the list and try again.');
   },
   async importHouseholds(eventId, households) {
     const { data, error } = await sb().rpc('import_households', { p_event: eventId, p_households: households });

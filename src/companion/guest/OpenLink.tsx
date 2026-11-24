@@ -58,7 +58,7 @@ export default function OpenLink() {
 
       {step === 'pin' && (<>
         <p className="eb" lang="en">Wedding invitation</p>
-        <h1 className="kn-h" style={{ fontSize: 34, color: 'var(--deep)' }}>ಬನ್ನಿ! ಸ್ವಾಗತ</h1>
+        <h1 className="serif" style={{ fontSize: 34, color: 'var(--deep)' }}>Welcome</h1>
         <p lang="en" style={{ margin: 0, fontSize: 16, lineHeight: 1.5, color: 'var(--muted)' }}>Enter the 6-digit wedding PIN from your invitation message.</p>
         <div className="field" lang="en"><label htmlFor="pin">Wedding PIN</label>
           <input id="pin" className="input" inputMode="numeric" autoComplete="one-time-code" maxLength={6} value={pin} onChange={e => setPin(e.target.value.replace(/\D/g, ''))}
@@ -69,7 +69,7 @@ export default function OpenLink() {
       </>)}
 
       {step === 'find' && (<>
-        <h1 className="kn-h" style={{ fontSize: 32, color: 'var(--deep)' }}>ನೀವು ಯಾರು?</h1>
+        <h1 className="serif" style={{ fontSize: 32, color: 'var(--deep)' }}>Find your family</h1>
         <p lang="en" style={{ margin: 0, fontSize: 16, color: 'var(--muted)' }}>Let's find you on the family's guest list.</p>
         <div className="field" lang="en"><label htmlFor="q">Your name</label><input id="q" className="input" value={query} onChange={e => setQuery(e.target.value)} autoComplete="name" /></div>
         <div className="field" lang="en"><label htmlFor="ph">WhatsApp number (optional)</label><input id="ph" className="input" inputMode="tel" value={phone} onChange={e => setPhone(e.target.value)} autoComplete="tel-national" /></div>
@@ -89,7 +89,7 @@ export default function OpenLink() {
       </>)}
 
       {step === 'new' && (<>
-        <h1 className="kn-h" style={{ fontSize: 32, color: 'var(--deep)' }}>ಎಷ್ಟು ಜನ ಬರ್ತೀರಾ?</h1>
+        <h1 className="serif" style={{ fontSize: 32, color: 'var(--deep)' }}>Add your family</h1>
         <p lang="en" style={{ margin: 0, fontSize: 16, color: 'var(--muted)' }}>How many of you are coming? Add each name — elders and kids too.</p>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }} lang="en">
           <button className="chip" aria-label="Fewer" onClick={() => setCountN(count - 1)} style={{ width: 48, height: 48 }}>−</button>
@@ -107,7 +107,7 @@ export default function OpenLink() {
       </>)}
 
       {step === 'ask' && (<>
-        <h1 className="kn-h" style={{ fontSize: 30, color: 'var(--deep)' }}>ಆತಿಥೇಯರನ್ನು ಕೇಳಿ</h1>
+        <h1 className="serif" style={{ fontSize: 30, color: 'var(--deep)' }}>Ask the hosts</h1>
         {done ? <p lang="en" style={{ margin: 0, fontSize: 16 }}>Sent! The family will let you in shortly.</p> : (<>
           <p lang="en" style={{ margin: 0, fontSize: 16, color: 'var(--muted)' }}>Tell the family who you are and they'll let you in.</p>
           <div className="field" lang="en"><label htmlFor="an">Your name</label><input id="an" className="input" value={names[0]} onChange={e => setNames(a => [e.target.value, ...a.slice(1)])} /></div>

@@ -75,6 +75,7 @@ async function scenario(browser, { width = 390, initial = 'anonymous', family = 
     if (url.pathname.endsWith('/logout')) { mode = 'anonymous'; return route.fulfill({ status: 204 }); }
     if (privatePath(url.pathname) && mode !== 'google' && mode !== 'host') return json({ message: 'Sign in with Google' }, 403);
     if (url.pathname.endsWith('/rpc/open_wedding_invite')) return json({ token, bundle: bundle() });
+    if (url.pathname.endsWith('/rpc/record_wedding_visit') || url.pathname.endsWith('/rpc/record_wedding_signin')) return json(null);
     if (url.pathname.endsWith('/rpc/open_general_invite')) return json(bundle());
     if (url.pathname.endsWith('/rpc/invite_bundle')) return json({ ...bundle(), household: { id: id(20), name: 'Family', coming: 'yes' }, people: [{ id: id(21), name: 'Family guest', isChild: false, attending: [] }] });
     if (url.pathname.endsWith('/general_invitation_settings')) return json(invitationSettings);
