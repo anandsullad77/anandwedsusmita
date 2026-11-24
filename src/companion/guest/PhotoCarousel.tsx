@@ -1,9 +1,18 @@
-import { useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { Photo } from '../lib/types';
 import { Icon } from './Icon';
 
-export default function PhotoCarousel({ photos, active, onActive }: { photos: Photo[]; active: number; onActive: (index: number) => void }) {
+export default function PhotoCarousel({ photos, active, onActive, enabled = true, priority = false }: { photos: Photo[]; active: number; onActive: (index: number) => void; enabled?: boolean; priority?: boolean }) {
   const track = useRef<HTMLDivElement>(null);
+  const [visited, setVisited] = useState<Set<number>>(() => new Set());
+  useEffect(() => {
+    if (!enabled) return;
+    setVisited(previous => {
+      const next = new Set(previous);
+      for (let i = Math.max(0, active - 1); i <= Math.min(photos.length - 1, active + 1); i++) next.add(i);
+      return next.size === previous.size ? previous : next;
+    });
+  }, [active, enabled, photos.length]);
   const go = (index: number) => {
     track.current?.scrollTo({ left: index * track.current.clientWidth, behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth' });
   };
@@ -17,7 +26,7 @@ export default function PhotoCarousel({ photos, active, onActive }: { photos: Ph
       if (index !== active) onActive(index);
     }}>
       {photos.map((photo, i) => <div className="carousel-slide" key={photo.id} role="group" aria-roledescription="slide" aria-label={`${i + 1} of ${photos.length}`}>
-        <img src={photo.url} alt={photo.caption ? `${photo.caption} — photo ${i + 1}` : `Photo ${i + 1} by ${photo.uploaderName}`} loading="lazy" draggable={false} />
+        <img src={enabled && (Math.abs(i - active) <= 1 || visited.has(i)) ? photo.url : undefined} alt={photo.caption ? `${photo.caption} — photo ${i + 1}` : `Photo ${i + 1} by ${photo.uploaderName}`} loading="eager" decoding="async" fetchPriority={priority && i === active ? 'high' : 'low'} draggable={false} />
       </div>)}
     </div>
     {photos.length > 1 && <>

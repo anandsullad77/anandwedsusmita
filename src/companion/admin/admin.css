@@ -94,6 +94,15 @@
 .visibility-options { display: flex; flex-direction: column; margin-top: 10px; }
 .visibility-options label { display: flex; gap: 12px; align-items: center; min-height: 44px; font-size: 13px; }
 .general-editor-preview { min-width: 0; }
+.invitation-preview-editor h3, .invitation-preview-sample h3 { margin: 0 0 10px; font-size: 15px; }
+.invitation-preview-editor > p { line-height: 1.7; }
+.invitation-preview-slots { display: flex; flex-direction: column; gap: 12px; }
+.invitation-preview-slot { min-width: 0; display: grid; grid-template-columns: 72px minmax(0, 1fr); align-items: center; gap: 12px; padding: 12px; border: 1px solid var(--p-line); border-radius: 12px; }
+.invitation-preview-slot > img, .invitation-preview-placeholder { width: 72px; height: 80px; border-radius: 8px; object-fit: cover; }
+.invitation-preview-placeholder { display: grid; place-items: center; background: var(--p-ivory); color: var(--p-muted); font-size: 22px; }
+.invitation-preview-slot .field { min-width: 0; }
+.invitation-preview-slot > button { grid-column: 2; justify-self: start; max-width: 100%; white-space: normal; }
+.invitation-preview-sample { margin-top: 24px; }
 .general-preview-disclosure { min-width: 0; }
 .general-preview-disclosure > summary { display: none; }
 .admin-wish { border-top: 1px solid var(--p-line); padding-top: 16px; overflow-wrap: anywhere; }

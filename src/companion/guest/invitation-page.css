@@ -1,0 +1,128 @@
+/* Scoped to the companion invitation; the original invitation at / is independent. */
+.invitation-page { --muted: #626b60; --line: #283a2d26; --sans: 'Noto Sans', system-ui, sans-serif; font-family: var(--sans); min-width: 0; }
+.invitation-page .general-section { padding: 68px 0; }
+.invitation-page .general-eyebrow { font-size: 10px; letter-spacing: .16em; }
+.invitation-page .general-invitation .general-eyebrow { font-size: 9px; }
+.invitation-page .general-section-heading h2 { font-size: clamp(38px, 4.2vw, 56px); line-height: 1.04; font-weight: 500; letter-spacing: -.035em; margin: 12px 0 20px; }
+.invitation-page .general-section-heading h2 i { display: block; font-weight: 400; color: var(--primary); }
+.invitation-page .general-section-heading > p:not(.general-eyebrow) { max-width: 43ch; line-height: 1.9; }
+.invitation-page .btn { border-radius: 7px; }
+.invitation-page .general-host-updates { margin-top: 22px; padding: 18px 22px; border: 0; border-left: 3px solid var(--primary); border-radius: 0 7px 7px 0; background: #a5305109; }
+.invitation-page .general-update-content h2 { font-size: 12px; }
+.invitation-page .general-update-content h2 > span { font-size: 11px; }
+.invitation-page .general-update-content p { font-size: 13px; line-height: 1.8; }
+.invitation-page .general-moments { column-gap: 70px; row-gap: 34px; }
+.invitation-page .general-moments .general-actions { margin-top: 24px; }
+.invitation-page .general-moments-note { display: flex; align-items: flex-start; gap: 7px; margin-top: 15px !important; font-size: 11px !important; line-height: 1.7 !important; }
+.general-moments-note svg { flex-shrink: 0; margin-top: 2px; }
+.invitation-page .general-photo-empty { position: relative; min-height: 310px; border: 1px solid var(--line); border-radius: 150px 150px 5px 5px; background: var(--card); }
+.invitation-page .general-photo-empty::after { content: ''; position: absolute; inset: 8px; border: 1px solid var(--line); border-radius: inherit; pointer-events: none; }
+.invitation-page .general-empty-frames { margin: 8px 0 19px; height: 102px; }
+.invitation-page .general-empty-frames > span { border-radius: 3px; }
+.invitation-page .general-photo-empty > p { font-size: 30px; }
+.invitation-page .general-photo-empty > span { font-size: 11px; margin-top: 3px; }
+.invitation-page .general-photo-preview { grid-template-rows: 155px 155px; gap: 8px; border-radius: 5px; padding: 8px; border: 1px solid var(--line); background: var(--card); }
+.invitation-page .general-photo-preview:not(:has(.general-photo-3)) { grid-template-rows: 318px; }
+.invitation-page .general-photo-preview img { transition: filter .2s ease; }
+.invitation-page .general-photo-preview:hover img { filter: brightness(1.05); }
+.invitation-page .general-photo-caption { bottom: 20px; left: 20px; max-width: calc(100% - 40px); border-radius: 4px; box-shadow: 0 3px 12px #283a2d12; font-size: 11px; }
+.general-participate { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; min-width: 0; }
+.general-participate-card { display: flex; align-items: center; gap: 18px; padding: 23px 25px; border: 1px solid var(--line); border-radius: 5px; text-decoration: none; color: var(--deep); background: #ffffff40; transition: border-color .2s ease, background-color .2s ease, transform .2s ease; min-width: 0; }
+.general-participate-card:hover { background: var(--card); border-color: #a5305166; transform: translateY(-2px); }
+.general-participate-card > span:nth-child(2) { flex: 1; min-width: 0; }
+.general-participate-card b { display: block; font: 600 25px/1.2 var(--serif); letter-spacing: -.015em; }
+.general-participate-card small { display: block; margin-top: 6px; color: var(--muted); font-size: 11px; line-height: 1.7; }
+.general-participate-icon { display: grid; place-items: center; width: 46px; height: 50px; flex-shrink: 0; color: var(--primary); background: #a530510b; border-radius: 24px 24px 4px 4px; }
+.general-participate-card > svg { flex-shrink: 0; color: var(--primary); }
+.general-participate-card:only-child { grid-column: 1 / -1; }
+.invitation-page .general-schedule { column-gap: 70px; }
+.invitation-page .general-schedule-list { gap: 0; counter-reset: schedule; }
+.invitation-page .general-schedule-list article { position: relative; padding-bottom: 28px; gap: 20px; }
+.invitation-page .general-schedule-list article:last-child { padding-bottom: 0; }
+.invitation-page .general-schedule-list article:not(:last-child)::before { content: ''; position: absolute; width: 1px; background: var(--line); top: 40px; bottom: 5px; left: 19px; }
+.invitation-page .general-schedule-number { width: 40px; height: 40px; background: var(--card); border-color: var(--line); }
+.invitation-page .general-schedule-list h3 { margin-top: 4px; }
+.invitation-page .photo-quests .general-section-heading h2 { font-size: clamp(36px, 4vw, 48px); }
+.invitation-page .quest-surprise { min-height: 44px; font-size: 12px; }
+.invitation-page .quest-personal-progress { margin: 24px 0; padding: 12px 16px; background: #283a2d07; border-left: 2px solid #283a2d33; border-radius: 0 4px 4px 0; color: var(--muted); font-size: 12px; }
+.invitation-page .photo-quest-featured { gap: 18px; }
+.invitation-page .photo-quest-card { position: relative; overflow: hidden; border-radius: 5px; padding: 25px; background: #ffffff59; }
+.invitation-page .photo-quest-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: #a5305159; }
+.invitation-page .photo-quest-card:has(.playful)::before { background: #b4986359; }
+.invitation-page .photo-quest-card h3 { font-size: 29px; }
+.invitation-page .photo-quest-card > p { font-size: 12px; line-height: 1.85; }
+.invitation-page .quest-card-actions .btn { min-height: 44px; font-size: 12px; }
+.invitation-page .quest-card-actions .btn-ghost { background: transparent; }
+.invitation-page .quest-catalog { border-radius: 5px; margin-top: 18px; }
+.invitation-page .quest-catalog > summary { font-size: 12px; min-height: 54px; }
+.invitation-page .quest-catalog > summary::-webkit-details-marker { display: none; }
+.invitation-page .quest-catalog[open] > summary svg { transform: rotate(180deg); }
+.invitation-page .general-download { position: relative; isolation: isolate; overflow: hidden; margin-top: 36px; padding: 38px 34px; gap: 22px; border-radius: 5px; }
+.invitation-page .general-download::before { content: ''; position: absolute; inset: 7px; border: 1px solid #fff7eb26; z-index: -1; pointer-events: none; }
+.invitation-page .general-download-icon { width: 48px; height: 60px; border-color: #fff7eb66; }
+.invitation-page .general-download-copy .general-eyebrow { color: #e6b6bb; font-size: 9px; margin-bottom: 8px; }
+.invitation-page .general-download-copy h2 { font-size: 31px; }
+.invitation-page .general-download-copy p { font-size: 12px; max-width: 40ch; }
+.invitation-page .general-download .btn { min-height: 46px; font-size: 12px; }
+.general-closing { text-align: center; padding: 66px 16px 0; }
+.general-closing > p:nth-child(2) { margin: 10px 0 14px; font: italic 400 clamp(36px, 4vw, 48px)/1.1 var(--serif); color: var(--deep); letter-spacing: -.025em; }
+.general-closing > span { display: block; font-size: 12px; line-height: 1.8; color: var(--muted); }
+.invitation-page .wedding-signoff { padding-top: 24px; }
+.invitation-page .wedding-signoff > p { display: none; }
+.invitation-page .wedding-signoff .wedding-mark { width: 56px; height: 56px; }
+.invitation-page .wedding-signoff > a { margin-bottom: 36px; }
+
+@media (max-width: 1000px) {
+  .invitation-page .general-moments, .invitation-page .general-schedule { column-gap: 36px; }
+  .general-participate-card { gap: 12px; padding: 20px; }
+  .general-participate-card b { font-size: 23px; }
+  .invitation-page .general-download { grid-template-columns: 48px minmax(0, 1fr); }
+  .invitation-page .general-download > .general-actions { grid-column: 2; }
+}
+@media (max-width: 767px) {
+  .general-shell main.general-main:has(> .invitation-page) { padding-top: 14px; }
+  .invitation-page .general-section { padding: 42px 0; }
+  .invitation-page .general-section-heading h2 { font-size: 40px; margin-block: 10px 16px; }
+  .invitation-page .general-section-heading > p:not(.general-eyebrow) { font-size: 13px; }
+  .invitation-page .general-invitation .general-eyebrow { font-size: 8px; }
+  .invitation-page .general-host-updates { padding: 15px; gap: 10px; margin-top: 18px; }
+  .invitation-page .general-host-updates p { font-size: 12px; }
+  .invitation-page .general-moments { row-gap: 25px; }
+  .invitation-page .general-photo-empty { min-height: 285px; border-radius: 140px 140px 5px 5px; }
+  .invitation-page .general-photo-preview { grid-template-rows: 130px 130px; }
+  .invitation-page .general-photo-preview:not(:has(.general-photo-3)) { grid-template-rows: 268px; }
+  .general-participate { grid-template-columns: minmax(0, 1fr); gap: 12px; }
+  .general-participate-card { padding: 18px; gap: 14px; }
+  .general-participate-card b { font-size: 25px; }
+  .general-participate-card small { font-size: 11px; }
+  .invitation-page .photo-quests .general-section-heading h2 { font-size: 37px; }
+  .invitation-page .photo-quests-heading { gap: 18px; }
+  .invitation-page .quest-personal-progress { margin: 20px 0; font-size: 11px; }
+  .invitation-page .photo-quest-featured { gap: 12px; }
+  .invitation-page .photo-quest-featured > article { flex-basis: 91%; }
+  .invitation-page .photo-quest-card { padding: 22px; }
+  .invitation-page .general-download { padding: 30px 24px; gap: 18px 16px; margin-top: 28px; }
+  .invitation-page .general-download-copy h2 { font-size: 28px; }
+  .invitation-page .general-download > .general-actions { grid-column: 1 / -1; }
+  .invitation-page .general-download .btn { font-size: 11px; min-height: 48px; }
+  .general-closing { padding-top: 46px; }
+  .general-closing .general-eyebrow { font-size: 9px; }
+}
+@media (max-width: 360px) {
+  .general-invitation { padding-inline: 18px; }
+  .general-invitation-topline { gap: 9px; font-size: 8px; letter-spacing: .08em; }
+  .general-portrait { width: 205px; height: auto; }
+  .general-couple { font-size: 36px; }
+  .general-event-detail { gap: 10px; }
+  .general-date-stamp, .general-detail-icon { min-width: 53px; width: 53px; }
+  .general-date { font-size: 12px; }
+  .general-date > span { font-size: 11px; }
+  .general-venue { font-size: 12px; }
+  .general-participate-card { padding: 16px 13px; gap: 11px; }
+  .general-participate-card b { font-size: 23px; }
+  .invitation-page .general-download { padding-inline: 19px; }
+  .invitation-page .general-download-copy h2 { font-size: 25px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .general-participate-card:hover { transform: none; }
+}

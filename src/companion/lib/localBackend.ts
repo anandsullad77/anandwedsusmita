@@ -157,9 +157,10 @@ export const localBackend: Backend = {
     requirePhotoGuest(db, eventId);
     return normalizeGeneralSettings(db.generalSettings[eventId]);
   },
-  async saveGeneralSettings(eventId, settings, cover) {
+  async saveGeneralSettings(eventId, settings, cover, previews = []) {
     if (!hostEmail) throw new Error('Only hosts can customize the invitation');
     validateGeneralSettings(settings);
+    if (previews.length > 3) throw new Error('Choose up to three preview photos.');
     let coverPath = settings.coverPath;
     if (cover) {
       if (cover.size > 2 * 1024 * 1024 || !['image/webp', 'image/png', 'image/jpeg'].includes(cover.type)) throw new Error('Use a JPG, PNG or WebP cover smaller than 2 MB.');
@@ -170,9 +171,24 @@ export const localBackend: Backend = {
         reader.readAsDataURL(cover);
       });
     }
+    const previewPhotos = [];
+    for (let index = 0; index < 3; index++) {
+      const blob = previews[index];
+      let path = settings.previewPhotos[index]?.path;
+      if (blob) {
+        if (blob.size > 2 * 1024 * 1024 || !['image/webp', 'image/png', 'image/jpeg'].includes(blob.type)) throw new Error('Use a JPG, PNG or WebP photo smaller than 2 MB.');
+        path = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(String(reader.result));
+          reader.onerror = () => reject(new Error('Could not save the preview photo.'));
+          reader.readAsDataURL(blob);
+        });
+      }
+      if (path) previewPhotos.push({ path, url: path });
+    }
     const db = load();
     if (!db.events.some(e => e.id === eventId)) throw new Error('Event not found');
-    db.generalSettings[eventId] = { ...settings, welcomeMessage: settings.welcomeMessage.trim(), coverPath, coverUrl: coverPath, sections: { ...settings.sections } };
+    db.generalSettings[eventId] = { ...settings, welcomeMessage: settings.welcomeMessage.trim(), coverPath, coverUrl: coverPath, previewPhotos, sections: { ...settings.sections } };
     save(db);
   },
   async listWishes(eventId, moderation = false) {
@@ -298,7 +314,7 @@ export const localBackend: Backend = {
     const me = device();
     const personId = db.devices.find(d => d.device === me && d.eventId === eventId)?.personId;
     const rows = db.photos.filter(p => p.eventId === eventId && (options?.includeHidden || !p.hidden) && (!options?.questId || p.questId === options.questId)).sort((a, b) => Number(b.pinned) - Number(a.pinned) || b.createdAt.localeCompare(a.createdAt));
-    return Promise.all(rows.map(async p => ({
+    return Promise.all((options?.preview ? rows.slice(0, 3) : rows).map(async p => ({
       id: p.id, postId: p.postId, postPosition: p.postPosition, uploaderName: p.uploaderName, moment: p.moment, questId: p.questId, caption: p.caption, createdAt: p.createdAt, pinned: p.pinned, hidden: p.hidden, flags: options?.includeHidden ? p.flaggedBy.length : undefined,
       akshate: p.akshateBy.length, mine: p.akshateBy.includes(me),
       uploadedByMe: p.uploadedBy ? p.uploadedBy === me : !!p.personId && p.personId === personId, url: await photoUrl(p.id)

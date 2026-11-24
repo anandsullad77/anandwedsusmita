@@ -16,15 +16,20 @@ const event = { id: eventId, slug: 'anand-susmita', title: "Anand & Susmita's we
 const photo = (n, createdAt, extra = {}) => ({ id: id(n), event_id: eventId, storage_path: `${eventId}/${n}.webp`, uploader_name: 'Google guest', uploaded_by: id(12), caption: `Memory ${n}`, created_at: createdAt, hidden: false, pinned: false, ...extra });
 const privatePath = pathname => /\/rest\/v1\/(photos|guestbook_messages|akshate)|\/rpc\/photo_quest_summary|\/storage\/v1\/.*photos/.test(pathname);
 
-async function scenario(browser, { width = 390, initial = 'anonymous', family = false, cancel = false, site = origin, customSections = sections } = {}) {
+async function scenario(browser, { width = 390, initial = 'anonymous', family = false, cancel = false, site = origin, customSections = sections, latency = 0, wishDelay = 0, previewPaths = [] } = {}) {
   const context = await browser.newContext({ viewport: { width, height: 900 }, reducedMotion: 'reduce', hasTouch: width < 768 });
-  let mode = initial, exchanges = 0, claims = 0, failUpload = false, failInsert = false, loseInsertResponse = false;
+  let mode = initial, exchanges = 0, claims = 0, failUpload = false, failInsert = false, loseInsertResponse = false, signings = 0;
+  let googleUserId = id(12);
+  let invitationSettings = { event_id: eventId, welcome_message: 'Join us for our wedding.', cover_path: null, sections: customSections, preview_photo_paths: [...previewPaths] };
+  let failPreviewUpload = false, failSettingsSave = false;
+  const settingsSaves = [];
+  const databaseEvent = { id: eventId, slug: event.slug, title: event.title, couple_a: event.coupleA, couple_b: event.coupleB, starts_at: event.startsAt, venue: event.venue, theme: event.theme };
   const requests = [], submissions = [], batches = [], errors = [], storage = new Set(), reports = [], reactions = [];
   const photos = [photo(30, '2026-11-20T10:00:00Z', { pinned: true }), photo(32, '2026-11-22T10:00:00Z', { post_id: id(60), post_position: 1 }), photo(31, '2026-11-22T10:00:00Z', { post_id: id(60), post_position: 0 }), photo(33, '2026-11-22T10:00:00Z', { post_id: id(60), post_position: 2 })];
   const wishes = [{ id: id(40), name: 'Approved guest', message: 'A blessing between the memories', status: 'approved', created_at: '2026-11-21T10:00:00Z' }];
   const user = () => {
     const provider = mode === 'google' ? 'google' : mode === 'anonymous' ? 'anonymous' : 'email';
-    const uid = mode === 'google' ? id(12) : mode === 'host' ? id(10) : mode === 'email' ? id(14) : id(11);
+    const uid = mode === 'google' ? googleUserId : mode === 'host' ? id(10) : mode === 'email' ? id(14) : id(11);
     return { id: uid, aud: 'authenticated', role: 'authenticated', email: 'fixture@example.com', is_anonymous: mode === 'anonymous', app_metadata: { provider, providers: [provider] }, user_metadata: { full_name: 'Google guest' }, identities: [{ id: uid, user_id: uid, provider, identity_data: {} }], created_at: new Date().toISOString() };
   };
   const session = () => {
@@ -48,7 +53,9 @@ async function scenario(browser, { width = 390, initial = 'anonymous', family = 
   }
   await context.route(`https://${host}/**`, async route => {
     const request = route.request(), url = new URL(request.url()), body = () => request.postDataJSON();
-    requests.push({ path: url.pathname, query: url.search, method: request.method(), mode });
+    requests.push({ path: url.pathname, query: url.search, method: request.method(), mode, at: Date.now(), paths: url.pathname === '/storage/v1/object/sign/photos' ? body().paths : undefined });
+    if (latency && (url.pathname.startsWith('/rest/') || url.pathname.endsWith('/user') || url.pathname === '/storage/v1/object/sign/photos')) await new Promise(resolve => setTimeout(resolve, latency));
+    if (wishDelay && url.pathname.endsWith('/guestbook_messages')) await new Promise(resolve => setTimeout(resolve, wishDelay));
     const json = (value, status = 200) => route.fulfill({ status, contentType: 'application/json', body: JSON.stringify(value) });
     if (url.pathname.endsWith('/authorize')) {
       assert.equal(url.searchParams.get('provider'), 'google');
@@ -70,9 +77,22 @@ async function scenario(browser, { width = 390, initial = 'anonymous', family = 
     if (url.pathname.endsWith('/rpc/open_wedding_invite')) return json({ token, bundle: bundle() });
     if (url.pathname.endsWith('/rpc/open_general_invite')) return json(bundle());
     if (url.pathname.endsWith('/rpc/invite_bundle')) return json({ ...bundle(), household: { id: id(20), name: 'Family', coming: 'yes' }, people: [{ id: id(21), name: 'Family guest', isChild: false, attending: [] }] });
-    if (url.pathname.endsWith('/general_invitation_settings')) return json({ event_id: eventId, welcome_message: 'Join us for our wedding.', cover_path: null, sections: customSections });
+    if (url.pathname.endsWith('/general_invitation_settings')) return json(invitationSettings);
     if (url.pathname.endsWith('/announcements')) return json([{ id: 1, body: 'Public host update', created_at: new Date().toISOString() }]);
-    if (url.pathname.endsWith('/hosts')) return json(mode === 'host' ? [{ event_id: eventId, events: { slug: 'anand-susmita' } }] : []);
+    if (url.pathname.endsWith('/hosts')) return json(mode === 'host' ? [{ event_id: eventId, events: databaseEvent }] : []);
+    if (url.pathname.endsWith('/events')) return json(databaseEvent);
+    if (url.pathname.endsWith('/event_functions')) return json([{ id: id(3), name_en: 'Muhurta & Akshate', starts_at: event.startsAt, venue: event.venue }]);
+    if (['/households', '/access_requests', '/photo_flags'].some(path => url.pathname.endsWith(path))) return json([]);
+    if (url.pathname.endsWith('/event_secrets')) return json({ pin: '291126' });
+    if (url.pathname.endsWith('/rpc/general_invite_token')) return json(token);
+    if (url.pathname.endsWith('/rpc/save_general_invitation_with_previews')) {
+      if (mode !== 'host') return json({ message: 'Only hosts can customize the invitation' }, 403);
+      if (failSettingsSave) return json({ message: 'Temporary settings failure' }, 503);
+      const values = body();
+      invitationSettings = { ...invitationSettings, welcome_message: values.p_welcome, cover_path: values.p_cover, sections: values.p_sections, preview_photo_paths: values.p_preview_paths };
+      settingsSaves.push(values);
+      return json(null);
+    }
     if (url.pathname.endsWith('/rpc/claim_person')) { claims++; return json(id(21)); }
     if (url.pathname.endsWith('/rpc/photo_quest_summary')) return json({ contributions: 4, completedQuestIds: [], counts: {} });
     if (url.pathname.endsWith('/photos') && url.pathname.startsWith('/rest/v1/')) {
@@ -89,6 +109,7 @@ async function scenario(browser, { width = 390, initial = 'anonymous', family = 
       if (postFilter?.startsWith('eq.')) filtered = filtered.filter(p => p.post_id === postFilter.slice(3));
       if (postFilter?.startsWith('in.')) filtered = filtered.filter(p => postFilter.includes(p.post_id));
       if (url.searchParams.get('quest_id')) filtered = filtered.filter(p => p.quest_id === url.searchParams.get('quest_id').slice(3));
+      if (url.searchParams.has('limit')) filtered = filtered.slice(0, Number(url.searchParams.get('limit')));
       return json(filtered);
     }
     if (url.pathname.endsWith('/devices')) return json(null);
@@ -96,8 +117,24 @@ async function scenario(browser, { width = 390, initial = 'anonymous', family = 
     if (url.pathname.endsWith('/guestbook_messages')) return json(wishes);
     if (url.pathname.endsWith('/rpc/submit_guestbook_wish')) { submissions.push(body()); return json(null); }
     if (url.pathname.endsWith('/rpc/flag_photo')) { reports.push(body()); return json(null); }
-    if (url.pathname === '/storage/v1/object/sign/photos') return json(body().paths.map(p => ({ path: p, signedURL: '/object/sign/photos/' + p + '?token=fixture' })));
+    if (url.pathname === '/storage/v1/object/sign/photos') {
+      const signature = ++signings;
+      return json(body().paths.map(p => ({ path: p, signedURL: '/object/sign/photos/' + p + '?token=fixture-' + signature })));
+    }
     if (url.pathname.startsWith('/storage/v1/object/sign/photos/')) return route.fulfill({ status: 200, contentType: 'image/webp', body: fs.readFileSync(path.join(root, 'public/images/invitation-couple.webp')) });
+    if (url.pathname === '/storage/v1/object/sign/invitation-previews') return json(body().paths.map(p => ({ path: p, signedURL: '/object/sign/invitation-previews/' + p + '?token=preview' })));
+    if (url.pathname.startsWith('/storage/v1/object/sign/invitation-previews/')) return route.fulfill({ status: 200, contentType: 'image/webp', body: fs.readFileSync(path.join(root, 'public/images/invitation-couple.webp')) });
+    if (url.pathname.startsWith('/storage/v1/object/invitation-previews/')) {
+      if (mode !== 'host') return json({ message: 'Only hosts can upload preview photos' }, 403);
+      if (failPreviewUpload) return json({ message: 'Temporary preview upload failure' }, 503);
+      storage.add(url.pathname.slice('/storage/v1/object/invitation-previews/'.length));
+      return json({ Key: url.pathname });
+    }
+    if (url.pathname === '/storage/v1/object/invitation-previews' && request.method() === 'DELETE') {
+      const removed = body().prefixes.filter(path => !invitationSettings.preview_photo_paths.includes(path));
+      removed.forEach(path => storage.delete(path));
+      return json(removed.map(name => ({ name })));
+    }
     if (url.pathname.startsWith('/storage/v1/object/photos/')) {
       if (failUpload) return json({ statusCode: '503', message: 'Temporary upload failure' }, 503);
       if (storage.has(url.pathname)) return json({ statusCode: '409', error: 'Duplicate', message: 'The resource already exists' }, 400);
@@ -108,15 +145,18 @@ async function scenario(browser, { width = 390, initial = 'anonymous', family = 
   const page = await context.newPage();
   page.on('pageerror', error => errors.push(error.message));
   page.setDefaultTimeout(12000);
-  return { context, page, requests, submissions, batches, photos, errors, reports, reactions,
+  return { context, page, requests, submissions, batches, photos, errors, reports, reactions, storage, settingsSaves,
+    get invitationSettings() { return invitationSettings; },
+    set failPreviewUpload(value) { failPreviewUpload = value; }, set failSettingsSave(value) { failSettingsSave = value; },
     get exchanges() { return exchanges; }, get claims() { return claims; },
+    set googleUserId(value) { googleUserId = value; },
     set failUpload(value) { failUpload = value; }, set failInsert(value) { failInsert = value; }, set loseInsertResponse(value) { loseInsertResponse = value; } };
 }
 const wait = async (check, message) => { for (let i = 0; i < 100; i++) { if (await check()) return; await new Promise(resolve => setTimeout(resolve, 100)); } throw new Error(message); };
 const nav = page => page.getByRole('navigation', { name: 'Wedding', exact: true });
 async function assertLayout(page) { assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), 'No horizontal page overflow'); }
 
-(async () => {
+if (require.main === module) (async () => {
   const browser = await playwright.chromium.launch({ executablePath: process.env.CHROME_PATH || (process.platform === 'win32' ? 'C:/Program Files/Google/Chrome/Application/chrome.exe' : undefined), headless: true });
   try {
     for (const width of [390, 1440]) {
@@ -304,3 +344,5 @@ async function assertLayout(page) { assert.ok(await page.evaluate(() => document
     console.log('PASS: cancellation returns to intent; host access, email gating, redirect validation and old route aliases remain functional');
   } finally { await browser.close(); }
 })().catch(error => { console.error(error); process.exitCode = 1; });
+
+module.exports = { scenario, wait, origin, eventId, photo, id };

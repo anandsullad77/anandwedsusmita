@@ -1,31 +1,64 @@
 import { fmtDate, fmtTime } from '../lib/format';
 import type { GeneralInvitationSettings, GeneralInviteBundle } from '../lib/types';
 
+const WIDTH = 1200;
+const EXPORT_SCALE = 1.5;
+const MAIN_PHOTO = '/images/anand-susmita-portrait.jpg';
+const INVITATION_PHOTO = '/images/anand-susmita-invitation.jpg';
+const sans = '"Noto Sans", "Noto Sans Kannada", sans-serif';
+const serif = '"Cormorant Garamond", "Noto Sans Kannada", serif';
+
+async function loadImage(src: string): Promise<HTMLImageElement> {
+  const image = new Image();
+  image.crossOrigin = 'anonymous';
+  image.src = src;
+  try { await image.decode(); }
+  catch { throw new Error('Could not load a photo for your invitation. Refresh the page and try again.'); }
+  return image;
+}
+
+type TextBlock = { kind: 'text'; lines: string[]; font: string; lineHeight: number; color: string; gap: number; tracking: number; names?: boolean };
+type Block = TextBlock | { kind: 'photos'; height: number; gap: number } | { kind: 'divider'; height: number; gap: number };
+
+// Draw the keepsake at 1800px wide, independently of the phone's screen or DPR.
 export async function makeInvitationCard(bundle: GeneralInviteBundle, settings: GeneralInvitationSettings, link: string): Promise<Blob> {
-  await Promise.all([
-    document.fonts.load('700 84px "Cormorant Garamond"'),
-    document.fonts.load('400 32px "Noto Sans"'),
-    document.fonts.load('400 32px "Noto Sans Kannada"')
-  ]);
   const { event, functions } = bundle;
+  const showPhotos = settings.sections.cover;
+  const [, photos, monogram, mandala, textile] = await Promise.all([
+    Promise.all([
+      document.fonts.load('700 94px "Cormorant Garamond"'),
+      document.fonts.load('600 44px "Cormorant Garamond"'),
+      document.fonts.load('italic 500 34px "Cormorant Garamond"'),
+      document.fonts.load('400 24px "Noto Sans"'),
+      document.fonts.load('600 24px "Noto Sans"'),
+      document.fonts.load('400 24px "Noto Sans Kannada"'),
+    ]),
+    showPhotos ? Promise.all([loadImage(MAIN_PHOTO), loadImage(settings.coverUrl ?? INVITATION_PHOTO)]) : [],
+    loadImage('/images/as-monogram.svg').catch(() => null),
+    loadImage('/images/name-mandala.svg').catch(() => null),
+    loadImage('/images/textile-border.svg').catch(() => null),
+  ]);
   const canvas = document.createElement('canvas');
-  canvas.width = 1200;
   const ctx = canvas.getContext('2d');
   if (!ctx) throw new Error('Your browser could not create the invitation card.');
-  const maxWidth = 940;
-  const sans = '"Noto Sans", "Noto Sans Kannada", sans-serif';
-  const serif = '"Cormorant Garamond", "Noto Sans Kannada", serif';
-  const wrap = (text: string, font: string): string[] => {
+  const primary = event.theme.primary ?? '#A53051';
+  const deep = event.theme.deep ?? '#283A2D';
+  const paper = event.theme.paper ?? '#FFF7EB';
+  const muted = '#686B5C';
+  const blocks: Block[] = [];
+
+  const wrap = (text: string, font: string, maxWidth: number, tracking: number): string[] => {
     ctx.font = font;
+    const measure = (line: string) => ctx.measureText(line).width + Math.max(0, [...line].length - 1) * tracking;
     const lines: string[] = [];
     for (const paragraph of text.split('\n')) {
       let line = '';
       for (const word of paragraph.split(/\s+/).filter(Boolean)) {
-        if (ctx.measureText(line ? `${line} ${word}` : word).width <= maxWidth) { line = line ? `${line} ${word}` : word; continue; }
+        const next = line ? `${line} ${word}` : word;
+        if (measure(next) <= maxWidth) { line = next; continue; }
         if (line) { lines.push(line); line = ''; }
-        // A long URL or name must also stay inside the printable card.
         for (const char of word) {
-          if (ctx.measureText(line + char).width > maxWidth) { lines.push(line); line = ''; }
+          if (measure(line + char) > maxWidth && line) { lines.push(line); line = ''; }
           line += char;
         }
       }
@@ -33,54 +66,124 @@ export async function makeInvitationCard(bundle: GeneralInviteBundle, settings: 
     }
     return lines;
   };
-  type Block = { lines: string[]; font: string; height: number; gap: number; color: string };
-  const primary = event.theme.primary ?? '#A53051';
-  const ink = event.theme.ink ?? '#2A2320';
-  const blocks: Block[] = [];
-  const add = (text: string, size: number, weight = 400, display = false, color = ink, gap = 26) => {
-    const font = `${weight} ${size}px ${display ? serif : sans}`;
-    blocks.push({ lines: wrap(text, font), font, height: size * 1.45, gap, color });
+  const text = (value: string, size: number, options: { display?: boolean; italic?: boolean; weight?: number; color?: string; gap?: number; width?: number; tracking?: number; names?: boolean } = {}) => {
+    const font = `${options.italic ? 'italic ' : ''}${options.weight ?? 400} ${size}px ${options.display ? serif : sans}`;
+    const tracking = options.tracking ?? 0;
+    blocks.push({ kind: 'text', lines: wrap(value, font, options.width ?? 936, tracking), font, lineHeight: size * (options.display ? 1.16 : 1.5), color: options.color ?? deep, gap: options.gap ?? 20, tracking, names: options.names });
   };
-  add('WITH LOVE & BLESSINGS', 25, 600, false, primary, 30);
-  const cover = settings.sections.cover ? settings.coverUrl ?? event.theme.portrait : null;
-  let image: HTMLImageElement | null = null;
-  if (cover) {
-    image = new Image();
-    image.crossOrigin = 'anonymous';
-    image.src = cover;
-    try { await image.decode(); } catch { throw new Error('Could not load the cover photo for the card. Refresh the invitation and try again.'); }
-  }
-  add(`${event.coupleA} & ${event.coupleB}`, 84, 700, true, event.theme.deep ?? '#283A2D', 26);
-  add(settings.welcomeMessage, 32, 400, false, ink, 40);
-  add(fmtDate(event.startsAt), 36, 600, false, primary, 10);
-  add(`${fmtTime(event.startsAt)} IST`, 32, 600, false, primary, 24);
-  add(event.venue, 34, 400, false, ink, 42);
+  const label = (value: string, gap = 12) => text(value, 15, { weight: 600, color: primary, tracking: 3, gap });
+
+  label('WITH LOVE AND OUR ELDERS’ BLESSINGS', 20);
+  text(`${event.coupleA} & ${event.coupleB}`, 94, { display: true, weight: 700, gap: 18, names: true });
+  text(settings.welcomeMessage, 23, { color: muted, width: 850, gap: 36 });
+  if (showPhotos) blocks.push({ kind: 'photos', height: 568, gap: 38 });
+  blocks.push({ kind: 'divider', height: 24, gap: 20 });
+  label('OUR WEDDING DAY');
+  text(fmtDate(event.startsAt), 44, { display: true, weight: 600, gap: 10 });
+  text(`Muhurta · ${fmtTime(event.startsAt)} IST`, 25, { weight: 600, color: primary, gap: 38 });
+  label('THE VENUE');
+  const [venueName, ...address] = event.venue.split(',').map(part => part.trim()).filter(Boolean);
+  text(venueName ?? event.venue, 41, { display: true, weight: 600, width: 910, gap: address.length ? 9 : 35 });
+  if (address.length) text(address.join(', '), 23, { color: muted, width: 830, gap: 35 });
   if (settings.sections.schedule && functions.length > 1) {
-    for (const f of functions) add(`${f.nameEn}\n${fmtDate(f.startsAt)} · ${fmtTime(f.startsAt)} IST${f.venue ? `\n${f.venue}` : ''}`, 27, 400, false, ink, 22);
-  }
-  add(`Open your invitation\n${link}`, 22, 400, false, '#6B5E57', 0);
-  canvas.height = Math.ceil(180 + blocks.reduce((sum, b) => sum + b.lines.length * b.height + b.gap, 0) + (image ? 520 : 0));
-  ctx.fillStyle = event.theme.paper ?? '#FFF7EB';
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-  ctx.strokeStyle = primary;
-  ctx.lineWidth = 3;
-  ctx.beginPath(); ctx.roundRect(34, 34, 1132, canvas.height - 68, 45); ctx.stroke();
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'top';
-  let y = 90;
-  blocks.forEach((b, index) => {
-    ctx.font = b.font; ctx.fillStyle = b.color;
-    b.lines.forEach(line => { ctx.fillText(line, 600, y); y += b.height; });
-    y += b.gap;
-    if (index === 0 && image) {
-      const width = 520, height = 460;
-      const scale = Math.max(width / image.naturalWidth, height / image.naturalHeight);
-      ctx.save();
-      ctx.beginPath(); ctx.roundRect(340, y, width, height, 30); ctx.clip();
-      ctx.drawImage(image, 600 - image.naturalWidth * scale / 2, y + (height - image.naturalHeight * scale) / 2, image.naturalWidth * scale, image.naturalHeight * scale);
-      ctx.restore();
-      y += 520;
+    label('THE CELEBRATIONS', 16);
+    for (const fn of functions) {
+      text(fn.nameEn, 31, { display: true, weight: 600, gap: 5 });
+      text(`${fmtDate(fn.startsAt)} · ${fmtTime(fn.startsAt)} IST${fn.venue ? `\n${fn.venue}` : ''}`, 21, { color: muted, gap: 24 });
     }
-  });
+  }
+  text('Your presence is our happiness.', 34, { display: true, italic: true, weight: 500, color: primary, gap: 25 });
+  label('OPEN YOUR INVITATION', 7);
+  text(link.replace(/^https?:\/\//, '').replace(/\/$/, ''), 19, { color: muted, width: 850, gap: 0 });
+
+  const top = 185;
+  const contentHeight = blocks.reduce((sum, block) => sum + (block.kind === 'text' ? block.lines.length * block.lineHeight : block.height) + block.gap, 0);
+  const height = Math.max(1800, Math.ceil(top + contentHeight + 180));
+  canvas.width = WIDTH * EXPORT_SCALE;
+  canvas.height = Math.ceil(height * EXPORT_SCALE);
+  ctx.scale(EXPORT_SCALE, EXPORT_SCALE);
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = 'high';
+  ctx.fillStyle = paper;
+  ctx.fillRect(0, 0, WIDTH, height);
+
+  if (mandala) {
+    ctx.save(); ctx.globalAlpha = .16;
+    ctx.drawImage(mandala, -110, -100, 400, 400);
+    ctx.drawImage(mandala, WIDTH - 290, -100, 400, 400);
+    ctx.restore();
+  }
+  ctx.strokeStyle = primary;
+  ctx.lineWidth = 1.2;
+  ctx.beginPath(); ctx.roundRect(32, 32, WIDTH - 64, height - 64, 26); ctx.stroke();
+  ctx.save(); ctx.globalAlpha = .3; ctx.strokeStyle = deep;
+  ctx.beginPath(); ctx.roundRect(44, 44, WIDTH - 88, height - 88, 19); ctx.stroke(); ctx.restore();
+  if (monogram) ctx.drawImage(monogram, 554, 66, 92, 92);
+
+  const arch = (x: number, y: number, width: number, photoHeight: number) => {
+    const radius = width / 2;
+    ctx.beginPath();
+    ctx.moveTo(x, y + photoHeight - 12);
+    ctx.lineTo(x, y + radius);
+    ctx.arc(x + radius, y + radius, radius, Math.PI, 0);
+    ctx.lineTo(x + width, y + photoHeight - 12);
+    ctx.quadraticCurveTo(x + width, y + photoHeight, x + width - 12, y + photoHeight);
+    ctx.lineTo(x + 12, y + photoHeight);
+    ctx.quadraticCurveTo(x, y + photoHeight, x, y + photoHeight - 12);
+    ctx.closePath();
+  };
+  const portrait = (image: HTMLImageElement, x: number, y: number) => {
+    const width = 434, photoHeight = 552;
+    ctx.save();
+    arch(x - 8, y - 8, width + 16, photoHeight + 16);
+    ctx.strokeStyle = primary; ctx.globalAlpha = .4; ctx.lineWidth = 1.2; ctx.stroke();
+    ctx.restore();
+    ctx.save(); arch(x, y, width, photoHeight); ctx.clip();
+    const scale = Math.max(width / image.naturalWidth, photoHeight / image.naturalHeight) * 1.07;
+    const drawnWidth = image.naturalWidth * scale, drawnHeight = image.naturalHeight * scale;
+    ctx.drawImage(image, x + (width - drawnWidth) / 2, y + (photoHeight - drawnHeight) * .34, drawnWidth, drawnHeight);
+    ctx.restore();
+  };
+  ctx.textBaseline = 'top';
+  let y = top;
+  for (const block of blocks) {
+    if (block.kind === 'photos') {
+      portrait(photos[0], 142, y + 8);
+      portrait(photos[1], 624, y + 8);
+      y += block.height + block.gap;
+      continue;
+    }
+    if (block.kind === 'divider') {
+      ctx.save(); ctx.strokeStyle = primary; ctx.globalAlpha = .4; ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(360, y + 12); ctx.lineTo(565, y + 12); ctx.moveTo(635, y + 12); ctx.lineTo(840, y + 12); ctx.stroke();
+      ctx.globalAlpha = 1; ctx.fillStyle = primary;
+      ctx.beginPath(); ctx.moveTo(600, y + 5); ctx.lineTo(607, y + 12); ctx.lineTo(600, y + 19); ctx.lineTo(593, y + 12); ctx.closePath(); ctx.fill();
+      ctx.restore(); y += block.height + block.gap;
+      continue;
+    }
+    ctx.font = block.font;
+    ctx.fillStyle = block.color;
+    for (const line of block.lines) {
+      const letters = [...line];
+      const lineWidth = ctx.measureText(line).width + Math.max(0, letters.length - 1) * block.tracking;
+      let x = (WIDTH - lineWidth) / 2;
+      ctx.textAlign = 'left';
+      if (block.tracking) {
+        for (const letter of letters) { ctx.fillText(letter, x, y); x += ctx.measureText(letter).width + block.tracking; }
+      } else if (block.names && line.includes('&')) {
+        const [first, second] = line.split('&');
+        ctx.fillText(first, x, y); x += ctx.measureText(first).width;
+        ctx.fillStyle = primary; ctx.fillText('&', x, y); x += ctx.measureText('&').width;
+        ctx.fillStyle = block.color; ctx.fillText(second, x, y);
+      } else ctx.fillText(line, x, y);
+      y += block.lineHeight;
+    }
+    y += block.gap;
+  }
+  if (textile) {
+    ctx.save(); ctx.beginPath(); ctx.rect(48, height - 132, WIDTH - 96, 84); ctx.clip();
+    for (let x = 48; x < WIDTH - 48; x += 140) ctx.drawImage(textile, x, height - 132, 140, 84);
+    ctx.restore();
+  }
   return await new Promise<Blob>((resolve, reject) => canvas.toBlob(blob => blob ? resolve(blob) : reject(new Error('Could not download the invitation card.')), 'image/png'));
 }

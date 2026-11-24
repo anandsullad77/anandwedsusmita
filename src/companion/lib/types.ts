@@ -57,7 +57,8 @@ export type Household = {
 
 export type InviteBundle = { event: EventInfo; functions: Fn[]; household: Household; people: Person[] };
 export type GeneralSections = { cover: boolean; schedule: boolean; photos: boolean; uploads: boolean; updates: boolean; guestbook: boolean; download: boolean; quests: boolean };
-export type GeneralInvitationSettings = { welcomeMessage: string; coverPath: string | null; coverUrl: string | null; sections: GeneralSections };
+export type InvitationPreviewPhoto = { path: string | null; url: string | null };
+export type GeneralInvitationSettings = { welcomeMessage: string; coverPath: string | null; coverUrl: string | null; previewPhotos: InvitationPreviewPhoto[]; sections: GeneralSections };
 export type GeneralInviteBundle = { event: EventInfo; functions: Fn[]; guestName: string | null; settings?: GeneralInvitationSettings };
 export type WishStatus = 'pending' | 'approved' | 'rejected';
 export type Wish = { id: string; name: string; message: string; status: WishStatus; createdAt: string };
@@ -141,7 +142,7 @@ export interface Backend {
   inviteBundle(token: string): Promise<InviteBundle | null>;
   generalInvite(token: string, name?: string): Promise<GeneralInviteBundle | null>;
   generalSettings(eventId: string): Promise<GeneralInvitationSettings>;
-  saveGeneralSettings(eventId: string, settings: GeneralInvitationSettings, cover?: Blob): Promise<void>;
+  saveGeneralSettings(eventId: string, settings: GeneralInvitationSettings, cover?: Blob, previews?: (Blob | null)[]): Promise<void>;
   listWishes(eventId: string, moderation?: boolean): Promise<Wish[]>;
   submitWish(token: string, name: string, message: string, requestId: string): Promise<void>;
   moderateWish(eventId: string, wishId: string, status: WishStatus): Promise<void>;
@@ -151,7 +152,7 @@ export interface Backend {
   requestAccess(slug: string, name: string, phone: string, note: string): Promise<void>;
   saveRsvp(eventId: string, payload: RsvpPayload): Promise<void>;
   changes(householdId: string): Promise<Change[]>;
-  listPhotos(eventId: string, options?: { questId?: string; includeHidden?: boolean }): Promise<Photo[]>;
+  listPhotos(eventId: string, options?: { questId?: string; includeHidden?: boolean; preview?: boolean }): Promise<Photo[]>;
   photoQuestSummary(eventId: string): Promise<PhotoQuestSummary>;
   uploadPhoto(eventId: string, blob: Blob, meta: { moment?: string; questId?: string; caption?: string; uploaderName: string; personId: string | null }): Promise<void>;
   uploadPhotoPost(eventId: string, postId: string, images: PostImage[], meta: PhotoMeta): Promise<void>;

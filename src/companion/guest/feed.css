@@ -6,8 +6,9 @@
 .photo-carousel { position: relative; background: var(--card); }
 .carousel-track { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; overscroll-behavior-x: contain; }
 .carousel-track::-webkit-scrollbar { display: none; }
-.carousel-slide { flex: 0 0 100%; min-width: 0; scroll-snap-align: center; scroll-snap-stop: always; }
-.carousel-slide img { width: 100%; aspect-ratio: 1; object-fit: contain; }
+.carousel-slide { flex: 0 0 100%; min-width: 0; aspect-ratio: 1; scroll-snap-align: center; scroll-snap-stop: always; }
+.carousel-slide img { display: block; width: 100%; aspect-ratio: 1; object-fit: contain; }
+.carousel-slide img:not([src]) { visibility: hidden; }
 .carousel-control { position: absolute; top: calc(50% - 36px); width: 44px; height: 44px; display: grid; place-items: center; border: 1px solid var(--line); border-radius: 50%; background: var(--paper); color: var(--deep); cursor: pointer; box-shadow: 0 2px 8px #0002; }
 .carousel-control:disabled { visibility: hidden; }
 .carousel-prev { left: 12px; }

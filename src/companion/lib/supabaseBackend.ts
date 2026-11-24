@@ -31,22 +31,57 @@ const toHousehold = (h: Record<string, any>): Household => ({
   updatedAt: h.updated_at, side: h.side, invitedBy: h.invited_by, inviteStatus: h.invite_status, source: h.source, functionIds: h.function_ids
 });
 
-async function signedUrls(paths: string[]): Promise<Map<string, string>> {
+// Keep URLs stable across feed refreshes so the browser can reuse downloaded photos.
+// Memory only, scoped to the account, and never kept beyond their five-minute expiry.
+const photoUrlCache = new Map<string, { url: string; expiresAt: number }>();
+const photoUrlRequests = new Map<string, Promise<Map<string, string>>>();
+async function signedUrls(paths: string[], userId: string): Promise<Map<string, string>> {
   const m = new Map<string, string>();
   if (!paths.length) return m;
-  const { data } = await sb().storage.from('photos').createSignedUrls(paths, 5 * 60);
-  for (const d of data ?? []) if (d.path && d.signedUrl) m.set(d.path, d.signedUrl);
+  const now = Date.now();
+  for (const [key, entry] of photoUrlCache) if (entry.expiresAt <= now) photoUrlCache.delete(key);
+  const missing: string[] = [];
+  for (const path of new Set(paths)) {
+    const cached = photoUrlCache.get(`${userId}:${path}`);
+    if (cached) m.set(path, cached.url);
+    else missing.push(path);
+  }
+  if (missing.length) {
+    const requestKey = JSON.stringify([userId, [...missing].sort()]);
+    let request = photoUrlRequests.get(requestKey);
+    if (!request) {
+      request = (async () => {
+        const expiresAt = Date.now() + (5 * 60 - 30) * 1000;
+        const data = must(await sb().storage.from('photos').createSignedUrls(missing, 5 * 60));
+        const urls = new Map<string, string>();
+        for (const d of data ?? []) if (d.path && d.signedUrl) {
+          urls.set(d.path, d.signedUrl);
+          photoUrlCache.set(`${userId}:${d.path}`, { url: d.signedUrl, expiresAt });
+        }
+        // Bound memory when a host browses several collections.
+        while (photoUrlCache.size > 1000) photoUrlCache.delete(photoUrlCache.keys().next().value!);
+        return urls;
+      })();
+      photoUrlRequests.set(requestKey, request);
+    }
+    try { for (const [path, url] of await request) m.set(path, url); }
+    finally { if (photoUrlRequests.get(requestKey) === request) photoUrlRequests.delete(requestKey); }
+  }
   return m;
 }
 
-async function photosFor(eventId: string, includeHidden: boolean, questId?: string): Promise<Photo[]> {
+async function photosFor(eventId: string, includeHidden: boolean, questId?: string, preview = false): Promise<Photo[]> {
   let q = sb().from('photos').select('*').eq('event_id', eventId);
   if (!includeHidden) q = q.eq('hidden', false);
   if (questId) q = q.eq('quest_id', questId);
   if (includeHidden) q = q.order('pinned', { ascending: false });
-  const rows = must(await q.order('created_at', { ascending: false }).limit(200)) as any[];
+  const [result, session] = await Promise.all([
+    q.order('created_at', { ascending: false }).limit(preview ? 3 : 200),
+    sb().auth.getSession(),
+  ]);
+  const rows = must(result) as any[];
   // Complete carousels even when a post straddles the latest-photo limit.
-  const postIds = [...new Set(rows.map(r => r.post_id).filter(Boolean))];
+  const postIds = !preview && rows.length === 200 ? [...new Set(rows.map(r => r.post_id).filter(Boolean))] : [];
   if (postIds.length) {
     let grouped = sb().from('photos').select('*').eq('event_id', eventId).in('post_id', postIds);
     if (!includeHidden) grouped = grouped.eq('hidden', false);
@@ -54,11 +89,15 @@ async function photosFor(eventId: string, includeHidden: boolean, questId?: stri
     for (const row of must(await grouped) as any[]) if (!rows.some(r => r.id === row.id)) rows.push(row);
   }
   const ids = rows.map(r => r.id);
-  const ak = ids.length ? must(await sb().from('akshate').select('photo_id,user_id').in('photo_id', ids)) as any[] : [];
-  const flags = includeHidden && ids.length ? must(await sb().from('photo_flags').select('photo_id').in('photo_id', ids)) as any[] : [];
-  const me = (await sb().auth.getUser()).data.user?.id;
-  const device = me ? must(await sb().from('devices').select('person_id').eq('event_id', eventId).eq('user_id', me).maybeSingle()) as { person_id: string } | null : null;
-  const urls = await signedUrls(rows.map(r => r.storage_path));
+  // The local session identifies "my photos"; database and Storage RLS still enforce access.
+  const me = session.data.session?.user.id;
+  const needsDevice = !preview && me && rows.some(r => !r.uploaded_by && r.person_id);
+  const [ak, flags, device, urls] = await Promise.all([
+    !preview && ids.length ? sb().from('akshate').select('photo_id,user_id').in('photo_id', ids).then(r => must(r) as any[]) : [],
+    includeHidden && ids.length ? sb().from('photo_flags').select('photo_id').in('photo_id', ids).then(r => must(r) as any[]) : [],
+    needsDevice ? sb().from('devices').select('person_id').eq('event_id', eventId).eq('user_id', me!).maybeSingle().then(r => must(r) as { person_id: string } | null) : null,
+    signedUrls(rows.map(r => r.storage_path), me ?? ''),
+  ]);
   return rows.map(r => ({
     id: r.id, postId: r.post_id, postPosition: r.post_position, uploaderName: r.uploader_name, moment: r.moment, questId: r.quest_id, caption: r.caption, createdAt: r.created_at, pinned: r.pinned, hidden: r.hidden, flags: includeHidden ? flags.filter(f => f.photo_id === r.id).length : undefined,
     akshate: ak.filter(a => a.photo_id === r.id).length, mine: ak.some(a => a.photo_id === r.id && a.user_id === me),
@@ -92,31 +131,62 @@ export const supabaseBackend: Backend = {
     const { data, error } = await sb().from('general_invitation_settings').select('*').eq('event_id', eventId).maybeSingle();
     if (error) throw new Error(error.code === 'PGRST205' ? 'Apply the 0005_general_invitation_extras.sql database migration to enable invitation settings and the guestbook.' : error.message);
     if (!data) return defaultGeneralSettings();
-    const settings = normalizeGeneralSettings({ welcomeMessage: data.welcome_message, coverPath: data.cover_path, coverUrl: null, sections: data.sections });
-    if (settings.coverPath) {
-      const signed = must(await sb().storage.from('invitation-covers').createSignedUrl(settings.coverPath, 7 * 86400));
-      if (!signed) throw new Error('Could not load the invitation cover.');
-      settings.coverUrl = signed.signedUrl;
-    }
+    const settings = normalizeGeneralSettings({ welcomeMessage: data.welcome_message, coverPath: data.cover_path, coverUrl: null,
+      previewPhotos: (data.preview_photo_paths ?? []).map((path: string) => ({ path, url: null })), sections: data.sections });
+    await Promise.all([
+      (async () => {
+        if (!settings.coverPath) return;
+        const signed = must(await sb().storage.from('invitation-covers').createSignedUrl(settings.coverPath, 7 * 86400));
+        if (!signed) throw new Error('Could not load the invitation cover.');
+        settings.coverUrl = signed.signedUrl;
+      })(),
+      (async () => {
+        if (!settings.previewPhotos.length) return;
+        const signed = must(await sb().storage.from('invitation-previews').createSignedUrls(settings.previewPhotos.map(photo => photo.path!), 3600));
+        settings.previewPhotos = settings.previewPhotos.map(photo => ({ ...photo, url: signed?.find(item => item.path === photo.path)?.signedUrl || null }));
+      })(),
+    ]);
     return settings;
   },
-  async saveGeneralSettings(eventId, settings, cover) {
+  async saveGeneralSettings(eventId, settings, cover, previews = []) {
     validateGeneralSettings(settings);
+    if (previews.length > 3) throw new Error('Choose up to three preview photos.');
+    const previous = must(await sb().from('general_invitation_settings').select('*').eq('event_id', eventId).maybeSingle());
     let coverPath = settings.coverPath;
-    let uploaded: string | null = null;
-    if (cover) {
-      if (cover.size > 2 * 1024 * 1024 || !['image/webp', 'image/png', 'image/jpeg'].includes(cover.type)) throw new Error('Use a JPG, PNG or WebP cover smaller than 2 MB.');
-      const extension = cover.type === 'image/jpeg' ? 'jpg' : cover.type === 'image/png' ? 'png' : 'webp';
-      uploaded = `${eventId}/${crypto.randomUUID()}.${extension}`;
-      must(await sb().storage.from('invitation-covers').upload(uploaded, cover, { contentType: cover.type }));
-      coverPath = uploaded;
-    }
+    const previewPaths: string[] = [];
+    const uploaded: { bucket: string; path: string }[] = [];
+    const upload = async (bucket: string, blob: Blob) => {
+      if (blob.size > 2 * 1024 * 1024 || !['image/webp', 'image/png', 'image/jpeg'].includes(blob.type)) throw new Error('Use a JPG, PNG or WebP photo smaller than 2 MB.');
+      const extension = blob.type === 'image/jpeg' ? 'jpg' : blob.type === 'image/png' ? 'png' : 'webp';
+      const path = `${eventId}/${crypto.randomUUID()}.${extension}`;
+      const { error } = await sb().storage.from(bucket).upload(path, blob, { contentType: blob.type });
+      if (error) throw new Error(bucket === 'invitation-previews' && String(error.message).toLowerCase().includes('bucket')
+        ? 'Apply the 0011_invitation_preview_photos.sql migration before uploading preview photos.' : error.message);
+      uploaded.push({ bucket, path });
+      return path;
+    };
     try {
-      must(await sb().rpc('save_general_invitation_settings', { p_event: eventId, p_welcome: settings.welcomeMessage.trim(), p_cover: coverPath, p_sections: settings.sections }));
+      if (cover) coverPath = await upload('invitation-covers', cover);
+      for (let index = 0; index < 3; index++) {
+        const blob = previews[index];
+        const path = blob ? await upload('invitation-previews', blob) : settings.previewPhotos[index]?.path;
+        if (path) previewPaths.push(path);
+      }
+      const args = { p_event: eventId, p_welcome: settings.welcomeMessage.trim(), p_cover: coverPath, p_sections: settings.sections };
+      const { error } = await sb().rpc('save_general_invitation_with_previews', { ...args, p_preview_paths: previewPaths });
+      if (error?.code === 'PGRST202' && !previewPaths.length && !settings.previewPhotos.length && !previews.some(Boolean)) {
+        must(await sb().rpc('save_general_invitation_settings', args));
+      } else if (error) {
+        throw new Error(error.code === 'PGRST202' ? 'Apply the 0011_invitation_preview_photos.sql migration before saving preview photos.' : error.message);
+      }
     } catch (e) {
-      if (uploaded) await sb().storage.from('invitation-covers').remove([uploaded]);
+      await Promise.allSettled(uploaded.map(file => sb().storage.from(file.bucket).remove([file.path])));
       throw e;
     }
+    // Replaced previews no longer need to consume storage. RLS prevents deleting
+    // a photo that another host has selected again during a concurrent save.
+    const retired = ((previous?.preview_photo_paths ?? []) as string[]).filter(path => !previewPaths.includes(path));
+    if (retired.length) await sb().storage.from('invitation-previews').remove(retired).catch(() => {});
   },
   async listWishes(eventId, moderation = false) {
     let query = sb().from('guestbook_messages').select('id,name,message,status,created_at').eq('event_id', eventId);
@@ -155,7 +225,7 @@ export const supabaseBackend: Backend = {
     const rows = must(await sb().from('household_changes').select('*').eq('household_id', householdId).order('created_at', { ascending: false }).limit(20)) as any[];
     return rows.map(r => ({ byName: r.by_name, summary: r.summary, at: r.created_at }));
   },
-  async listPhotos(eventId, options) { return photosFor(eventId, !!options?.includeHidden, options?.questId); },
+  async listPhotos(eventId, options) { return photosFor(eventId, !!options?.includeHidden, options?.questId, !!options?.preview); },
   async photoQuestSummary(eventId) {
     const { data, error } = await sb().rpc('photo_quest_summary', { p_event: eventId });
     if (error) throw new Error(error.message);

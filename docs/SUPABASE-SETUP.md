@@ -40,8 +40,9 @@ Use the Supabase **SQL Editor** and run each file in `supabase/migrations/` in t
 8. `0008_single_wedding.sql` — `/invitation` opens only this wedding; PIN crypto functions support Supabase's extensions schema; hosts can remove photo files from private Storage.
 9. `0009_google_guest_access.sql` — Google sign-in is required for this wedding's photos, uploads and wishes, with host access preserved.
 10. `0010_photo_posts.sql` — adds grouping and positions for multi-image posts while retaining legacy photos.
+11. `0011_invitation_preview_photos.sql` — three host-managed photos in the invitation before Google sign-in, with a separate private previews bucket and host-only uploads.
 
-**Run only missing migrations, in order.** A project with 0001–0008 needs 0009 and 0010; a project already on 0009 needs only 0010. These migrations are not a database reset script; rerunning `0001` against existing tables will fail. Follow [the Google sign-in guide](GOOGLE-SIGN-IN.md) to configure the custom domain and application callback before publishing. The original Jothe Jotheyali source folder has not been changed.
+**Run only missing migrations, in order, through 0011.** A project already on 0010 needs only 0011. These migrations are not a database reset script; rerunning `0001` against existing tables will fail. Follow [the Google sign-in guide](GOOGLE-SIGN-IN.md) to configure the custom domain and application callback before publishing. The original Jothe Jotheyali source folder has not been changed.
 
 ## 3. Configure the wedding and host access
 
@@ -90,13 +91,13 @@ For Netlify, the included `public/_redirects` provides the SPA fallback. Other s
 
 1. Open `/admin` and sign in with your confirmed host email/password.
 2. **Families & invites:** add families, or download the Excel sample, replace the sample rows, upload it, review, and create the invitations. Send personal links using the WhatsApp buttons. Imports add families; they do not update existing matching family names.
-3. **General invitation:** edit the companion welcome/cover and choose which sections to show. These settings affect `/invitation` and the family app; the original `/` invitation stays as designed.
+3. **General invitation:** edit the companion welcome/cover, upload up to three **Photos before sign-in**, and choose which sections to show. Save invitation changes to publish the previews. Signed-in guests continue to see the latest feed photos. These settings affect `/invitation` and the family app; the original `/` invitation stays as designed.
 4. **PIN & links:** confirm the family PIN and copy the public companion or family recovery link.
 5. **Photos & flags:** moderate photo reports; guests can request review but cannot remove other people's photos.
 6. **General invitation → Review wishes & blessings:** approve wishes before they appear to guests.
 7. **Gamanisi! updates:** publish actual host updates after confirming the wording.
 
-The companion is linked from the public invitation. Its invitation, cover, venue and host updates stay public. Visitors need Google sign-in to view photos, read or submit wishes, or upload images; existing hosts retain their email/password access. Family RSVP, travel, stay, phone numbers, and host administration retain their separate access controls. The migrations create the `photos` and `invitation-covers` buckets as private; keep them private.
+The companion is linked from the public invitation. Its invitation, cover, venue, host updates and up to three host-selected preview photos are visible before Google sign-in. Visitors still need Google sign-in to view the full guest photo feed, read or submit wishes, or upload images; existing hosts retain their email/password access. Family RSVP, travel, stay, phone numbers, and host administration retain their separate access controls. The `photos`, `invitation-covers` and `invitation-previews` buckets remain private. Preview policies allow invitation visitors to sign only the selected images; hosts alone can upload, replace or remove them. Replaced preview files are cleaned up after a successful save.
 
 ## 7. Check before sharing
 

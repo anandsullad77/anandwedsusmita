@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { api } from '../lib/backend';
 import { ago } from '../lib/format';
-import { DEFAULT_WELCOME, prepareInvitationCover } from '../lib/generalInvitation';
+import { DEFAULT_WELCOME, prepareInvitationCover, prepareInvitationPreview } from '../lib/generalInvitation';
 import type { AdminData, GeneralInvitationSettings, GeneralSections, Wish, WishStatus } from '../lib/types';
 import InvitationHero from '../guest/InvitationHero';
+import InvitationPhotoPreview from '../guest/InvitationPhotoPreview';
 import { useVisibleViewport } from '../lib/useVisibleViewport';
 import '../guest/general.css';
 
@@ -17,6 +18,8 @@ export default function GeneralInvitationAdmin({ d }: { d: AdminData }) {
   const [draft, setDraft] = useState<GeneralInvitationSettings | null>(null);
   const [cover, setCover] = useState<Blob | null>(null);
   const [coverPreview, setCoverPreview] = useState<string | null>(null);
+  const [previewFiles, setPreviewFiles] = useState<(Blob | null)[]>([null, null, null]);
+  const [previewUrls, setPreviewUrls] = useState<(string | null)[]>([]);
   const [wishes, setWishes] = useState<Wish[]>([]);
   const [filter, setFilter] = useState<WishStatus>('pending');
   const [busy, setBusy] = useState<string | null>(null);
@@ -27,6 +30,7 @@ export default function GeneralInvitationAdmin({ d }: { d: AdminData }) {
   const [compact, setCompact] = useState(() => matchMedia('(max-width: 1100px)').matches);
   const [previewOpen, setPreviewOpen] = useState(false);
   const coverInput = useRef<HTMLInputElement>(null);
+  const previewInputs = useRef<(HTMLInputElement | null)[]>([]);
   const editor = useRef<HTMLFormElement>(null);
   useVisibleViewport(editor, 76, !!draft);
   const lock = useRef(false);
@@ -54,6 +58,11 @@ export default function GeneralInvitationAdmin({ d }: { d: AdminData }) {
     setCoverPreview(url);
     return () => URL.revokeObjectURL(url);
   }, [cover]);
+  useEffect(() => {
+    const urls = previewFiles.map(file => file ? URL.createObjectURL(file) : null);
+    setPreviewUrls(urls);
+    return () => urls.forEach(url => { if (url) URL.revokeObjectURL(url); });
+  }, [previewFiles]);
   const run = async (action: string, fn: () => Promise<void>) => {
     if (lock.current) return;
     lock.current = true; setBusy(action); setError(null); setNotice(null);
@@ -62,9 +71,11 @@ export default function GeneralInvitationAdmin({ d }: { d: AdminData }) {
   };
   const save = () => run('save', async () => {
     if (!draft) return;
-    await api.saveGeneralSettings(d.event.id, draft, cover ?? undefined);
+    await api.saveGeneralSettings(d.event.id, draft, cover ?? undefined, previewFiles);
     const latest = await api.generalSettings(d.event.id);
     setSaved(latest); setDraft(latest); setCover(null);
+    setPreviewFiles([null, null, null]);
+    previewInputs.current.forEach(input => { if (input) input.value = ''; });
     if (coverInput.current) coverInput.current.value = '';
     setNotice('Invitation saved. General visitors and family app guests will see your changes when they open or refresh their invitation.');
   });
@@ -73,8 +84,9 @@ export default function GeneralInvitationAdmin({ d }: { d: AdminData }) {
     setWishes(items => items.map(item => item.id === wish.id ? { ...item, status } : item));
     setNotice(status === 'approved' ? `Approved the wish from ${wish.name}.` : `Hidden the wish from ${wish.name}.`);
   });
-  const dirty = !!cover || JSON.stringify(draft) !== JSON.stringify(saved);
+  const dirty = !!cover || previewFiles.some(Boolean) || JSON.stringify(draft) !== JSON.stringify(saved);
   const previewSettings = draft ? { ...draft, coverUrl: coverPreview ?? draft.coverUrl } : null;
+  const publicPhotos = Array.from({ length: 3 }, (_, index) => ({ id: String(index), url: previewUrls[index] ?? draft?.previewPhotos[index]?.url ?? '', alt: `Wedding preview photo ${index + 1}` })).filter(photo => photo.url);
 
   return <>
     <header><h1 className="h1">General invitation</h1><p style={{ color: 'var(--p-muted)', marginBottom: 0 }}>Personalize the shared invitation for general visitors and family app guests, and review their wishes.</p></header>
@@ -101,12 +113,35 @@ export default function GeneralInvitationAdmin({ d }: { d: AdminData }) {
             if (file) void run('cover', async () => { setCover(await prepareInvitationCover(file)); });
           }} /><span className="import-help">JPG, PNG or WebP, up to 5 MB. The preview shows how the photo will be cropped.</span></div>
           <button type="button" className="abtn" onClick={() => { setCover(null); setDraft({ ...draft, coverPath: null, coverUrl: null }); if (coverInput.current) coverInput.current.value = ''; }}>Use original cover photo</button>
+          <section className="invitation-preview-editor" aria-labelledby="invitation-preview-title">
+            <h3 id="invitation-preview-title">Photos before sign-in</h3>
+            <p className="import-help">Choose up to three photos for anyone opening the invitation. After sign-in, guests see the latest photos from the Feed.</p>
+            <div className="invitation-preview-slots">{[0, 1, 2].map(index => {
+              const photo = publicPhotos.find(photo => photo.id === String(index));
+              return <div className="invitation-preview-slot" key={index}>
+                {photo ? <img src={photo.url} alt={`Preview photo ${index + 1}`} /> : <div className="invitation-preview-placeholder" aria-hidden="true">{index + 1}</div>}
+                <div className="field"><label htmlFor={`invitation-preview-${index}`}>Preview photo {index + 1}</label><input id={`invitation-preview-${index}`} ref={input => { previewInputs.current[index] = input; }} type="file" accept="image/jpeg,image/png,image/webp" onChange={e => {
+                  const file = e.target.files?.[0];
+                  if (file) void run(`preview-${index}`, async () => {
+                    const blob = await prepareInvitationPreview(file);
+                    setPreviewFiles(files => files.map((previous, position) => position === index ? blob : previous));
+                  });
+                }} /></div>
+                <button type="button" className="abtn" disabled={!photo && !draft.previewPhotos[index]?.path} onClick={() => {
+                  setPreviewFiles(files => files.map((previous, position) => position === index ? null : previous));
+                  setDraft({ ...draft, previewPhotos: Array.from({ length: 3 }, (_, position) => position === index ? { path: null, url: null } : draft.previewPhotos[position] ?? { path: null, url: null }) });
+                  if (previewInputs.current[index]) previewInputs.current[index]!.value = '';
+                }}>Remove preview photo {index + 1}</button>
+              </div>;
+            })}</div>
+            <p className="import-help">JPG, PNG or WebP, up to 5 MB each. Save invitation changes to publish your selection.</p>
+          </section>
           <div><b style={{ fontSize: 14 }}>Visible sections</b><div className="visibility-options">
             {(Object.keys(sectionLabels) as (keyof GeneralSections)[]).map(key => <label key={key}><input type="checkbox" checked={draft.sections[key]} onChange={e => setDraft({ ...draft, sections: { ...draft.sections, [key]: e.target.checked } })} />{sectionLabels[key]}</label>)}
           </div></div>
           <div className="import-actions general-save-actions">
             <button className="abtn red" disabled={!dirty || !draft.welcomeMessage.trim()}>{busy === 'save' ? 'Saving…' : 'Save invitation changes'}</button>
-            <button type="button" className="abtn" disabled={!dirty} onClick={() => { if (saved) setDraft(saved); setCover(null); if (coverInput.current) coverInput.current.value = ''; }}>Discard changes</button>
+            <button type="button" className="abtn" disabled={!dirty} onClick={() => { if (saved) setDraft(saved); setCover(null); setPreviewFiles([null, null, null]); previewInputs.current.forEach(input => { if (input) input.value = ''; }); if (coverInput.current) coverInput.current.value = ''; }}>Discard changes</button>
           </div>
           <p className="import-help">The date, couple’s names and venue come from the wedding details. Section visibility applies to the general invitation.</p>
         </fieldset>
@@ -114,6 +149,7 @@ export default function GeneralInvitationAdmin({ d }: { d: AdminData }) {
       <details className="general-preview-disclosure" open={!compact || previewOpen} onToggle={e => { if (compact) setPreviewOpen(e.currentTarget.open); }}><summary><span>Preview invitation{dirty ? ' · unsaved changes' : ''}</span><span>⌄</span></summary><section className="panel general-editor-preview" aria-label="Invitation preview">
         <h2>Invitation preview{dirty ? ' · unsaved changes' : ''}</h2>
         <InvitationHero event={d.event} settings={previewSettings} />
+        {draft.sections.photos && publicPhotos.length > 0 && <div className="invitation-preview-sample"><h3>Before sign-in</h3><InvitationPhotoPreview photos={publicPhotos} publicPreview /></div>}
         <p className="import-help">Visible sections: {(Object.keys(sectionLabels) as (keyof GeneralSections)[]).filter(key => key !== 'cover' && draft.sections[key]).map(key => sectionLabels[key]).join(', ') || 'Invitation only'}.</p>
       </section></details>
     </div>}

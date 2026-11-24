@@ -36,31 +36,32 @@ export default function Scene({ ctx, canUpload = true, canWish = true, showPhoto
   const loadGeneration = useRef(0);
   const load = useCallback(async () => {
     const generation = ++loadGeneration.current;
-    try {
-      const [nextPhotos, nextWishes] = await Promise.all([
-        showPhotos ? api.listPhotos(b.event.id, quest ? { questId: quest.id } : undefined) : Promise.resolve([]),
-        canWish && !quest ? api.listWishes(b.event.id) : Promise.resolve([]),
-      ]);
-      if (generation !== loadGeneration.current) return;
-      setPhotos(nextPhotos); setWishes(nextWishes); setLoadError(false); setLoaded(true);
-    } catch {
-      if (generation !== loadGeneration.current) return;
-      setLoadError(true); setLoaded(true);
-    }
+    let failed = false;
+    // Display each section as soon as it arrives; slow wishes must not hold up photos.
+    await Promise.all([
+      (showPhotos ? api.listPhotos(b.event.id, quest ? { questId: quest.id } : undefined) : Promise.resolve([]))
+        .then(items => { if (generation === loadGeneration.current) setPhotos(items); }).catch(() => { failed = true; }),
+      (canWish && !quest ? api.listWishes(b.event.id) : Promise.resolve([]))
+        .then(items => { if (generation === loadGeneration.current) setWishes(items); }).catch(() => { failed = true; }),
+    ]);
+    if (generation !== loadGeneration.current) return;
+    setLoadError(failed); setLoaded(true);
   }, [b.event.id, quest?.id, canWish, showPhotos]);
   const createBase = ctx.scenePath?.endsWith('/feed') ? `${ctx.scenePath.slice(0, -5)}/create` : '/app/create';
   const uploadPath = quest && ctx.questsEnabled !== false ? `${createBase}?type=photos&quest=${quest.id}` : createBase;
   const selectCollection = (id: string) => { setSearch(previous => { if (id) previous.set('quest', id); else previous.delete('quest'); return previous; }); window.scrollTo({ top: 0, behavior: 'instant' }); };
 
   useEffect(() => {
-    setLoaded(false); setPhotos([]); setWishes([]); setMenu(null); setVisible(12);
+    setLoaded(false); setLoadError(false); setPhotos([]); setWishes([]); setMenu(null); setVisible(12);
     void load();
     pendingCount(b.event.id).then(setPending);
     const off = onQueueChange(() => { void pendingCount(b.event.id).then(setPending); void load(); });
-    const t = setInterval(load, 20_000);
+    const t = setInterval(() => { if (!document.hidden) void load(); }, 20_000);
+    const resume = () => { if (!document.hidden) void load(); };
     const h = () => void load();
     window.addEventListener('as-wedding-db', h);
-    return () => { ++loadGeneration.current; off(); clearInterval(t); window.removeEventListener('as-wedding-db', h); };
+    document.addEventListener('visibilitychange', resume);
+    return () => { ++loadGeneration.current; off(); clearInterval(t); window.removeEventListener('as-wedding-db', h); document.removeEventListener('visibilitychange', resume); };
   }, [load]);
 
   async function akshate(p: Photo) {
@@ -114,18 +115,18 @@ export default function Scene({ ctx, canUpload = true, canWish = true, showPhoto
         </div>
       )}
 
-      {loadError && <div className="scene-empty card" role="alert"><p>Could not load the Feed.</p><button className="btn btn-ghost" onClick={() => void load()}>Try again</button></div>}
-      {!loaded && <p className="guest-meta" role="status">Gathering the memories…</p>}
+      {loadError && <div className="scene-empty card" role="alert"><p>Some posts could not be refreshed.</p><button className="btn btn-ghost" onClick={() => void load()}>Try again</button></div>}
+      {!loaded && !shown.length && <p className="guest-meta" role="status">Gathering the memories…</p>}
       {loaded && !loadError && !shown.length && <div className="scene-empty card" lang="en"><Icon size={32} d="M3 6h18v14H3zM21 16l-5-5-9 9" /><h2>{quest ? 'This collection is waiting for its first memory.' : filter === 'mine' ? 'Your moments belong here.' : 'The first posts are on their way.'}</h2><p>Photos and wishes from the people who make this day special.</p>{(canUpload || canWish) && <Link className="btn btn-primary" to={uploadPath}>Create Post</Link>}</div>}
       {loaded && (photos.length >= 200 || wishes.length === 50) && <p className="guest-meta">Showing the latest photos and up to 50 approved wishes.</p>}
 
-      {!loadError && shown.slice(0, visible).map(post => post.kind === 'wish' ? (
+      {shown.slice(0, visible).map((post, index) => post.kind === 'wish' ? (
         <article key={post.id} className="post feed-post feed-wish" data-post-type="wish">
           <div className="post-header"><div className="post-avatar" aria-hidden="true">{post.wish.name.slice(0, 2).toUpperCase()}</div><div className="post-author"><b className="post-author-name">{post.wish.name}</b><div className="post-metadata"><MomentTag label="Wish & blessing" /><time className="post-timestamp" dateTime={post.createdAt}>{ago(post.createdAt)}</time></div></div></div>
           <p className="feed-wish-message">{post.wish.message}</p>
         </article>
       ) : (
-        <PhotoPost key={post.id} photos={post.photos}>{(p, carousel) => <>
+        <PhotoPost key={post.id} photos={post.photos} priority={index === 0}>{(p, carousel) => <>
           <div className="post-header" lang="en">
             <div className="post-avatar" aria-hidden="true">{p.uploaderName.slice(0, 2).toUpperCase()}</div>
             <div className="post-author">

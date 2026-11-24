@@ -153,6 +153,39 @@ async function main() {
     await db.query('update photos set uploaded_by=null where post_id=$1', [post]);
     assert.equal((await db.query('select * from photos where post_id=$1 and uploaded_by is null', [post])).rows.length, 2);
     console.log('PASS: grouped posts preserve legacy data, enforce image positions and ownership, and publish atomically');
+
+    const previewPaths = [100, 101, 102].map(n => `${wedding}/${id(n)}.webp`);
+    const unselectedPath = `${wedding}/${id(103)}.webp`;
+    const savePreviews = (paths, photos = true) => db.query('select save_general_invitation_with_previews($1,$2,$3,$4::jsonb,$5::text[])',
+      [wedding, 'A public invitation', null, JSON.stringify({ cover: true, schedule: true, photos, uploads: true, updates: true, guestbook: true, download: true, quests: true }), paths]);
+    await asUser(host);
+    for (const name of [...previewPaths, unselectedPath]) await db.query("insert into storage.objects (bucket_id,name) values ('invitation-previews',$1)", [name]);
+    await savePreviews(previewPaths);
+    await assert.rejects(savePreviews([...previewPaths, unselectedPath]), /up to three/);
+    await assert.rejects(savePreviews([previewPaths[0], previewPaths[0]]), /different photos/);
+    await assert.rejects(savePreviews([`${other}/${id(100)}.webp`]), /Invalid preview/);
+    await assert.rejects(savePreviews([`${wedding}/${id(104)}.webp`]), /Upload the preview/);
+    await assert.rejects(savePreviews([null]), /different photos|Invalid preview/);
+    const activeDelete = await db.query("delete from storage.objects where bucket_id='invitation-previews' and name=$1 returning name", [previewPaths[0]]);
+    assert.equal(activeDelete.rows.length, 0, 'Published preview files cannot be removed before updating settings');
+
+    await asUser(id(999));
+    assert.equal((await rows('storage.objects')).filter(row => row.bucket_id === 'invitation-previews').length, 0, 'An unrelated account cannot sign preview files');
+    await asUser(anonymous);
+    const publicPreviews = (await rows('storage.objects')).filter(row => row.bucket_id === 'invitation-previews');
+    assert.deepEqual(publicPreviews.map(row => row.name).sort(), [...previewPaths].sort());
+    assert.deepEqual((await rows('photos')).filter(photo => photo.event_id === wedding), [], 'Public previews never expose the private feed');
+    await assert.rejects(savePreviews([]), /Only hosts/);
+    await assert.rejects(db.query("insert into storage.objects (bucket_id,name) values ('invitation-previews',$1)", [`${wedding}/${id(105)}.webp`]), /row-level security/);
+    assert.equal((await db.query("delete from storage.objects where bucket_id='invitation-previews' returning name")).rows.length, 0);
+
+    await asUser(host);
+    await savePreviews(previewPaths.slice(0, 2));
+    assert.equal((await db.query("delete from storage.objects where bucket_id='invitation-previews' and name=$1 returning name", [previewPaths[2]])).rows.length, 1);
+    await savePreviews(previewPaths.slice(0, 2), false);
+    await asUser(anonymous);
+    assert.equal((await rows('storage.objects')).filter(row => row.bucket_id === 'invitation-previews').length, 0, 'Hidden photo sections do not allow new preview signatures');
+    console.log('PASS: hosts manage up to three previews; public visitors see only selected images; guest photos stay private; hidden/removed previews and invalid writes are blocked');
   } finally { await db.close(); }
 }
 main().catch(error => { console.error(error); process.exitCode = 1; });
