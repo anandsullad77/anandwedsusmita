@@ -14,8 +14,8 @@ async function main() {
     await db.exec(`
       create role anon; create role authenticated; create role service_role;
       create schema auth; create schema storage; create schema extensions;
-      create table auth.users (id uuid primary key, email text);
-      create table auth.identities (user_id uuid references auth.users, provider text);
+      create table auth.users (id uuid primary key, email text, raw_user_meta_data jsonb not null default '{}', email_confirmed_at timestamptz);
+      create table auth.identities (user_id uuid references auth.users, provider text, identity_data jsonb not null default '{}');
       create function auth.uid() returns uuid language sql stable as $$ select nullif(current_setting('request.jwt.claim.sub', true), '')::uuid $$;
       create function public.gen_random_bytes(n int) returns bytea language sql as $$ select decode(substr(repeat(md5(random()::text), 2), 1, n*2), 'hex') $$;
       create function extensions.gen_salt(text) returns text language sql as $$ select 'fixture'::text $$;
@@ -28,8 +28,8 @@ async function main() {
     const migrations = fs.readdirSync(path.join(root, 'supabase/migrations')).sort();
     for (const file of migrations) await db.exec(fs.readFileSync(path.join(root, 'supabase/migrations', file), 'utf8').replace('create extension if not exists pgcrypto;', ''));
     console.log(`PASS: ${migrations.length} migrations execute in order`);
-    for (const user of [host, anonymous, google, outsider, email, family]) await db.query('insert into auth.users values ($1,$2)', [user, `${user}@example.com`]);
-    await db.query("insert into auth.identities values ($1,'google'),($2,'google'),($3,'email')", [google, outsider, email]);
+    for (const user of [host, anonymous, google, outsider, email, family]) await db.query('insert into auth.users (id,email) values ($1,$2)', [user, `${user}@example.com`]);
+    await db.query("insert into auth.identities (user_id,provider) values ($1,'google'),($2,'google'),($3,'email')", [google, outsider, email]);
     for (const [event, slug] of [[wedding, 'anand-susmita'], [other, 'another-wedding']]) {
       await db.query("insert into events (id,slug,title,couple_a,couple_b,starts_at,venue,pin_hash) values ($1,$2,'Wedding','Anand','Susmita',now(),'Venue','fixture')", [event, slug]);
       await db.query('insert into general_invites (event_id) values ($1)', [event]);
@@ -49,7 +49,7 @@ async function main() {
     }
     const token = (await db.query('select token::text from general_invites where event_id=$1', [wedding])).rows[0].token;
     const otherToken = (await db.query('select token::text from general_invites where event_id=$1', [other])).rows[0].token;
-    await db.exec('grant usage on schema public,auth,storage to anon,authenticated; grant select,insert,update,delete on all tables in schema public,storage to authenticated; grant usage,select on all sequences in schema public to authenticated;');
+    await db.exec('grant usage on schema public,auth,storage to anon,authenticated; grant select,insert,update,delete on all tables in schema public,storage to authenticated; grant usage,select on all sequences in schema public to authenticated; revoke all on public.wedding_guest_directory, public.wedding_guest_post_activity from authenticated;');
     const asUser = async user => { await db.exec('reset role'); await db.query("select set_config('request.jwt.claim.sub',$1,false)", [user || '']); await db.exec(user ? 'set role authenticated' : 'set role anon'); };
     const rows = async table => (await db.query(`select * from ${table}`)).rows;
     const upload = () => db.query("insert into storage.objects (bucket_id,name) values ('photos',$1)", [`${wedding}/new.webp`]);
@@ -229,7 +229,7 @@ async function main() {
     const recoveryHosts = [];
     for (const [index, role] of ['owner', 'cohost', 'planner', 'photographer'].entries()) {
       const uid = id(200 + index), email = `${role}@example.com`;
-      await db.query('insert into auth.users values ($1,$2)', [uid, email]);
+      await db.query('insert into auth.users (id,email) values ($1,$2)', [uid, email]);
       await db.query('insert into hosts (event_id,user_id,role) values ($1,$2,$3)', [wedding, uid, role]);
       recoveryHosts.push(email);
     }
@@ -266,8 +266,8 @@ async function main() {
     await db.exec('reset role');
     const freshGoogle = id(850), legacyGoogle = id(851), googleHost = id(852);
     for (const user of [freshGoogle, legacyGoogle, googleHost]) {
-      await db.query('insert into auth.users values ($1,$2)', [user, `${user}@example.com`]);
-      await db.query("insert into auth.identities values ($1,'google')", [user]);
+      await db.query('insert into auth.users (id,email) values ($1,$2)', [user, `${user}@example.com`]);
+      await db.query("insert into auth.identities (user_id,provider) values ($1,'google')", [user]);
     }
     await db.query("insert into hosts (event_id,user_id,role) values ($1,$2,'cohost')", [wedding, googleHost]);
     await db.query('insert into event_visitors (event_id,user_id) values ($1,$2)', [wedding, legacyGoogle]);
@@ -312,6 +312,130 @@ async function main() {
     const otherAnalytics = await analytics(other);
     assert.equal(otherAnalytics.visitors, 0); assert.equal(otherAnalytics.photoPosts, 1); assert.equal(otherAnalytics.wishes, 1);
     console.log('PASS: analytics deduplicate browsers/accounts, include existing guest sign-ins, exclude hosts, group carousels, count all posts, protect private activity and isolate weddings');
+    // Guest contacts are derived from verified account IDs, never display names.
+    await db.exec('reset role');
+    const memoryA = id(9500), memoryB = id(9501), memoryC = id(9502), noWedding = id(9503);
+    for (const [user, address] of [[memoryA, 'first.guest@gmail.com'], [memoryB, 'second.guest@gmail.com'], [memoryC, 'quiet.guest@gmail.com'], [noWedding, 'unrelated@gmail.com']]) {
+      await db.query('insert into auth.users (id,email,raw_user_meta_data) values ($1,$2,$3::jsonb)', [user, address, JSON.stringify({ full_name: 'Same guest name' })]);
+      await db.query("insert into auth.identities (user_id,provider,identity_data) values ($1,'google',$2::jsonb)", [user, JSON.stringify({ full_name: 'Same guest name', email: address })]);
+    }
+    // A linked Google identity's email takes precedence over the primary Auth email.
+    await db.query("update auth.users set email='another-provider@example.com' where id=$1", [memoryA]);
+    for (const position of [2, 0, 1]) {
+      await db.query(`insert into photos (id,event_id,storage_path,uploader_name,uploaded_by,caption,post_id,post_position,hidden)
+        values ($1,$2,$3,'Shared display name',$4,'All three memories',$5,$6,$7)`,
+        [id(9600 + position), wedding, `${wedding}/memory-${position}.webp`, memoryA, id(9609), position, position === 2]);
+    }
+    await db.query(`insert into guestbook_messages (id,event_id,user_id,request_id,name,message,status)
+      values ($1,$2,$3,$1,'Shared display name','A pending wish','pending')`, [id(9610), wedding, memoryB]);
+    await db.query('insert into akshate (photo_id,user_id) values ($1,$2)', [id(9600), memoryB]);
+    await asUser(memoryC);
+    await db.query('select record_wedding_signin($1)', [id(9700)]);
+    await db.query('select record_wedding_signin($1)', [id(9700)]);
+    const contacts = async (event = wedding, query = '', limit = 200, offset = 0) =>
+      (await db.query('select admin_wedding_guests($1,$2,$3,$4) as data', [event, query, limit, offset])).rows[0].data;
+    const memories = async (event = wedding, user = null, limit = 200, offset = 0) =>
+      (await db.query('select admin_wedding_guest_posts($1,$2,$3,$4) as data', [event, user, limit, offset])).rows[0].data;
+    for (const user of [null, anonymous, google, memoryA, email, family, outsider]) {
+      await asUser(user);
+      await assert.rejects(contacts(), /Only hosts|permission denied/);
+      await assert.rejects(memories(), /Only hosts|permission denied/);
+      await assert.rejects(db.query('select * from wedding_guest_directory'), /permission denied/);
+      await assert.rejects(db.query('select * from wedding_guest_post_activity'), /permission denied/);
+      await assert.rejects(db.query('select email from auth.users'), /permission denied/);
+    }
+    await asUser(host);
+    await assert.rejects(contacts(other), /Only hosts/); await assert.rejects(memories(other), /Only hosts/);
+    await assert.rejects(db.query('select * from wedding_guest_directory'), /permission denied/, 'Hosts also use the event-checked RPC');
+    const list = await contacts();
+    const a = list.guests.find(g => g.id === memoryA), b = list.guests.find(g => g.id === memoryB), c = list.guests.find(g => g.id === memoryC);
+    assert.equal(a.email, 'first.guest@gmail.com'); assert.equal(b.email, 'second.guest@gmail.com');
+    assert.equal(a.name, b.name); assert.equal(a.photoPosts, 1); assert.equal(a.photos, 3); assert.equal(a.wishes, 0);
+    assert.equal(b.photoPosts, 0); assert.equal(b.wishes, 1); assert.equal(b.reactions, 1);
+    assert.equal(c.photoPosts, 0); assert.equal(c.wishes, 0); assert.ok(c.firstSignedInAt && c.lastSignedInAt);
+    assert.ok(new Date(c.lastSignedInAt) >= new Date(c.firstSignedInAt));
+    assert.ok(!list.guests.some(g => [noWedding, host, googleHost, anonymous, email, family].includes(g.id)));
+    assert.deepEqual((await contacts(wedding, 'FIRST.GUEST@GMAIL.COM')).guests.map(g => g.id), [memoryA]);
+    assert.equal((await contacts(wedding, '%')).total, 0, 'Search treats wildcard characters literally');
+    const pages = await contacts(wedding, 'Same guest name', 1);
+    assert.equal(pages.total, 3); assert.equal(pages.guests.length, 1);
+    assert.notEqual(pages.guests[0].id, (await contacts(wedding, 'Same guest name', 1, 1)).guests[0].id);
+    const aPosts = await memories(wedding, memoryA);
+    assert.equal(aPosts.total, 1); assert.equal(aPosts.posts[0].email, a.email);
+    assert.equal(aPosts.posts[0].photos.length, 3); assert.equal(aPosts.posts[0].status, 'partly_hidden');
+    assert.deepEqual(aPosts.posts[0].photos.map(p => p.path), [0, 1, 2].map(n => `${wedding}/memory-${n}.webp`));
+    assert.equal((await memories(wedding, memoryB)).posts[0].status, 'pending');
+    assert.equal((await memories(wedding, noWedding)).total, 0);
+    // Every historical wish is accessible through paging, beyond recent-post limits.
+    await db.exec('reset role');
+    await db.query(`insert into guestbook_messages (event_id,user_id,request_id,name,message,status)
+      select $1,$2,gen_random_uuid(),'Historical guest','Older memory ' || n,'approved' from generate_series(1,205) n`, [wedding, memoryB]);
+    await asUser(host);
+    const firstPage = await memories(wedding, memoryB), lastPage = await memories(wedding, memoryB, 200, 200);
+    assert.equal(firstPage.total, 206); assert.equal(firstPage.posts.length, 200); assert.equal(lastPage.posts.length, 6);
+    assert.equal(new Set([...firstPage.posts, ...lastPage.posts].map(p => p.id)).size, 206);
+    await asUser(outsider);
+    const otherGuests = await contacts(other);
+    assert.ok(!otherGuests.guests.some(g => [memoryA, memoryB, memoryC].includes(g.id)), 'Other wedding hosts cannot see these guest emails');
+    console.log('PASS: host-only guest emails, verified Google identity mapping, same-name separation, guests without posts, carousel ownership, pending wishes, reactions, pagination and wedding isolation');
+    const setReaction = async (photo, reaction) => db.query('select set_photo_reaction($1,$2)', [photo, reaction]);
+    const reactionSummary = async photos => (await db.query('select photo_reaction_summary($1::uuid[]) as data', [photos])).rows[0].data;
+    await asUser(null);
+    await assert.rejects(setReaction(id(9600), 'love'), /permission denied/);
+    await assert.rejects(reactionSummary([id(9600)]), /permission denied/);
+    for (const user of [anonymous, email, family]) {
+      await asUser(user);
+      await assert.rejects(setReaction(id(9600), 'love'), /unavailable/);
+      assert.deepEqual(await reactionSummary([id(9600)]), []);
+    }
+    // A verified Google identity without invitation access is also denied.
+    await asUser(noWedding);
+    await assert.rejects(setReaction(id(9600), 'love'), /unavailable/);
+    assert.deepEqual(await reactionSummary([id(9600)]), []);
+    await asUser(google);
+    const previous = (await reactionSummary([id(9600)]))[0];
+    assert.equal(previous.counts.akshate, 1, 'Existing blessings use the default reaction');
+    assert.equal(previous.mine, null);
+    for (const kind of ['love', 'wow', 'celebrate', 'akshate']) {
+      await setReaction(id(9600), kind); await setReaction(id(9600), kind);
+      const state = (await reactionSummary([id(9600)]))[0];
+      assert.equal(state.mine, kind); assert.equal(state.counts[kind], kind === 'akshate' ? 2 : 1);
+      assert.equal(Object.values(state.counts).reduce((sum, n) => sum + n, 0), 2, 'Changes replace a reaction, and retries do not add duplicates');
+      assert.deepEqual(Object.keys(state).sort(), ['counts', 'mine', 'photoId'], 'Summaries do not reveal other user IDs or emails');
+    }
+    await setReaction(id(9601), 'love');
+    const twoSlides = await reactionSummary([id(9600), id(9601)]);
+    assert.equal(twoSlides.find(p => p.photoId === id(9600)).mine, 'akshate');
+    assert.equal(twoSlides.find(p => p.photoId === id(9601)).mine, 'love');
+    await setReaction(id(9600), null); await setReaction(id(9600), null);
+    assert.equal((await reactionSummary([id(9600)]))[0].counts.akshate, 1, 'Removing a reaction preserves other guests');
+    await assert.rejects(setReaction(id(9600), 'invalid'), /valid reaction/);
+    await assert.rejects(setReaction(id(9602), 'love'), /unavailable/, 'Hidden carousel images cannot receive guest reactions');
+    await assert.rejects(setReaction(id(32), 'love'), /unavailable/, 'Another wedding requires its own invitation');
+    assert.deepEqual(await reactionSummary([id(9602), id(32)]), []);
+    assert.equal((await db.query('update akshate set reaction=$1 where photo_id=$2 returning *', ['wow', id(9600)])).rows.length, 0, 'Guests cannot update another guest’s reaction');
+    await db.exec('reset role');
+    await db.query(`with accounts as (insert into auth.users (id,email) select gen_random_uuid(),null from generate_series(1,1005) returning id)
+      insert into akshate (photo_id,user_id,reaction) select $1,id,'celebrate' from accounts`, [id(9601)]);
+    await asUser(google);
+    assert.equal((await reactionSummary([id(9601)]))[0].counts.celebrate, 1005, 'Counts exceed the REST row limit without truncation');
+    await asUser(host);
+    await setReaction(id(9602), 'wow');
+    assert.equal((await reactionSummary([id(9602)]))[0].mine, 'wow', 'Hosts retain hidden-photo access');
+    console.log('PASS: four photo reactions replace/remove atomically, preserve blessings, isolate carousel images, reject hidden/uninvited/wrong-wedding access, protect other guests and count beyond 1000');
+    const team = async () => (await db.query('select admin_host_team($1) as data', [wedding])).rows[0].data;
+    for (const user of [null, google, anonymous, email]) {
+      await asUser(user); await assert.rejects(team(), /Only hosts|permission denied/);
+      await assert.rejects(db.query('select host_team_add($1,$2,$3,$4,$5)', [host,wedding,google,'owner','Guest']), /permission denied/);
+    }
+    await asUser(host); assert.equal((await team()).canManage, true);
+    await asUser(googleHost); assert.equal((await team()).canManage, false);
+    await db.exec('reset role; set role service_role');
+    await assert.rejects(db.query('select host_team_add($1,$2,$3,$4,$5)', [googleHost,wedding,memoryC,'owner','New owner']), /Only owners/);
+    assert.equal((await db.query('select host_team_add($1,$2,$3,$4,$5) as added', [host,wedding,memoryC,'owner','New owner'])).rows[0].added, true);
+    assert.equal((await db.query('select host_team_add($1,$2,$3,$4,$5) as added', [host,wedding,memoryC,'cohost','Changed'])).rows[0].added, false, 'Retry does not change an existing role');
+    await asUser(memoryC); assert.equal((await team()).canManage, true);
+    console.log('PASS: host-team listing, owner-only additions, server-only grants, co-owner rights and retry role preservation');
   } finally { await db.close(); }
 }
 main().catch(error => { console.error(error); process.exitCode = 1; });

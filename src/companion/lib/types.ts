@@ -76,6 +76,8 @@ export type Session = { eventId: string; slug: string; householdToken: string; p
 
 export type Change = { byName: string; summary: string; at: string };
 
+export type ReactionKind = 'akshate' | 'love' | 'wow' | 'celebrate';
+export type ReactionCounts = Record<ReactionKind, number>;
 export type Photo = {
   id: string;
   postId?: string | null;
@@ -88,6 +90,8 @@ export type Photo = {
   createdAt: string;
   akshate: number;
   mine: boolean;        // did I shower akshate
+  reactionCounts: ReactionCounts;
+  myReaction: ReactionKind | null;
   uploadedByMe: boolean;
   pinned: boolean;
   hidden: boolean;
@@ -119,6 +123,26 @@ export type AnalyticsPost = {
   photos: number; createdAt: string; status: string; url?: string;
 };
 export type AdminAnalytics = { visitors: number; signedIn: number; photoPosts: number; wishes: number; recentPosts: AnalyticsPost[] };
+
+export type GuestContact = {
+  id: string; name: string; email: string | null;
+  firstSeenAt: string | null; lastActiveAt: string | null;
+  firstSignedInAt: string | null; lastSignedInAt: string | null;
+  photoPosts: number; photos: number; wishes: number; reactions: number;
+};
+export type GuestMemoryPhoto = { id: string; path: string; caption: string | null; moment: string | null; questId: string | null; hidden: boolean; url?: string };
+export type GuestMemoryPost = {
+  id: string; guestId: string; name: string; email: string | null; author: string;
+  kind: 'photo' | 'wish'; text: string | null; photos: GuestMemoryPhoto[]; createdAt: string; status: string;
+};
+export type GuestDirectory = { total: number; guests: GuestContact[] };
+export type GuestMemoryPosts = { total: number; posts: GuestMemoryPost[] };
+
+export type HostRole = 'owner' | 'cohost' | 'planner' | 'photographer';
+export type HostTeamMember = { id: string; name: string; email: string | null; role: HostRole; confirmed: boolean };
+export type HostTeam = { currentUserId: string; canManage: boolean; members: HostTeamMember[] };
+export type HostTeamAction = { action: 'invite'; name: string; email: string; role: 'owner' | 'cohost' } | { action: 'reset'; userId: string };
+export type HostTeamResult = { accessAdded: boolean; emailSent: boolean; message: string };
 
 export type HouseholdImport = {
   name: string;
@@ -164,6 +188,7 @@ export interface Backend {
   uploadPhoto(eventId: string, blob: Blob, meta: { moment?: string; questId?: string; caption?: string; uploaderName: string; personId: string | null }): Promise<void>;
   uploadPhotoPost(eventId: string, postId: string, images: PostImage[], meta: PhotoMeta): Promise<void>;
   toggleAkshate(photoId: string): Promise<void>;
+  setPhotoReaction(photoId: string, reaction: ReactionKind | null): Promise<void>;
   // Send a report/removal request for host review; never hide or delete the photo.
   flagPhoto(photoId: string, reason: string, removal: boolean): Promise<void>;
   announcements(eventId: string): Promise<Announcement[]>;
@@ -171,8 +196,12 @@ export interface Backend {
   // hosts
   hostSignIn(email: string, password: string): Promise<boolean>;
   hostEvents(): Promise<EventInfo[]>;
+  hostTeam(eventId: string): Promise<HostTeam>;
+  manageHostTeam(eventId: string, action: HostTeamAction): Promise<HostTeamResult>;
   adminData(eventId: string): Promise<AdminData>;
   adminAnalytics(eventId: string): Promise<AdminAnalytics>;
+  adminGuests(eventId: string, options?: { query?: string; offset?: number; limit?: number }): Promise<GuestDirectory>;
+  adminGuestPosts(eventId: string, options?: { guestId?: string; offset?: number; limit?: number; includeUrls?: boolean }): Promise<GuestMemoryPosts>;
   saveHousehold(eventId: string, hh: Partial<AdminHousehold> & { name: string }, people: Partial<Person>[]): Promise<void>;
   deleteHousehold(eventId: string, householdId: string): Promise<void>;
   importHouseholds(eventId: string, households: HouseholdImport[]): Promise<HouseholdImportResult>;

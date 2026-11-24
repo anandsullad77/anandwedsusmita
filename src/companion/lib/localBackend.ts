@@ -6,12 +6,15 @@ import { familyKey, validateHouseholdImport } from './familyImport';
 import { defaultGeneralSettings, normalizeGeneralSettings, validateGeneralSettings, validateWish } from './generalInvitation';
 import { photoQuest } from './photoQuests';
 import { demoVisitorCount } from './visitAnalytics';
+import { isReaction, reactionFields } from './reactions';
 import type {
-  AdminData, AdminHousehold, AnalyticsPost, Announcement, Backend, Change, EventInfo, Fn, GeneralInvitationSettings, Household, InviteBundle, ListMatch, Person, Photo, RsvpPayload, Wish
+  AdminData, AdminHousehold, AnalyticsPost, Announcement, Backend, Change, EventInfo, Fn, GeneralInvitationSettings, HostTeamMember, Household, InviteBundle, ListMatch, Person, Photo, ReactionKind, RsvpPayload, Wish
 } from './types';
 
-type DBPhoto = Omit<Photo, 'url' | 'mine' | 'akshate' | 'uploadedByMe'> & { eventId: string; personId: string | null; uploadedBy?: string; akshateBy: string[]; flaggedBy: string[] };
+type DBPhoto = Omit<Photo, 'url' | 'mine' | 'akshate' | 'uploadedByMe' | 'reactionCounts' | 'myReaction'> & { eventId: string; personId: string | null; uploadedBy?: string; akshateBy: string[]; reactionsBy?: Record<string, ReactionKind>; flaggedBy: string[] };
+const photoReactionMap = (photo: DBPhoto): Record<string, ReactionKind> => ({ ...Object.fromEntries(photo.akshateBy.map(id => [id, 'akshate'])), ...photo.reactionsBy });
 type DB = {
+  hostTeam?: (HostTeamMember & { eventId: string })[];
   events: (EventInfo & { pin: string })[];
   functions: (Fn & { eventId: string })[];
   households: (AdminHousehold & { eventId: string })[];
@@ -324,7 +327,7 @@ export const localBackend: Backend = {
     const rows = db.photos.filter(p => p.eventId === eventId && (options?.includeHidden || !p.hidden) && (!options?.questId || p.questId === options.questId)).sort((a, b) => Number(b.pinned) - Number(a.pinned) || b.createdAt.localeCompare(a.createdAt));
     return Promise.all((options?.preview ? rows.slice(0, 3) : rows).map(async p => ({
       id: p.id, postId: p.postId, postPosition: p.postPosition, uploaderName: p.uploaderName, moment: p.moment, questId: p.questId, caption: p.caption, createdAt: p.createdAt, pinned: p.pinned, hidden: p.hidden, flags: options?.includeHidden ? p.flaggedBy.length : undefined,
-      akshate: p.akshateBy.length, mine: p.akshateBy.includes(me),
+      ...reactionFields(photoReactionMap(p), me),
       uploadedByMe: p.uploadedBy ? p.uploadedBy === me : !!p.personId && p.personId === personId, url: await photoUrl(p.id)
     })));
   },
@@ -382,11 +385,20 @@ export const localBackend: Backend = {
   },
 
   async toggleAkshate(photoId) {
+    const p = load().photos.find(x => x.id === photoId);
+    await localBackend.setPhotoReaction(photoId, p && photoReactionMap(p)[device()] === 'akshate' ? null : 'akshate');
+  },
+  async setPhotoReaction(photoId, reaction) {
     const db = load();
-    const p = db.photos.find(x => x.id === photoId); if (!p) return;
+    const p = db.photos.find(x => x.id === photoId);
+    if (!p || (p.hidden && !hostEmail)) throw new Error('Photo is unavailable');
     requirePhotoGuest(db, p.eventId);
+    if (reaction !== null && !isReaction(reaction)) throw new Error('Choose a valid reaction');
     const me = device();
-    p.akshateBy = p.akshateBy.includes(me) ? p.akshateBy.filter(x => x !== me) : [...p.akshateBy, me];
+    p.reactionsBy = photoReactionMap(p);
+    if (reaction) p.reactionsBy[me] = reaction;
+    else delete p.reactionsBy[me];
+    p.akshateBy = Object.keys(p.reactionsBy).filter(id => p.reactionsBy![id] === 'akshate');
     save(db);
   },
 
@@ -423,13 +435,34 @@ export const localBackend: Backend = {
     if (!hostEmail) return [];
     return load().events.map(({ pin: _p, ...e }) => e);
   },
+  async hostTeam(eventId) {
+    if (!hostEmail) throw new Error('Only hosts can view the host team');
+    const db = load(); if (!db.events.some(e => e.id === eventId)) throw new Error('Event not found');
+    return { currentUserId: 'demo-host', canManage: true, members: [
+      { id: 'demo-host', name: 'Demo owner', email: hostEmail, role: 'owner' as const, confirmed: true },
+      ...(db.hostTeam ?? []).filter(h => h.eventId === eventId && h.email?.toLowerCase() !== hostEmail?.toLowerCase()),
+    ] };
+  },
+  async manageHostTeam(eventId, action) {
+    const team = await localBackend.hostTeam(eventId);
+    if (action.action === 'reset') {
+      if (!team.members.some(h => h.id === action.userId)) throw new Error('Host not found');
+      return { accessAdded: false, emailSent: false, message: 'Demo only: no email was sent. Password emails are available on the connected website.' };
+    }
+    const email = action.email.trim().toLowerCase(), name = action.name.trim();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || !name || name.length > 100 || !['owner', 'cohost'].includes(action.role)) throw new Error('Check the host name, email and role.');
+    if (team.members.some(h => h.email?.toLowerCase() === email)) throw new Error('This email already has host access.');
+    const db = load(); db.hostTeam ??= [];
+    db.hostTeam.push({ id: 'demo-team-' + uid(), eventId, email, name, role: action.role, confirmed: false }); save(db);
+    return { accessAdded: true, emailSent: false, message: 'Host added to this browser’s demo. No email was sent.' };
+  },
   async adminData(eventId) {
     const db = load();
     const e = db.events.find(x => x.id === eventId)!;
     const { pin: _p, ...event } = e;
     const photos = await Promise.all(db.photos.filter(p => p.eventId === eventId).sort((a, b) => b.createdAt.localeCompare(a.createdAt)).map(async p => ({
       id: p.id, uploaderName: p.uploaderName, moment: p.moment, questId: p.questId, caption: p.caption, createdAt: p.createdAt, pinned: p.pinned, hidden: p.hidden,
-      akshate: p.akshateBy.length, mine: false, uploadedByMe: p.uploadedBy === device(), flags: p.flaggedBy.length, url: await photoUrl(p.id)
+      ...reactionFields(photoReactionMap(p), device()), uploadedByMe: p.uploadedBy === device(), flags: p.flaggedBy.length, url: await photoUrl(p.id)
     })));
     return {
       event,
@@ -464,6 +497,17 @@ export const localBackend: Backend = {
     const recentPosts = await Promise.all([...photoPosts, ...wishes].sort((a, b) => b.createdAt.localeCompare(a.createdAt)).slice(0, 20)
       .map(async post => { const { previewId, ...row } = post as AnalyticsPost & { previewId?: string }; return { ...row, url: previewId ? await photoUrl(previewId) : undefined }; }));
     return { visitors: demoVisitorCount(), signedIn: 0, photoPosts: groups.size, wishes: wishes.length, recentPosts };
+  },
+  async adminGuests(eventId) {
+    if (!hostEmail) throw new Error('Only hosts can view guest contacts');
+    if (!load().events.some(e => e.id === eventId)) throw new Error('Event not found');
+    // The browser demo has no Google accounts; never invent guest emails.
+    return { total: 0, guests: [] };
+  },
+  async adminGuestPosts(eventId) {
+    if (!hostEmail) throw new Error('Only hosts can view guest activities');
+    if (!load().events.some(e => e.id === eventId)) throw new Error('Event not found');
+    return { total: 0, posts: [] };
   },
   async saveHousehold(eventId, hh, people) {
     const db = load();

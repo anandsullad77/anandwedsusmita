@@ -5,6 +5,8 @@ import { useGuestAuth } from '../lib/useGuestAuth';
 import WeddingBrand from './WeddingBrand';
 import { Icon } from '../guest/Icon';
 import './google-sign-in.css';
+import { getSession } from '../lib/familySession';
+import { WEDDING_SLUG } from '../lib/wedding';
 
 export function GoogleSignIn({ returnTo, purpose = 'share in the celebration' }: { returnTo: string; purpose?: string }) {
   const [busy, setBusy] = useState(false);
@@ -17,6 +19,7 @@ export function GoogleSignIn({ returnTo, purpose = 'share in the celebration' }:
       catch (error) { setError((error as Error).message); setBusy(false); }
     }}><img src="/images/google-sign-in.png" width={20} height={20} alt="" aria-hidden="true" />{busy ? 'Opening Google…' : 'Continue with Google'}</button>
     <small>Your invitation stays public. Photos and wishes are shared with signed-in wedding guests.</small>
+    <small>Your Google name and email are visible only to the wedding hosts. They may use your email to send you wedding memories, including your posts.</small>
     {error && <p className="error" role="alert">{error}</p>}
   </div>;
 }
@@ -52,6 +55,8 @@ export function GuestAccount({ base = '/invitation' }: { base?: string }) {
   const trigger = useRef<HTMLButtonElement>(null);
   const panelId = useId();
   const current = useLocation();
+  const family = getSession();
+  const hasFamily = family?.slug === WEDDING_SLUG;
 
   useEffect(() => { setOpen(false); }, [current.pathname, current.search, current.hash, user?.id]);
   useEffect(() => {
@@ -80,6 +85,7 @@ export function GuestAccount({ base = '/invitation' }: { base?: string }) {
       <div className="guest-account-details"><GuestAvatar user={user} /><div><b>{user.name}</b>{user.email && <span>{user.email}</span>}</div></div>
       <div className="guest-account-actions">
         <Link to={base} onClick={() => setOpen(false)}><Icon size={18} d="M3 5h18v14H3zM3 5l9 7 9-7" />Wedding invitation</Link>
+        {hasFamily && <Link to="/app/family" onClick={() => setOpen(false)}><Icon size={18} d="M8 12a3 3 0 1 0 0-6 3 3 0 0 0 0 6M16 12a3 3 0 1 0 0-6 3 3 0 0 0 0 6M3 20a5 5 0 0 1 10 0M13 16a5 5 0 0 1 8 4" />Family RSVP</Link>}
         <button type="button" disabled={busy} onClick={async () => {
           setBusy(true); setError(null);
           try { await signOutGuest(); } catch (error) { setError((error as Error).message); setBusy(false); }

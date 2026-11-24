@@ -51,3 +51,21 @@ export async function updateHostPassword(password: string) {
   const { error } = await supabase().auth.updateUser({ password });
   if (error) throw new Error(error.message);
 }
+
+// Admin-sent links use Auth's verified implicit callback, which can be opened
+// on the recipient's device without the sending owner's PKCE verifier.
+export function finishHostEmailLink(fragment: string): Promise<void> {
+  const existing = exchanges.get(fragment);
+  if (existing) return existing;
+  const pending = (async () => {
+    const params = new URLSearchParams(fragment.replace(/^#/, ''));
+    if (!['invite', 'recovery'].includes(params.get('type') || '')) throw new Error(expiredMessage);
+    const access_token = params.get('access_token'), refresh_token = params.get('refresh_token');
+    if (!access_token || !refresh_token) throw new Error(expiredMessage);
+    const { error } = await supabase().auth.setSession({ access_token, refresh_token });
+    if (error) throw new Error(expiredMessage);
+    await requireWeddingHost();
+  })();
+  exchanges.set(fragment, pending);
+  return pending;
+}

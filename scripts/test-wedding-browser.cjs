@@ -76,6 +76,11 @@ async function scenario(browser, { width = 390, initial = 'anonymous', family = 
     if (privatePath(url.pathname) && mode !== 'google' && mode !== 'host') return json({ message: 'Sign in with Google' }, 403);
     if (url.pathname.endsWith('/rpc/open_wedding_invite')) return json({ token, bundle: bundle() });
     if (url.pathname.endsWith('/rpc/record_wedding_visit') || url.pathname.endsWith('/rpc/record_wedding_signin')) return json(null);
+    if (url.pathname.endsWith('/rpc/admin_wedding_guests')) return json({ total: 0, guests: [] });
+    if (url.pathname.endsWith('/rpc/admin_wedding_guest_posts')) return json({ total: 0, posts: [] });
+    if (url.pathname.endsWith('/household_changes')) return json([]);
+    if (url.pathname.endsWith('/rpc/photo_reaction_summary')) return json([]);
+    if (url.pathname.endsWith('/rpc/set_photo_reaction')) { reactions.push(request.postDataJSON()); return json(null); }
     if (url.pathname.endsWith('/rpc/open_general_invite')) return json(bundle());
     if (url.pathname.endsWith('/rpc/invite_bundle')) return json({ ...bundle(), household: { id: id(20), name: 'Family', coming: 'yes' }, people: [{ id: id(21), name: 'Family guest', isChild: false, attending: [] }] });
     if (url.pathname.endsWith('/general_invitation_settings')) return json(invitationSettings);

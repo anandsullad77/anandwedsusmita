@@ -1,5 +1,21 @@
 # Owner and host password recovery
 
+## Host team and owner-sent links
+
+Apply `supabase/migrations/0017_host_team_management.sql` after the existing migrations through 0016. Deploy the new function:
+
+```powershell
+supabase functions deploy host-team --project-ref YOUR_PROJECT_REF --no-verify-jwt
+```
+
+The handler validates the caller's bearer token with Auth and checks the wedding's `owner` membership before granting access or sending email. Its private database helpers are executable only by `service_role`; no service key is added to browser code. Owners and co-owners share the database role `owner`. A Host uses `cohost`; existing planner/photographer roles remain supported. All hosts keep existing wedding administration rights, while team changes and sending someone else's password email require ownership. Duplicate invitations never alter a current member's role.
+
+In **Admin → Hosts & co-owners**, enter a name/email, select Host or Co-owner, and choose **Add host & send password link**. New Auth accounts remain unconfirmed until the recipient verifies the invitation email. Membership is saved before mail is requested. For an existing verified account, the function sends a recovery email instead. **Send password link** retries email delivery or helps an existing team member recover. If SMTP fails after access was added, the UI reports the partial result and keeps that member visible for retry. SMTP acceptance does not guarantee inbox delivery.
+
+Keep the Supabase **Invite user** and **Reset Password** templates pointing at `{{ .ConfirmationURL }}` and allow `https://anandwedsusmita.in/admin/reset-password` (plus actual local preview origins) in Auth's Redirect URLs. Owner-sent emails use Supabase's verified implicit callback, allowing the recipient to open it on their own phone/computer without the sender's PKCE verifier. The app accepts only `invite`/`recovery` callbacks, removes tokens from the address bar, verifies current host membership, and checks it again before password update. Self-requested recovery continues using the existing PKCE flow described below. Expiry and single-use enforcement belong to Supabase Auth. No email link or token is returned to the owner or logged by the function.
+
+Custom SMTP is needed to deliver beyond Supabase's permitted default recipients. Configure **both** functions and deploy the frontend. Run `npm.cmd run test:hosts` for mocked owner checks, mail failures, responsive team management and recipient-device password setup; `test:recovery` retains the existing self-service checks; `test:access` checks owner/team database restrictions. These tests do not send real emails.
+
 The **Forgot password?** link is on `/admin`. It opens `/admin/forgot-password`. Owners and hosts enter their registered email, receive Supabase's recovery email, then open `/admin/reset-password` to choose and confirm a password of at least 12 characters. Open the email link in the same browser and on the same origin used to request it: the app uses [Supabase's PKCE recovery flow](https://supabase.com/docs/reference/javascript/auth-resetpasswordforemail).
 
 ## Enable recovery in the Supabase project

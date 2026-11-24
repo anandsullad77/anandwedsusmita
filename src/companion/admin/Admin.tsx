@@ -4,9 +4,11 @@ import { api } from '../lib/backend';
 import { ago, inviteMessage, waLink } from '../lib/format';
 import type { AdminData, AdminHousehold, EventInfo, Person, Photo } from '../lib/types';
 import FamilyExcelImport from './FamilyExcelImport';
+import FamilyContactImport from './FamilyContactImport';
 import GeneralInvitationAdmin from './GeneralInvitationAdmin';
 import AdminNavigation from './AdminNavigation';
 import Analytics from './Analytics';
+import HostTeam from './HostTeam';
 import { Icon } from '../guest/Icon';
 import { useVisibleViewport } from '../lib/useVisibleViewport';
 import MomentTag from '../guest/MomentTag';
@@ -47,6 +49,7 @@ export default function Admin() {
             <Route path="general" element={<GeneralInvitationAdmin d={data} />} />
             <Route path="photos" element={<Photos d={data} reload={reload} />} />
             <Route path="analytics" element={<Analytics eventId={data.event.id} />} />
+            <Route path="hosts" element={<HostTeam eventId={data.event.id} />} />
             <Route path="updates" element={<Updates d={data} reload={reload} />} />
             <Route path="settings" element={<Settings d={data} reload={reload} />} />
           </Routes>
@@ -169,6 +172,7 @@ function Families({ d, reload }: { d: AdminData; reload: () => void }) {
   const [remove, setRemove] = useState<AdminHousehold | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
+  const [importContacts, setImportContacts] = useState(false);
   const couple = `${d.event.coupleA} & ${d.event.coupleB}`;
   const rows = d.households.filter(h =>
     (filter === 'all' || (filter === 'not_sent' && h.inviteStatus === 'not_sent') || (filter === 'waiting' && h.inviteStatus !== 'responded' && h.inviteStatus !== 'not_sent') || (filter === 'open' && h.source === 'open'))
@@ -183,7 +187,7 @@ function Families({ d, reload }: { d: AdminData; reload: () => void }) {
   return (<>
     <header style={{ display: 'flex', flexWrap: 'wrap', gap: 12, justifyContent: 'space-between', alignItems: 'center' }}>
       <div><h1 className="h1">Families &amp; invites</h1><span style={{ color: 'var(--p-muted)', fontSize: 14 }}>{d.households.length} families · personal invitations and replies</span></div>
-      <button className="abtn red" onClick={() => setEdit('new')}>+ Add family</button>
+      <div className="family-header-actions"><button className="abtn" onClick={() => setImportContacts(true)}><Icon size={18} d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8M20 8v6m-3-3h6" />Import contacts</button><button className="abtn red" onClick={() => setEdit('new')}>+ Add family</button></div>
     </header>
     <div className="family-toolbar">
       <label htmlFor="fq" className="sr-only">Search</label>
@@ -222,6 +226,7 @@ function Families({ d, reload }: { d: AdminData; reload: () => void }) {
       </table>
     </div>
     {edit && <EditFamily d={d} h={edit === 'new' ? null : edit} onClose={() => { setEdit(null); reload(); }} />}
+    {importContacts && <FamilyContactImport d={d} onClose={() => setImportContacts(false)} onImported={message => { setImportContacts(false); setNotice(message); reload(); }} />}
     {remove && <DeleteFamily eventId={d.event.id} h={remove} onClose={() => setRemove(null)} onDeleted={() => { setNotice(`${remove.name} deleted.`); setRemove(null); reload(); }} />}
   </>);
 }

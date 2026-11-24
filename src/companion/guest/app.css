@@ -64,8 +64,6 @@
 .post-photo > img { width: 100%; max-height: 65dvh; object-fit: contain; }
 .frame-band { position: absolute; left: 0; right: 0; bottom: 0; background: linear-gradient(transparent, #1E281FDC); color: #FFF7EB; padding: 24px 14px 12px; display: flex; align-items: center; gap: 8px; }
 .frame-band img { width: 22px; height: 22px; filter: brightness(0) invert(1); }
-.akshate-btn { min-height: 44px; padding: 0 14px; border-radius: 10px; border: 0; background: #F3EEE6; color: #2B1A12; font-weight: 600; font-size: 13px; display: inline-flex; align-items: center; gap: 8px; cursor: pointer; position: relative; }
-.akshate-btn[aria-pressed=true] { background: #FBE7C2; }
 .menu { position: absolute; right: 10px; top: 56px; background: #fff; border: 1px solid var(--line); border-radius: 14px; box-shadow: 0 8px 24px #0000001F; z-index: 5; display: flex; flex-direction: column; min-width: 220px; }
 .menu button { min-height: 48px; text-align: left; padding: 0 14px; border: 0; background: transparent; cursor: pointer; font-size: 14px; }
 .haaku-screen { background: var(--paper); color: var(--ink); min-height: 100dvh; width: min(100%, 640px); margin: 0 auto; display: flex; flex-direction: column; }
@@ -96,8 +94,6 @@
 .upload-body textarea { min-height: 90px; border-radius: 12px; }
 .upload-actions { position: sticky; bottom: var(--controls-bottom, 0px); border-top: 1px solid var(--line); background: var(--paper); padding: 14px 20px max(14px, env(safe-area-inset-bottom)); }
 .upload-actions p { font-size: 10px; line-height: 1.7; text-align: center; margin: 10px 0 0; color: var(--muted); }
-@keyframes burst { 0% { transform: translate(0,0) scale(.6); opacity: 1; } 100% { transform: translate(var(--dx), var(--dy)) scale(1); opacity: 0; } }
-.burst { position: absolute; left: 50%; top: 50%; width: 6px; height: 11px; border-radius: 50%; background: var(--akshate); animation: burst .8s var(--ease) forwards; pointer-events: none; }
 @media (max-width: 767px) {
   .guest-page-heading h1 { font-size: 34px; }
   .guest-page-heading > p:not(.guest-eyebrow) { font-size: 13px; }

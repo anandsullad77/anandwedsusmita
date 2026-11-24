@@ -52,11 +52,10 @@ export default function InvitationExperience({ bundle, base, token, photoContext
           <header className="general-header">
             <div className="general-header-inner">
               <WeddingBrand className="general-brand" tagline="Together," title="With Love" />
-              <nav className="general-nav" aria-label="Wedding" lang="en" style={{ gridTemplateColumns: `repeat(${1 + Number(hasFeed) + Number(canCreate) + Number(!!familyPage)}, minmax(0, 1fr))` }}>
+              <nav className="general-nav" aria-label="Wedding" lang="en" style={{ gridTemplateColumns: `repeat(${1 + Number(hasFeed) + Number(canCreate)}, minmax(0, 1fr))` }}>
                 <Link to={base} className={onInvitation ? 'active' : undefined} aria-current={onInvitation ? 'page' : undefined}><Icon d="M3 5h18v14H3zM3 5l9 7 9-7" /><span>Invitation</span></Link>
                 {canCreate && <NavLink to={`${base}/create`} className="general-upload-link"><Icon d="M12 5v14M5 12h14" /><span>Create Post</span></NavLink>}
                 {hasFeed && <NavLink to={`${base}/feed`}><Icon d="M3 6h18v14H3zM7 10h10M7 15h6" /><span>Feed</span></NavLink>}
-                {familyPage && <NavLink to={`${base}/family`}><Icon d="M8 12a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM16 12a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM3 20c.6-3 2.6-4.5 5-4.5s4.4 1.5 5 4.5M13 15.6c.9-.1 1.9-.1 3-.1 2.4 0 4.4 1.5 5 4.5" /><span>Family</span></NavLink>}
               </nav>
               <GuestAccount base={base} />
             </div>

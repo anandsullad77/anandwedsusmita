@@ -8,6 +8,7 @@ import Admin from './admin/Admin';
 import { ForgotHostPassword, ResetHostPassword } from './admin/HostPasswordRecovery';
 import { WEDDING_SLUG } from './lib/wedding';
 import AuthCallback from './guest/AuthCallback';
+import FamilySignInGate from './components/FamilySignInGate';
 
 function Home() {
   useEffect(() => { window.location.replace('/'); }, []);
@@ -29,11 +30,11 @@ export default function App() {
     <Route path="/auth/callback" element={<AuthCallback />} />
     <Route path="/invitation/*" element={<GeneralInvite />} />
     <Route path="/celebrate/*" element={<LegacyInvitation />} />
-    <Route path="/rsvp" element={<FamilyEntry />} />
-    <Route path="/i/:token" element={<Banni />} />
-    <Route path="/e/:slug" element={<FamilyEntry />} />
+    <Route path="/rsvp" element={<FamilySignInGate><FamilyEntry /></FamilySignInGate>} />
+    <Route path="/i/:token" element={<FamilySignInGate><Banni /></FamilySignInGate>} />
+    <Route path="/e/:slug" element={<FamilySignInGate><FamilyEntry /></FamilySignInGate>} />
     <Route path="/g/:token/*" element={<GeneralInvite />} />
-    <Route path="/app/*" element={<GuestApp />} />
+    <Route path="/app/*" element={<FamilySignInGate><GuestApp /></FamilySignInGate>} />
     <Route path="/admin/forgot-password" element={<ForgotHostPassword />} />
     <Route path="/admin/reset-password" element={<ResetHostPassword />} />
     <Route path="/admin/*" element={<Admin />} />

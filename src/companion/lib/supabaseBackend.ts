@@ -1,9 +1,25 @@
 // Supabase backend — talks to the schema in supabase/migrations/0001_init.sql.
 // Guests use anonymous auth (a silent device session). Hosts use email/password.
 import { supabase as sb } from './supabaseClient';
-import type { AdminAnalytics, AdminData, AdminHousehold, Backend, EventInfo, GeneralInviteBundle, GeneralInvitationSettings, Household, Person, Photo, PhotoQuestSummary, Wish } from './types';
+import type { AdminAnalytics, AdminData, AdminHousehold, Backend, EventInfo, GeneralInviteBundle, GeneralInvitationSettings, GuestDirectory, GuestMemoryPosts, HostTeam, HostTeamResult, Household, Person, Photo, PhotoQuestSummary, ReactionCounts, ReactionKind, Wish } from './types';
 import { defaultGeneralSettings, normalizeGeneralSettings, validateGeneralSettings, validateWish } from './generalInvitation';
 import { photoQuest } from './photoQuests';
+import { emptyReactions, reactionFields } from './reactions';
+import { siteOrigin } from '../../siteOrigin';
+
+type PhotoReactionSummary = { photoId: string; counts: ReactionCounts; mine: ReactionKind | null };
+async function photoReactionSummary(ids: string[], userId: string): Promise<PhotoReactionSummary[]> {
+  if (ids.length > 500) return (await Promise.all(Array.from({ length: Math.ceil(ids.length / 500) }, (_, i) => photoReactionSummary(ids.slice(i * 500, (i + 1) * 500), userId)))).flat();
+  const { data, error } = await sb().rpc('photo_reaction_summary', { p_photos: ids });
+  if (error?.code === 'PGRST202') {
+    // Show existing blessings while the additive migration is pending.
+    const rows = must(await sb().from('akshate').select('photo_id,user_id').in('photo_id', ids)) as { photo_id: string; user_id: string }[];
+    return ids.map(photoId => ({ photoId, counts: reactionFields(Object.fromEntries(rows.filter(r => r.photo_id === photoId).map(r => [r.user_id, 'akshate' as const])), userId).reactionCounts,
+      mine: rows.some(r => r.photo_id === photoId && r.user_id === userId) ? 'akshate' as const : null }));
+  }
+  if (error) throw new Error(error.message);
+  return data as PhotoReactionSummary[];
+}
 
 async function ensureDevice() {
   const { data } = await sb().auth.getSession();
@@ -92,15 +108,17 @@ async function photosFor(eventId: string, includeHidden: boolean, questId?: stri
   // The local session identifies "my photos"; database and Storage RLS still enforce access.
   const me = session.data.session?.user.id;
   const needsDevice = !preview && me && rows.some(r => !r.uploaded_by && r.person_id);
-  const [ak, flags, device, urls] = await Promise.all([
-    !preview && ids.length ? sb().from('akshate').select('photo_id,user_id').in('photo_id', ids).then(r => must(r) as any[]) : [],
+  const [reactions, flags, device, urls] = await Promise.all([
+    !preview && ids.length ? photoReactionSummary(ids, me ?? '') : [],
     includeHidden && ids.length ? sb().from('photo_flags').select('photo_id').in('photo_id', ids).then(r => must(r) as any[]) : [],
     needsDevice ? sb().from('devices').select('person_id').eq('event_id', eventId).eq('user_id', me!).maybeSingle().then(r => must(r) as { person_id: string } | null) : null,
     signedUrls(rows.map(r => r.storage_path), me ?? ''),
   ]);
+  const reactionsById = new Map(reactions.map(reaction => [reaction.photoId, reaction]));
   return rows.map(r => ({
     id: r.id, postId: r.post_id, postPosition: r.post_position, uploaderName: r.uploader_name, moment: r.moment, questId: r.quest_id, caption: r.caption, createdAt: r.created_at, pinned: r.pinned, hidden: r.hidden, flags: includeHidden ? flags.filter(f => f.photo_id === r.id).length : undefined,
-    akshate: ak.filter(a => a.photo_id === r.id).length, mine: ak.some(a => a.photo_id === r.id && a.user_id === me),
+    reactionCounts: reactionsById.get(r.id)?.counts ?? emptyReactions(), myReaction: reactionsById.get(r.id)?.mine ?? null,
+    akshate: reactionsById.get(r.id)?.counts.akshate ?? 0, mine: reactionsById.get(r.id)?.mine === 'akshate',
     uploadedByMe: r.uploaded_by ? r.uploaded_by === me : !!r.person_id && r.person_id === device?.person_id,
     url: urls.get(r.storage_path) ?? ''
   }));
@@ -257,10 +275,13 @@ export const supabaseBackend: Backend = {
     must(await sb().from('photos').insert(rows));
   },
   async toggleAkshate(photoId) {
-    const me = (await sb().auth.getUser()).data.user?.id;
-    const existing = must(await sb().from('akshate').select('photo_id').eq('photo_id', photoId).eq('user_id', me!)) as any[];
-    if (existing.length) must(await sb().from('akshate').delete().eq('photo_id', photoId).eq('user_id', me!));
-    else must(await sb().from('akshate').insert({ photo_id: photoId, user_id: me }));
+    const me = (await sb().auth.getSession()).data.session?.user.id;
+    const current = (await photoReactionSummary([photoId], me ?? ''))[0]?.mine;
+    await supabaseBackend.setPhotoReaction(photoId, current === 'akshate' ? null : 'akshate');
+  },
+  async setPhotoReaction(photoId, reaction) {
+    const { error } = await sb().rpc('set_photo_reaction', { p_photo: photoId, p_reaction: reaction });
+    if (error) throw new Error(error.code === 'PGRST202' ? 'The new reactions are not enabled yet. Please ask the hosts to finish the update.' : error.message);
   },
   async flagPhoto(photoId, reason, removal) {
     must(await sb().rpc('flag_photo', { p_photo: photoId, p_reason: reason, p_removal: removal }));
@@ -279,6 +300,22 @@ export const supabaseBackend: Backend = {
   async hostEvents() {
     const rows = must(await sb().from('hosts').select('events(*)')) as any[];
     return rows.map(r => toEvent(r.events));
+  },
+  async hostTeam(eventId) {
+    const { data, error } = await sb().rpc('admin_host_team', { p_event: eventId });
+    if (error) throw new Error(error.code === 'PGRST202' ? 'Host management is not enabled yet. Apply the 0017_host_team_management.sql migration, then refresh.' : error.message);
+    return data as HostTeam;
+  },
+  async manageHostTeam(eventId, action) {
+    const { data: { session } } = await sb().auth.getSession();
+    if (!session) throw new Error('Sign in as an owner to manage hosts.');
+    const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/host-team`, {
+      method: 'POST', headers: { apikey: import.meta.env.VITE_SUPABASE_ANON_KEY, Authorization: `Bearer ${session.access_token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ...action, eventId, redirectTo: siteOrigin() + '/admin/reset-password' }),
+    });
+    const result = await response.json().catch(() => null);
+    if (!response.ok) throw new Error(result?.message || 'Host management is unavailable. Check that the host-team email function is deployed.');
+    return result as HostTeamResult;
   },
   async adminData(eventId) {
     const ev = must(await sb().from('events').select('*').eq('id', eventId).single()) as any;
@@ -311,6 +348,20 @@ export const supabaseBackend: Backend = {
     const urls = await signedUrls(paths, session?.user.id ?? '').catch(() => new Map<string, string>());
     return { ...result, recentPosts: result.recentPosts.map(({ photoPath, ...post }) => ({ ...post, url: photoPath ? urls.get(photoPath) : undefined })) };
   },
+  async adminGuests(eventId, options = {}) {
+    const { data, error } = await sb().rpc('admin_wedding_guests', { p_event: eventId, p_query: options.query ?? '', p_limit: options.limit ?? 50, p_offset: options.offset ?? 0 });
+    if (error) throw new Error(error.code === 'PGRST202' ? 'Guest contacts are not enabled yet. Apply the 0015_guest_memory_directory.sql database migration, then refresh.' : error.message);
+    return data as GuestDirectory;
+  },
+  async adminGuestPosts(eventId, options = {}) {
+    const { data, error } = await sb().rpc('admin_wedding_guest_posts', { p_event: eventId, p_user: options.guestId ?? null, p_limit: options.limit ?? 50, p_offset: options.offset ?? 0 });
+    if (error) throw new Error(error.code === 'PGRST202' ? 'Guest activities are not enabled yet. Apply the 0015_guest_memory_directory.sql database migration, then refresh.' : error.message);
+    const result = data as GuestMemoryPosts;
+    if (options.includeUrls === false) return result;
+    const { data: { session } } = await sb().auth.getSession();
+    const urls = await signedUrls(result.posts.flatMap(post => post.photos.map(photo => photo.path)), session?.user.id ?? '').catch(() => new Map<string, string>());
+    return { ...result, posts: result.posts.map(post => ({ ...post, photos: post.photos.map(photo => ({ ...photo, url: urls.get(photo.path) })) })) };
+  },
   async saveHousehold(eventId, hh, people) {
     const row = { event_id: eventId, name: hh.name, cap: hh.cap ?? null, side: hh.side ?? null, invited_by: hh.invitedBy ?? null,
       ...(hh.functionIds ? { function_ids: hh.functionIds } : {}) };
@@ -332,7 +383,7 @@ export const supabaseBackend: Backend = {
   async importHouseholds(eventId, households) {
     const { data, error } = await sb().rpc('import_households', { p_event: eventId, p_households: households });
     if (error) {
-      if (error.code === 'PGRST202') throw new Error('Excel import is not set up yet. Apply the 0004_import_households.sql database migration, then try again.');
+      if (error.code === 'PGRST202') throw new Error('Family import is not set up yet. Apply the 0004_import_households.sql database migration, then try again.');
       throw new Error(error.message);
     }
     return data as { created: number; skipped: number };

@@ -1,0 +1,42 @@
+.photo-reactions { position: relative; min-width: 0; flex: 1; }
+.reaction-button-row { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
+.reaction-trigger { min-height: 44px; display: inline-flex; align-items: center; justify-content: center; gap: 7px; padding: 10px 12px; border: 1px solid transparent; border-radius: 10px; background: #f3eee6; color: var(--deep); font-size: 13px; font-weight: 600; line-height: 1.4; cursor: pointer; touch-action: manipulation; user-select: none; -webkit-touch-callout: none; }
+.reaction-trigger:disabled { opacity: .65; cursor: wait; }
+.reaction-trigger-emoji { font-family: 'Apple Color Emoji', 'Segoe UI Emoji', sans-serif; font-size: 21px; line-height: 1; }
+.reaction-trigger.reaction-akshate { background: #fff0cf; color: #805100; }
+.reaction-trigger.reaction-love { background: #fbeaf0; color: var(--rose); }
+.reaction-trigger.reaction-wow { background: #fff4d2; color: #805100; }
+.reaction-trigger.reaction-celebrate { background: #f1ecfc; color: #604598; }
+.reaction-trigger[aria-expanded=true] { border-color: var(--line); }
+.reaction-summary { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; color: var(--deep); }
+.reaction-summary-icons { display: inline-flex; padding-left: 3px; }
+.reaction-summary-icons > span { display: grid; place-items: center; margin-left: -3px; width: 23px; height: 23px; border: 2px solid #fff; border-radius: 50%; background: #fff; font-size: 15px; line-height: 1; }
+.reaction-picker { position: fixed; z-index: 100; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 3px; width: min(292px, calc(100vw - 64px)); padding: 7px; border: 1px solid #e5d9cc; border-radius: 20px; background: #fffdf9; box-shadow: 0 6px 24px #283a2d26; animation: reaction-picker-in .15s ease-out; transform-origin: left bottom; }
+.reaction-picker::after { content: ''; position: absolute; left: 0; right: 0; bottom: -14px; height: 14px; }
+.reaction-picker > button { min-width: 0; min-height: 67px; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 6px; border: 0; border-radius: 14px; padding: 7px 2px; background: transparent; cursor: pointer; }
+.reaction-picker > button > span { font-size: 30px; line-height: 1.15; transform-origin: center bottom; transition: transform .16s ease; }
+.reaction-picker > button > b { font-size: 10px; font-weight: 600; line-height: 1.5; }
+.reaction-picker > button:hover, .reaction-picker > button:focus-visible, .reaction-picker > button[aria-checked=true] { background: #f6efe4; }
+.reaction-picker > button:hover > span, .reaction-picker > button:focus-visible > span { transform: translateY(-5px) scale(1.15); }
+.reaction-error { margin: 8px 0 0; font-size: 12px; line-height: 1.6; overflow-wrap: anywhere; }
+.carousel-photo-surface { position: relative; overflow: hidden; isolation: isolate; }
+.reaction-effect { position: absolute; inset: 0; z-index: 3; overflow: hidden; pointer-events: none; }
+.reaction-center { position: absolute; left: 50%; top: 50%; font-size: clamp(54px, 14vw, 88px); line-height: 1; filter: drop-shadow(0 3px 10px #0003); animation: reaction-photo-pop 1.2s ease-out both; }
+.reaction-particle { position: absolute; animation-delay: var(--delay) !important; }
+.effect-akshate .reaction-particle { top: -15px; left: var(--x); width: 6px; height: 13px; border-radius: 70% 10% 70% 10%; background: #efb52b; box-shadow: 1px 1px 0 #b87b18; animation: reaction-rice-fall 1.1s ease-in both; }
+.effect-love .reaction-particle { bottom: -24px; left: var(--x); color: #e4547d; font-size: 26px; text-shadow: 0 2px 6px #fff8; animation: reaction-heart-float 1.1s ease-out both; }
+.effect-wow .reaction-particle { left: 50%; top: 50%; color: #ffd76a; font-size: 22px; text-shadow: 0 2px 5px #583d0044; animation: reaction-star-pop 1.1s ease-out both; }
+.effect-celebrate .reaction-particle { left: 50%; top: 50%; width: 7px; height: 13px; border-radius: 2px; background: var(--particle-color); animation: reaction-confetti 1.1s ease-out both; }
+@keyframes reaction-picker-in { from { opacity: 0; transform: translateY(6px) scale(.96); } to { opacity: 1; transform: none; } }
+@keyframes reaction-photo-pop { 0% { opacity: 0; transform: translate(-50%, -50%) scale(.3); } 25% { opacity: 1; transform: translate(-50%, -50%) scale(1.15); } 45%, 65% { opacity: 1; transform: translate(-50%, -50%) scale(1); } 100% { opacity: 0; transform: translate(-50%, -65%) scale(1.1); } }
+@keyframes reaction-rice-fall { from { opacity: 1; transform: translateY(-10px) rotate(var(--rotate)); } to { opacity: 0; transform: translateY(65vh) rotate(calc(var(--rotate) + 120deg)); } }
+@keyframes reaction-heart-float { from { opacity: 0; transform: translateY(0) scale(.5); } 20% { opacity: .9; } to { opacity: 0; transform: translateY(-55vh) scale(1.3) rotate(-12deg); } }
+@keyframes reaction-star-pop { 0% { opacity: 0; transform: translate(0, 0) scale(.2); } 35% { opacity: 1; } 100% { opacity: 0; transform: translate(var(--dx), var(--dy)) scale(1.2) rotate(var(--rotate)); } }
+@keyframes reaction-confetti { 0% { opacity: 1; transform: translate(0, 0) rotate(0); } 100% { opacity: 0; transform: translate(var(--dx), calc(var(--dy) + 100px)) rotate(var(--rotate)); } }
+@media (prefers-reduced-motion: reduce) {
+  .reaction-picker, .reaction-center { animation: none; }
+  .reaction-center { transform: translate(-50%, -50%); }
+  .reaction-particle { display: none; }
+  .reaction-picker > button > span { transition: none; }
+  .reaction-picker > button:hover > span, .reaction-picker > button:focus-visible > span { transform: none; }
+}

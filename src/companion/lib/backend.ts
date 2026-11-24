@@ -16,6 +16,7 @@ export const api: Backend = {
   async uploadPhoto(...args) { await requireGuestSignIn(); return backend.uploadPhoto(...args); },
   async uploadPhotoPost(...args) { await requireGuestSignIn(); return backend.uploadPhotoPost(...args); },
   async toggleAkshate(...args) { await requireGuestSignIn(); return backend.toggleAkshate(...args); },
+  async setPhotoReaction(...args) { await requireGuestSignIn(); return backend.setPhotoReaction(...args); },
   async flagPhoto(...args) { await requireGuestSignIn(); return backend.flagPhoto(...args); },
   async inviteBundle(token) {
     const bundle = await backend.inviteBundle(token);

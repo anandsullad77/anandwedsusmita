@@ -64,6 +64,7 @@ const isImage = request => request.path.startsWith('/storage/v1/object/sign/phot
       assert.equal(new URLSearchParams(previewQuery.query).get('limit'), '3');
       assert.equal(preview.requests.filter(isSigning).flatMap(request => request.paths).length, 3, 'Invitation preview signs only its three images');
       assert.equal(preview.requests.some(request => request.path === '/rest/v1/akshate' || request.path === '/rest/v1/devices' || request.path === '/auth/v1/user'), false, 'Preview skips unused reaction and identity requests');
+      assert.equal(preview.requests.some(request => request.path.endsWith('/rpc/photo_reaction_summary')), false, 'Preview does not request reaction summaries');
       assert.deepEqual(preview.errors, []);
       await preview.context.close();
 

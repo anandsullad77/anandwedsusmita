@@ -2,3 +2,8 @@
 # server-only database function before forwarding a request to Supabase Auth.
 [functions.host-password-reset]
 verify_jwt = false
+
+# The handler verifies Auth with the caller's bearer token, then checks owner
+# membership before looking up targets, granting access or sending email.
+[functions.host-team]
+verify_jwt = false

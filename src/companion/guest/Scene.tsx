@@ -1,12 +1,14 @@
-import { useCallback, useEffect, useRef, useState, type CSSProperties } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { api } from '../lib/backend';
 import { ago, shortDate } from '../lib/format';
 import { framedCopy } from '../lib/image';
 import { onQueueChange, pendingCount } from '../lib/uploadQueue';
-import type { Photo, PhotoContext, Wish } from '../lib/types';
+import type { Photo, PhotoContext, ReactionKind, Wish } from '../lib/types';
+import { withReaction } from '../lib/reactions';
 import { weddingFeed } from '../lib/feed';
 import PhotoPost from './PhotoPost';
+import PhotoReactions from './PhotoReactions';
 import { Icon } from './Icon';
 import MomentTag from './MomentTag';
 import { photoQuest, PHOTO_QUESTS } from '../lib/photoQuests';
@@ -27,7 +29,9 @@ export default function Scene({ ctx, canUpload = true, canWish = true, showPhoto
   const [pending, setPending] = useState(0);
   const [menu, setMenu] = useState<string | null>(null);
   const [filter, setFilter] = useState<'all' | 'mine'>('all');
-  const [burst, setBurst] = useState<string | null>(null);
+  const [reacting, setReacting] = useState<Set<string>>(() => new Set());
+  const pendingReactions = useRef(new Map<string, ReactionKind | null>());
+  const reactionVersions = useRef(new Map<string, number>());
   const [loaded, setLoaded] = useState(false);
   const [flagging, setFlagging] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
@@ -36,11 +40,19 @@ export default function Scene({ ctx, canUpload = true, canWish = true, showPhoto
   const loadGeneration = useRef(0);
   const load = useCallback(async () => {
     const generation = ++loadGeneration.current;
+    const versions = new Map(reactionVersions.current);
     let failed = false;
     // Display each section as soon as it arrives; slow wishes must not hold up photos.
     await Promise.all([
       (showPhotos ? api.listPhotos(b.event.id, quest ? { questId: quest.id } : undefined) : Promise.resolve([]))
-        .then(items => { if (generation === loadGeneration.current) setPhotos(items); }).catch(() => { failed = true; }),
+        .then(items => {
+          if (generation === loadGeneration.current) setPhotos(previous => {
+            const latest = new Map(previous.map(photo => [photo.id, photo]));
+            return items.map(photo => pendingReactions.current.has(photo.id) ? withReaction(photo, pendingReactions.current.get(photo.id)!)
+              : (versions.get(photo.id) ?? 0) !== (reactionVersions.current.get(photo.id) ?? 0) && latest.has(photo.id)
+                ? withReaction(photo, latest.get(photo.id)!.myReaction) : photo);
+          });
+        }).catch(() => { failed = true; }),
       (canWish && !quest ? api.listWishes(b.event.id) : Promise.resolve([]))
         .then(items => { if (generation === loadGeneration.current) setWishes(items); }).catch(() => { failed = true; }),
     ]);
@@ -64,10 +76,21 @@ export default function Scene({ ctx, canUpload = true, canWish = true, showPhoto
     return () => { ++loadGeneration.current; off(); clearInterval(t); window.removeEventListener('as-wedding-db', h); document.removeEventListener('visibilitychange', resume); };
   }, [load]);
 
-  async function akshate(p: Photo) {
-    if (!p.mine) { setBurst(p.id); try { navigator.vibrate?.(20); } catch { /* not supported */ } }
-    setPhotos(ps => ps.map(x => x.id === p.id ? { ...x, mine: !x.mine, akshate: x.akshate + (x.mine ? -1 : 1) } : x));
-    await api.toggleAkshate(p.id).catch(() => {});
+  async function react(photo: Photo, reaction: ReactionKind | null) {
+    if (pendingReactions.current.has(photo.id)) return;
+    pendingReactions.current.set(photo.id, reaction);
+    reactionVersions.current.set(photo.id, (reactionVersions.current.get(photo.id) ?? 0) + 1);
+    setReacting(ids => new Set(ids).add(photo.id));
+    setPhotos(items => items.map(item => item.id === photo.id ? withReaction(item, reaction) : item));
+    try { await api.setPhotoReaction(photo.id, reaction); }
+    catch (err) {
+      setPhotos(items => items.map(item => item.id === photo.id ? withReaction(item, photo.myReaction) : item));
+      throw err;
+    } finally {
+      pendingReactions.current.delete(photo.id);
+      reactionVersions.current.set(photo.id, (reactionVersions.current.get(photo.id) ?? 0) + 1);
+      setReacting(ids => { const next = new Set(ids); next.delete(photo.id); return next; });
+    }
   }
 
   async function share(p: Photo) {
@@ -126,7 +149,7 @@ export default function Scene({ ctx, canUpload = true, canWish = true, showPhoto
           <p className="feed-wish-message">{post.wish.message}</p>
         </article>
       ) : (
-        <PhotoPost key={post.id} photos={post.photos} priority={index === 0}>{(p, carousel) => <>
+        <PhotoPost key={post.id} photos={post.photos} priority={index === 0}>{(p, carousel, celebrate) => <>
           <div className="post-header" lang="en">
             <div className="post-avatar" aria-hidden="true">{p.uploaderName.slice(0, 2).toUpperCase()}</div>
             <div className="post-author">
@@ -149,16 +172,8 @@ export default function Scene({ ctx, canUpload = true, canWish = true, showPhoto
           {carousel}
           <div style={{ padding: '10px 14px 12px', display: 'flex', flexDirection: 'column', gap: 10 }}>
             {p.caption && <p className="post-caption" lang="en" style={{ margin: 0, fontSize: 15, lineHeight: 1.45 }}>{p.caption}</p>}
-            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-              <button className="akshate-btn" aria-pressed={p.mine} onClick={() => akshate(p)}>
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="var(--akshate)" aria-hidden="true"><ellipse cx="8" cy="9" rx="2" ry="3.2" transform="rotate(-25 8 9)" /><ellipse cx="15" cy="7" rx="2" ry="3.2" transform="rotate(20 15 7)" /><ellipse cx="12" cy="15" rx="2" ry="3.2" transform="rotate(-5 12 15)" /></svg>
-                <span style={{ fontFamily: 'var(--kn-sans)' }}>ಅಕ್ಷತೆ</span> {p.akshate}
-                {burst === p.id && Array.from({ length: 10 }, (_, i) => (
-                  <span key={i} className="burst" onAnimationEnd={() => { if (i === 0) setBurst(null); }}
-                    style={{ ['--dx' as string]: `${Math.cos(i * 0.63) * 40}px`, ['--dy' as string]: `${Math.sin(i * 0.63) * 40 - 20}px` } as CSSProperties} />
-                ))}
-              </button>
-              <span style={{ flex: 1 }} />
+            <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
+              <PhotoReactions key={p.id} photo={p} pending={reacting.has(p.id)} onChange={async reaction => { await react(p, reaction); celebrate(reaction); }} />
               <button className="chip" onClick={() => share(p)} style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }} lang="en"><Icon size={18} d="M4 20l1.3-3.9A8 8 0 1 1 8 19z" />Share</button>
             </div>
           </div>

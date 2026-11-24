@@ -2,7 +2,7 @@ import { useEffect, useState, type ReactNode } from 'react';
 import { Link, useLocation, useSearchParams } from 'react-router-dom';
 import WeddingBrand, { WeddingTextile } from '../components/WeddingBrand';
 import { api } from '../lib/backend';
-import { finishHostPasswordRecovery, MIN_HOST_PASSWORD_LENGTH, requestHostPasswordReset, updateHostPassword } from '../lib/hostPasswordRecovery';
+import { finishHostEmailLink, finishHostPasswordRecovery, MIN_HOST_PASSWORD_LENGTH, requestHostPasswordReset, updateHostPassword } from '../lib/hostPasswordRecovery';
 import './admin.css';
 
 function HostAuthPanel({ children }: { children: ReactNode }) {
@@ -45,6 +45,7 @@ export function ForgotHostPassword() {
 
 export function ResetHostPassword() {
   const [search] = useSearchParams();
+  const [emailFragment] = useState(() => window.location.hash);
   const code = search.get('code'), flowId = search.get('sb_flow_id');
   const invalid = search.has('error') || new URLSearchParams(window.location.hash.slice(1)).has('error');
   const [ready, setReady] = useState(false);
@@ -56,17 +57,19 @@ export function ResetHostPassword() {
   const [saveError, setSaveError] = useState<string | null>(null);
   useEffect(() => {
     let active = true;
-    if (api.kind === 'local' || invalid || !code) {
+    const emailLink = new URLSearchParams(emailFragment.slice(1)).has('access_token');
+    if (emailLink) window.history.replaceState(window.history.state, '', '/admin/reset-password');
+    if (api.kind === 'local' || invalid || (!code && !emailLink)) {
       setLinkError('This reset link is invalid, expired, or already used. Please request a new link.');
       return;
     }
-    finishHostPasswordRecovery(code, flowId).then(() => {
+    (emailLink ? finishHostEmailLink(emailFragment) : finishHostPasswordRecovery(code!, flowId)).then(() => {
       if (!active) return;
       window.history.replaceState(window.history.state, '', '/admin/reset-password');
       setReady(true);
     }).catch(error => { if (active) setLinkError((error as Error).message); });
     return () => { active = false; };
-  }, [code, flowId, invalid]);
+  }, [code, flowId, invalid, emailFragment]);
   return <HostAuthPanel>
     <h1 className="h1 host-auth-title">{saved ? 'Password updated' : 'Choose a new password'}</h1>
     {linkError ? <><p className="error" role="alert">{linkError}</p><Link className="btn btn-primary" to="/admin/forgot-password">Request a new reset link</Link></>

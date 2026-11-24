@@ -1,8 +1,8 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import type { Photo } from '../lib/types';
 import { Icon } from './Icon';
 
-export default function PhotoCarousel({ photos, active, onActive, enabled = true, priority = false }: { photos: Photo[]; active: number; onActive: (index: number) => void; enabled?: boolean; priority?: boolean }) {
+export default function PhotoCarousel({ photos, active, onActive, enabled = true, priority = false, overlay }: { photos: Photo[]; active: number; onActive: (index: number) => void; enabled?: boolean; priority?: boolean; overlay?: ReactNode }) {
   const track = useRef<HTMLDivElement>(null);
   const [visited, setVisited] = useState<Set<number>>(() => new Set());
   const [aspectRatios, setAspectRatios] = useState<Record<string, number>>({});
@@ -18,6 +18,7 @@ export default function PhotoCarousel({ photos, active, onActive, enabled = true
     track.current?.scrollTo({ left: index * track.current.clientWidth, behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth' });
   };
   return <div className="photo-carousel" role="region" aria-roledescription="carousel" aria-label={`Post with ${photos.length} photo${photos.length === 1 ? '' : 's'}`}>
+    <div className="carousel-photo-surface">
     <div ref={track} className="carousel-track" style={{ aspectRatio: aspectRatios[photos[active]?.id] ?? 1 }} tabIndex={photos.length > 1 ? 0 : undefined} aria-label="Post photos" onKeyDown={event => {
       if (event.key === 'ArrowRight' || event.key === 'ArrowLeft') {
         event.preventDefault(); go(Math.max(0, Math.min(photos.length - 1, active + (event.key === 'ArrowRight' ? 1 : -1))));
@@ -34,6 +35,8 @@ export default function PhotoCarousel({ photos, active, onActive, enabled = true
           setAspectRatios(previous => previous[photo.id] === ratio ? previous : { ...previous, [photo.id]: ratio });
         }} />
       </div>)}
+    </div>
+    {overlay}
     </div>
     {photos.length > 1 && <>
       <span className="carousel-count" aria-live="polite">{active + 1} / {photos.length}</span>

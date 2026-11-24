@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { api } from '../lib/backend';
 import type { AdminAnalytics } from '../lib/types';
 import { Icon } from '../guest/Icon';
+import GuestMemoryDirectory from './GuestMemoryDirectory';
 
 const postStatus: Record<string, string> = { pending: 'Awaiting approval', rejected: 'Rejected', hidden: 'Hidden', partly_hidden: 'Some photos hidden' };
 const when = (at: string) => new Date(at).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit', timeZone: 'Asia/Kolkata' });
@@ -10,11 +11,12 @@ export default function Analytics({ eventId }: { eventId: string }) {
   const [data, setData] = useState<AdminAnalytics | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [guestVersion, setGuestVersion] = useState(0);
   const request = useRef(0);
   const load = useCallback(async () => {
     const current = ++request.current;
     setBusy(true); setError(null);
-    try { const result = await api.adminAnalytics(eventId); if (request.current === current) setData(result); }
+    try { const result = await api.adminAnalytics(eventId); if (request.current === current) { setData(result); setGuestVersion(v => v + 1); } }
     catch (e) { if (request.current === current) setError((e as Error).message); }
     finally { if (request.current === current) setBusy(false); }
   }, [eventId]);
@@ -32,6 +34,7 @@ export default function Analytics({ eventId }: { eventId: string }) {
       </section>
       <p className="analytics-note">Visits start when analytics is enabled and count each browser once; the same person on another device counts again. Sign-ins count guests, excluding hosts. Existing sign-ins and posts are included, along with posts awaiting approval.</p>
       {api.kind === 'local' && <p className="analytics-note">Demo: visits and posts are from this browser. Google sign-ins are available on the connected website.</p>}
+      <GuestMemoryDirectory eventId={eventId} refreshKey={guestVersion} />
       <section className="panel analytics-posts" aria-labelledby="analytics-posts-title">
         <div className="analytics-header"><h2 id="analytics-posts-title">Recent posts</h2><span className="analytics-note">Latest 20 · times in IST</span></div>
         {!data.recentPosts.length && <p className="analytics-note">No photos or wishes shared yet.</p>}
