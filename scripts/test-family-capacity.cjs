@@ -46,10 +46,10 @@ const json = (route, body) => route.fulfill({ contentType: 'application/json', b
       await page.getByRole('button', { name: 'Continue →', exact: true }).click();
       assert.match(await page.locator('.rsvp-review').innerText(), /3 coming/);
       await page.getByRole('button', { name: 'Send our reply', exact: true }).click();
-      await page.getByRole('heading', { name: 'We can’t wait to see you.', exact: true }).waitFor();
+      await page.waitForURL(origin + '/app');
       assert.equal(saves.length, 1); assert.equal(saves[0].p_payload.add.length, 2);
       assert.equal(saves[0].p_payload.add[0].isChild, true);
-      await page.getByRole('button', { name: 'Update our reply', exact: true }).click();
+      await page.goto(origin + '/i/family-private?edit=1');
       await page.getByRole('heading', { name: 'Will you join us?', exact: true }).waitFor();
       assert.equal(await page.locator('.rsvp-added-member').count(), 0, 'Saved members become existing members');
       assert.equal(await add.isDisabled(), true, 'Saved members consume the host-set capacity');
@@ -66,6 +66,21 @@ const json = (route, body) => route.fulfill({ contentType: 'application/json', b
       await page.waitForURL(origin + '/app/create?type=photos');
       await page.getByRole('heading', { name: 'Upload Photos', exact: true }).waitFor();
       assert.equal(run.claims, 2, 'OAuth reclaims the family for the Google account');
+      if (width === 390) {
+        let rejectSave = true;
+        await context.route('**/rest/v1/rpc/save_rsvp', route => rejectSave
+          ? route.fulfill({ status: 503, contentType: 'application/json', body: JSON.stringify({ message: 'Please retry your reply' }) })
+          : json(route, null));
+        await page.goto(origin + '/i/family-private');
+        await page.getByLabel('Sorry, we can’t attend', { exact: true }).check();
+        await page.getByRole('button', { name: 'Continue →', exact: true }).click();
+        await page.getByRole('button', { name: 'Send our reply', exact: true }).click();
+        await page.getByRole('alert').filter({ hasText: 'Please retry your reply' }).waitFor();
+        assert.ok(page.url().includes('/i/family-private'), 'A failed save stays on the review screen');
+        rejectSave = false;
+        await page.getByRole('button', { name: 'Send our reply', exact: true }).click();
+        await page.waitForURL(origin + '/app');
+      }
       assert.deepEqual(run.errors, []); await context.close();
       console.log(`PASS ${width}px: anonymous RSVP, host cap, add/remove/child validation, save/re-edit, public invitation/profile, protected feed/wish/upload and Google return`);
     }

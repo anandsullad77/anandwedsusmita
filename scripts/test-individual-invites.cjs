@@ -56,7 +56,7 @@ const json = (route, value) => route.fulfill({ contentType: 'application/json', 
       await guest.page.getByLabel('I will confirm this later', { exact: true }).check();
       await guest.page.getByRole('button', { name: 'Continue →', exact: true }).click();
       await guest.page.getByRole('button', { name: 'Send my reply', exact: true }).click();
-      await guest.page.getByRole('link', { name: 'View invitation', exact: true }).click();
+      await guest.page.waitForURL(origin + '/app');
       await guest.page.getByRole('button', { name: 'Account menu for Guest', exact: true }).click();
       await guest.page.locator('.guest-account-panel').getByRole('link', { name: 'My RSVP', exact: true }).click();
       await guest.page.getByRole('heading', { name: 'Your RSVP', exact: true }).waitFor();

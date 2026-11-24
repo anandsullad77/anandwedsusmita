@@ -22,6 +22,7 @@
     "test:feed": "node scripts/test-feed-performance.cjs",
     "test:previews": "node scripts/test-invitation-previews.cjs",
     "test:invitation": "node scripts/test-invitation-download.cjs",
+    "test:sharing": "node scripts/test-invitation-sharing.cjs",
     "preview": "vite preview --host 127.0.0.1"
   },
   "dependencies": {

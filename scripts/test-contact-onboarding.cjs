@@ -194,7 +194,7 @@ async function fits(page) {
       await page.getByRole('button', { name: 'Continue →', exact: true }).click();
       await page.getByRole('heading', { name: 'Everything look right?' }).waitFor(); await fits(page);
       await page.getByRole('button', { name: 'Send our reply', exact: true }).click();
-      await page.getByRole('heading', { name: 'We can’t wait to see you.' }).waitFor();
+      await page.waitForURL(origin + '/app');
       assert.equal(rsvps.length, 1); assert.equal(rsvps[0].p_payload.coming, 'yes');
       await fits(page);
       await page.screenshot({ path: path.join(artifacts, `onboarding-complete-${width}.png`), fullPage: true });

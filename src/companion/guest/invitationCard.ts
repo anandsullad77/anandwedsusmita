@@ -2,7 +2,8 @@ import { fmtDate, fmtTime } from '../lib/format';
 import type { GeneralInvitationSettings, GeneralInviteBundle } from '../lib/types';
 
 const WIDTH = 1200;
-const EXPORT_SCALE = 1.5;
+const EXPORT_SCALE = 1080 / WIDTH;
+const HEIGHT = WIDTH * 16 / 9;
 const MAIN_PHOTO = '/images/anand-susmita-portrait.jpg';
 const INVITATION_PHOTO = '/images/anand-susmita-invitation.jpg';
 const sans = '"Noto Sans", "Noto Sans Kannada", sans-serif';
@@ -20,7 +21,7 @@ async function loadImage(src: string): Promise<HTMLImageElement> {
 type TextBlock = { kind: 'text'; lines: string[]; font: string; lineHeight: number; color: string; gap: number; tracking: number; names?: boolean };
 type Block = TextBlock | { kind: 'photos'; height: number; gap: number } | { kind: 'divider'; height: number; gap: number };
 
-// Draw the keepsake at 1800px wide, independently of the phone's screen or DPR.
+// Always export a 1080 × 1920 story, independently of screen size or copy length.
 export async function makeInvitationCard(bundle: GeneralInviteBundle, settings: GeneralInvitationSettings, link: string): Promise<Blob> {
   const { event, functions } = bundle;
   const showPhotos = settings.sections.cover;
@@ -98,9 +99,10 @@ export async function makeInvitationCard(bundle: GeneralInviteBundle, settings: 
 
   const top = 185;
   const contentHeight = blocks.reduce((sum, block) => sum + (block.kind === 'text' ? block.lines.length * block.lineHeight : block.height) + block.gap, 0);
-  const height = Math.max(1800, Math.ceil(top + contentHeight + 180));
+  const height = HEIGHT;
+  const contentScale = Math.min(1, (height - top - 180) / contentHeight);
   canvas.width = WIDTH * EXPORT_SCALE;
-  canvas.height = Math.ceil(height * EXPORT_SCALE);
+  canvas.height = 1920;
   ctx.scale(EXPORT_SCALE, EXPORT_SCALE);
   ctx.imageSmoothingEnabled = true;
   ctx.imageSmoothingQuality = 'high';
@@ -145,7 +147,10 @@ export async function makeInvitationCard(bundle: GeneralInviteBundle, settings: 
     ctx.restore();
   };
   ctx.textBaseline = 'top';
-  let y = top;
+  ctx.save();
+  ctx.translate((WIDTH - WIDTH * contentScale) / 2, top + Math.max(0, (height - top - 180 - contentHeight * contentScale) / 2));
+  ctx.scale(contentScale, contentScale);
+  let y = 0;
   for (const block of blocks) {
     if (block.kind === 'photos') {
       portrait(photos[0], 142, y + 8);
@@ -180,6 +185,7 @@ export async function makeInvitationCard(bundle: GeneralInviteBundle, settings: 
     }
     y += block.gap;
   }
+  ctx.restore();
   if (textile) {
     ctx.save(); ctx.beginPath(); ctx.rect(48, height - 132, WIDTH - 96, 84); ctx.clip();
     for (let x = 48; x < WIDTH - 48; x += 140) ctx.drawImage(textile, x, height - 132, 140, 84);

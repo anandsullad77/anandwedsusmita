@@ -19,5 +19,8 @@ export const shortDate = (iso: string) =>
 export const waLink = (phone: string | undefined, text: string) =>
   `https://wa.me/${(phone ?? '').replace(/\D/g, '')}?text=${encodeURIComponent(text)}`;
 
-export const inviteMessage = (familyName: string, couple: string, link: string, pin: string, individual = false) =>
-  `Namaskara! ${couple} warmly invite ${individual ? familyName : `the ${familyName}`} to their wedding. Open your invitation here: ${link}\n\nIf you open it on another phone later, the wedding PIN is ${pin}.`;
+export function inviteMessage(name: string, event: { coupleA: string; coupleB: string; startsAt: string; venue: string }, link: string, individual = false) {
+  const greeting = individual || /\bfamily\b/i.test(name) ? name.trim() : `${name.trim()} and family`;
+  const date = new Date(event.startsAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Asia/Kolkata' });
+  return `Dear ${greeting},\n\n*Your invitation to ${event.coupleA} & ${event.coupleB}’s wedding is here! ❤️*\n\n👇 *Tap the link below to open your invitation and RSVP*\n\n${link}\n\nWe’d love to celebrate with you. Your presence and blessings would make our day special.\n\n🗓 ${date} · ${fmtTime(event.startsAt)} IST\n📍 ${event.venue}`;
+}

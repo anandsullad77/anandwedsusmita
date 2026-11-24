@@ -208,6 +208,14 @@ body:has(.admin-menu-dialog[open]), body:has(.family-dialog[open]) { overflow: h
 .family-delete-dialog .family-edit-body { gap: 14px; overflow-wrap: anywhere; }
 .family-delete-dialog p { margin: 0; }
 .family-edit-form { display: flex; flex-direction: column; height: 100%; overflow: hidden; }
+.invitation-share-image { display: block; width: 100%; height: auto; aspect-ratio: 7 / 4; object-fit: contain; border-radius: 10px; }
+.platform .input.invitation-share-message { min-height: 330px; font-size: 14px; line-height: 1.65; resize: vertical; overflow-wrap: anywhere; }
+.invitation-share-help { font-size: 14px; color: var(--p-muted); }
+.invitation-share-tools { display: flex; flex-wrap: wrap; gap: 10px; }
+.invitation-share-dialog .family-edit-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.invitation-share-dialog .family-edit-header h2 { min-width: 0; overflow-wrap: anywhere; }
+.invitation-share-dialog .family-edit-actions { flex-wrap: wrap; }
+.invitation-share-dialog .family-edit-actions > * { text-align: center; flex: 1 1 160px; }
 .family-edit-scroll { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; }
 .family-edit-header { display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; padding: 20px 22px; border-bottom: 1px solid var(--p-line); gap: 12px; }
 .family-edit-header h2 { font: 600 30px/1.2 var(--serif); margin: 2px 0 0; }

@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, NavLink, Route, Routes } from 'react-router-dom';
 import { api } from '../lib/backend';
-import { ago, inviteMessage, waLink } from '../lib/format';
+import { ago, waLink } from '../lib/format';
 import type { AdminData, AdminHousehold, EventInfo, Person, Photo } from '../lib/types';
 import FamilyExcelImport from './FamilyExcelImport';
 import FamilyContactImport from './FamilyContactImport';
 import InvitationTypeSwitch from './InvitationTypeSwitch';
+import ShareInvitation from './ShareInvitation';
 import GeneralInvitationAdmin from './GeneralInvitationAdmin';
 import AdminNavigation from './AdminNavigation';
 import Analytics from './Analytics';
@@ -174,6 +175,7 @@ function Families({ d, reload }: { d: AdminData; reload: () => void }) {
   const [notice, setNotice] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const [importContacts, setImportContacts] = useState(false);
+  const [share, setShare] = useState<AdminHousehold | null>(null);
   const couple = `${d.event.coupleA} & ${d.event.coupleB}`;
   const rows = d.households.filter(h =>
     (filter === 'all' || (filter === 'not_sent' && h.inviteStatus === 'not_sent') || (filter === 'waiting' && h.inviteStatus !== 'responded' && h.inviteStatus !== 'not_sent') || (filter === 'open' && h.source === 'open'))
@@ -181,7 +183,8 @@ function Families({ d, reload }: { d: AdminData; reload: () => void }) {
   const link = (h: AdminHousehold) => `${location.origin}/i/${h.token}`;
   const send = (h: AdminHousehold) => {
     const phone = h.people.find(p => p.phone)?.phone ?? '';
-    const text = h.inviteStatus === 'not_sent' ? inviteMessage(h.name, couple, link(h), d.pin, h.invitationType === 'individual') : `Namaskara! Gentle reminder to RSVP for ${couple}'s wedding: ${link(h)}`;
+    if (h.inviteStatus === 'not_sent') { setShare(h); return; }
+    const text = `Namaskara! Gentle reminder to RSVP for ${couple}'s wedding: ${link(h)}`;
     window.open(waLink(phone, text), '_blank');
     void api.setInviteStatus(h.id, 'sent').then(reload).catch(e => setActionError(e.message));
   };
@@ -215,6 +218,7 @@ function Families({ d, reload }: { d: AdminData; reload: () => void }) {
                 <td data-label="Stay" className={!h.stay?.manage && !h.stay?.nights.length ? 'is-empty-detail' : undefined}>{h.stay?.manage ? 'Own' : h.stay?.nights.length ? h.stay.nights.join(', ') : '—'}</td>
                 <td className="family-row-actions" style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
                   {h.inviteStatus !== 'responded' && <button className={`abtn ${h.inviteStatus === 'not_sent' ? 'red' : 'solid'}`} onClick={() => send(h)}>{h.inviteStatus === 'not_sent' ? 'Send on WhatsApp' : 'Nudge'}</button>}
+                  {h.inviteStatus !== 'not_sent' && <button className="abtn" onClick={() => setShare(h)}>Share invitation</button>}
                   <button className="abtn" onClick={async () => { setActionError(null); try { await navigator.clipboard.writeText(link(h)); setNotice(`Invitation link copied for ${h.name}.`); } catch { setActionError('Could not copy the invitation link. Please try again.'); } }}>Copy link</button>
                   <button className="abtn" onClick={() => setEdit(h)}>Edit</button>
                   <button className="abtn danger" aria-label={`Delete ${h.name}`} onClick={() => { setNotice(null); setActionError(null); setRemove(h); }}>Delete</button>
@@ -227,6 +231,9 @@ function Families({ d, reload }: { d: AdminData; reload: () => void }) {
       </table>
     </div>
     {edit && <EditFamily d={d} h={edit === 'new' ? null : edit} onClose={() => { setEdit(null); reload(); }} />}
+    {share && <ShareInvitation household={share} event={d.event} link={link(share)} onClose={() => setShare(null)} onShared={() => {
+      if (share.inviteStatus === 'not_sent') void api.setInviteStatus(share.id, 'sent').then(reload).catch(e => setActionError(e.message));
+    }} />}
     {importContacts && <FamilyContactImport d={d} onClose={() => setImportContacts(false)} onImported={message => { setImportContacts(false); setNotice(message); reload(); }} />}
     {remove && <DeleteFamily eventId={d.event.id} h={remove} onClose={() => setRemove(null)} onDeleted={() => { setNotice(`${remove.name} deleted.`); setRemove(null); reload(); }} />}
   </>);

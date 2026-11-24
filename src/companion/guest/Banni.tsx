@@ -1,5 +1,5 @@
 ﻿import { useEffect, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useRef } from 'react';
 import { api, getSession, setSession } from '../lib/backend';
 import { fmtDate, fmtTime } from '../lib/format';
@@ -9,6 +9,7 @@ import './rsvp.css';
 
 const windows = ['Day before · morning', 'Day before · evening', 'Wedding day · early', 'Wedding day · morning', 'Not sure yet'];
 export default function Banni() {
+  const navigate = useNavigate();
   const { token = '' } = useParams();
   const [b, setB] = useState<InviteBundle | null>(null);
   const [loading, setLoading] = useState(true);
@@ -72,7 +73,7 @@ export default function Banni() {
       await api.claimPerson(token, person);
       setSession({ eventId: b.event.id, slug: b.event.slug, householdToken: token, personId: person, invitationType: b.household.invitationType });
       await api.saveRsvp(b.event.id, { requestId, add: coming === 'yes' ? added.map(p => ({ name: p.name.trim(), isChild: p.isChild, functionIds: functions })) : [], coming: coming as 'yes' | 'no', attendance: b.people.map(p => ({ personId: p.id, functionIds: coming === 'yes' && selected.includes(p.id) ? functions : [] })), travel: coming === 'yes' ? travel : null, stay: coming === 'yes' ? stay : null, blessing: blessing.trim(), summary: coming === 'yes' ? `RSVP: ${names.length} coming (${names.map(p => p.name).join(', ')}) · ${travel?.mode ?? 'travel to be confirmed'} · ${stayChoice === 'hosts' ? `stay ${nights.join(', ')}` : stayChoice === 'own' ? 'own stay' : 'stay to be confirmed'}` : 'RSVP: unable to attend' });
-      move(3);
+      navigate('/app', { replace: true });
     } catch (e) { setError((e as Error).message); } finally { setBusy(false); saveLock.current = false; }
   };
   return <div className="rsvp-shell" lang="en"><header className="rsvp-top"><WeddingBrand tagline={individual ? "Your RSVP" : "Family RSVP"} /><a href="/">View invitation →</a></header><main className="rsvp-layout"><aside className="rsvp-invite"><p>WITH LOVE, YOU’RE INVITED</p><h1>{b.event.coupleA} <i>&amp;</i> {b.event.coupleB}</h1><p>{fmtDate(b.event.startsAt)}<br />{fmtTime(b.event.startsAt)} IST</p><p>{b.event.venue}</p></aside><section className="rsvp-card">

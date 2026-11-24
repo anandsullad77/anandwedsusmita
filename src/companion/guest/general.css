@@ -202,7 +202,6 @@
 .general-signoff > span { color: var(--primary); font-size: 14px; }
 .general-signoff p { margin: 14px 0 4px; font-size: 12px; }
 .general-signoff b { font: 500 28px/1.2 var(--serif); color: var(--deep); }
-.invitation-print-root { display: none; }
 
 @media (max-width: 1000px) {
   .general-moments { gap: 36px; }
@@ -268,11 +267,4 @@
   .general-invitation .general-eyebrow { font-size: 8px; }
   .general-portrait { height: 184px; width: 220px; }
   .general-download .btn { font-size: 11px; }
-}
-@media print {
-  @page { size: A4; margin: 12mm; }
-  body:has(> .invitation-print-root) > :not(.invitation-print-root) { display: none !important; }
-  body:has(> .invitation-print-root) { height: auto; background: white; }
-  .invitation-print-root { display: block !important; width: 100%; }
-  .invitation-print-root img { width: 100%; height: 270mm; object-fit: contain; }
 }
