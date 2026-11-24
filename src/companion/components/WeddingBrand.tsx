@@ -6,10 +6,10 @@ export function WeddingMark({ className = '', size = 64 }: { className?: string;
   return <img className={`wedding-mark ${className}`} src="/images/as-monogram.svg" alt="" aria-hidden="true" width={size} height={size} />;
 }
 
-export default function WeddingBrand({ className = '', tagline }: { className?: string; tagline?: string }) {
+export default function WeddingBrand({ className = '', tagline, title = 'Anand & Susmita' }: { className?: string; tagline?: string; title?: string }) {
   return <a href="/" className={`wedding-brand ${className}`} aria-label="Anand and Susmita — wedding invitation">
     <WeddingMark />
-    <span className="wedding-brand-copy">{tagline && <small>{tagline}</small>}<b>Anand &amp; Susmita</b></span>
+    <span className="wedding-brand-copy">{tagline && <small>{tagline}</small>}<b>{title}</b></span>
   </a>;
 }
 

@@ -41,7 +41,9 @@
 .general-invitation::before { content: ''; position: absolute; inset: 7px; border: 1px solid color-mix(in srgb, var(--deep) 10%, transparent); pointer-events: none; z-index: -1; }
 .general-invitation-topline { display: flex; align-items: center; justify-content: center; gap: 12px; width: 100%; padding: 21px 0 19px; margin-bottom: 22px; border-bottom: 1px solid var(--line); color: var(--deep); font: 500 9px/1.7 var(--sans); letter-spacing: .13em; text-transform: uppercase; }
 .general-invitation-topline > span:nth-child(2) { color: var(--primary); font-size: 11px; }
+.general-hero-layout { display: grid; justify-items: center; align-items: center; width: 100%; min-width: 0; }
 .general-hero-copy { text-align: center; min-width: 0; width: 100%; }
+.general-hero-intro, .general-hero-message { min-width: 0; text-align: center; }
 .general-invitation .general-eyebrow { font-size: 9px; letter-spacing: .12em; color: var(--muted); }
 .general-banni { margin: 14px 0 12px; font-size: 21px; color: var(--primary); display: flex; align-items: center; justify-content: center; gap: 9px; }
 .general-banni span { font: 500 11px var(--sans); color: var(--primary); }
@@ -78,7 +80,8 @@
 .general-venue { margin: 0; font-size: 13px; line-height: 1.7; color: var(--deep); white-space: pre-wrap; overflow-wrap: anywhere; }
 .general-directions { display: inline-flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 600; color: var(--primary); min-height: 44px; text-decoration: underline; text-underline-offset: 5px; }
 @container invitation-hero (min-width: 700px) {
-  .general-invitation { grid-template-columns: minmax(0, 1.05fr) minmax(0, .95fr); column-gap: clamp(28px, 5cqi, 60px); padding: 0 clamp(28px, 5cqi, 60px) 26px; }
+  .general-invitation { padding: 0 clamp(28px, 5cqi, 60px) 26px; }
+  .has-cover .general-hero-layout { grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr); column-gap: clamp(28px, 5cqi, 60px); }
   .general-invitation-topline { grid-column: 1 / -1; justify-content: space-between; margin-bottom: 32px; padding-block: 23px; font-size: 10px; }
   .general-hero-copy { align-self: center; }
   .general-banni { margin: 17px 0 14px; font-size: 22px; }
@@ -87,7 +90,7 @@
   .general-welcome { margin-top: 18px; font-size: 15px; }
   .general-shell .general-hero-cta { margin-top: 22px; min-height: 47px; font-size: 13px; }
   .general-hero-note { font-size: 17px; margin-top: 15px; }
-  .general-portrait { width: min(100% - 24px, 340px); height: auto; aspect-ratio: 4 / 5; margin: 12px 0; padding: 8px; border-radius: 180px 180px 3px 3px; align-self: center; }
+  .general-portrait { width: min(100% - 12px, 440px); height: auto; aspect-ratio: 4 / 5; margin: 12px 0; padding: 8px; border-radius: 220px 220px 3px 3px; align-self: center; }
   .general-event-details { grid-column: 1 / -1; grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr); gap: 28px; margin-top: 32px; padding-top: 26px; }
   .general-event-detail + .general-event-detail { padding-left: 24px; border-left: 1px solid var(--line); }
   .general-date { font-size: 14px; }
@@ -103,21 +106,28 @@
   .without-cover .general-hero-copy { padding: 24px 0 16px; }
 }
 @container invitation-hero (max-width: 699px) {
-  .general-invitation.has-cover { grid-template-columns: minmax(0, 1.05fr) minmax(0, .95fr); column-gap: 18px; padding-inline: 20px; }
-  .general-invitation-topline { grid-column: 1 / -1; }
-  .has-cover .general-hero-copy { align-self: center; }
-  .general-invitation.has-cover .general-couple { flex-direction: column; align-items: center; gap: 0; font-size: clamp(34px, 12cqi, 64px); }
-  .general-invitation.has-cover .general-couple i { font-size: .45em; line-height: 1; }
-  .has-cover .general-banni { flex-wrap: wrap; column-gap: 6px; row-gap: 4px; margin-block: 12px 10px; font-size: 18px; }
-  .has-cover .general-banni span { font-size: 10px; }
-  .has-cover .general-welcome { font-size: 12px; line-height: 1.75; margin-top: 12px; }
-  .general-shell .has-cover .general-hero-cta { gap: 8px; min-height: 44px; max-width: 100%; padding: 8px 10px; margin-top: 17px; font-size: 10px; }
-  .has-cover .general-hero-cta svg { flex-shrink: 0; width: 14px; }
+  .general-invitation.has-cover { padding-inline: 20px; }
+  .has-cover .general-invitation-topline { margin-bottom: 18px; }
+  .has-cover .general-hero-layout { width: calc(100% + 16px); grid-template-columns: minmax(0, .78fr) minmax(0, 1.22fr); column-gap: 12px; row-gap: 20px; }
+  /* Let the introduction and message use the whole card, leaving the side-by-side row for the names and portrait. */
+  .has-cover .general-hero-copy { display: contents; }
+  .has-cover .general-hero-intro { grid-column: 1 / -1; grid-row: 1; padding-inline: 8px; }
+  .general-invitation.has-cover .general-couple { grid-column: 1; grid-row: 2; width: 100%; flex-direction: column; align-items: center; gap: 0; font-size: clamp(30px, 10.5cqi, 62px); }
+  .general-invitation.has-cover .general-couple i { font-size: .5em; line-height: 1.4; }
+  .has-cover .general-banni { flex-wrap: wrap; column-gap: 8px; row-gap: 4px; margin: 10px 0 0; font-size: 20px; }
+  .has-cover .general-banni span { font-size: 11px; }
+  .has-cover .general-hero-message { grid-column: 1 / -1; grid-row: 3; width: 100%; padding-inline: 8px; }
+  .has-cover .general-welcome { font-size: 13px; line-height: 1.8; margin-top: 0; max-width: 38ch; }
+  .general-shell .has-cover .general-hero-cta { gap: 16px; min-height: 46px; max-width: 100%; padding: 10px 22px; margin-top: 14px; font-size: 12px; }
+  .has-cover .general-hero-cta svg { flex-shrink: 0; width: 17px; }
   .has-cover .general-hero-note { display: none; }
-  .general-invitation.has-cover .general-portrait { width: 100%; max-width: 240px; height: auto; aspect-ratio: 3 / 4; margin: 0 0 0; align-self: center; }
-  .has-cover .general-portrait .portrait-sprig { width: 40px; bottom: -12px; }
-  .has-cover .general-portrait-sprig-left { left: -16px; }
-  .has-cover .general-portrait-sprig-right { right: -16px; }
+  .general-invitation.has-cover .general-portrait { grid-column: 2; grid-row: 2; width: calc(100% - 8px); max-width: 340px; height: auto; aspect-ratio: 3 / 4; margin: 5px 0; align-self: center; }
+  .has-cover .general-portrait-photo::before { inset: -6px; }
+  .has-cover .general-portrait-photo::after { inset: -11px 8px; }
+  .has-cover .general-portrait .portrait-sprig { width: clamp(40px, 12cqi, 56px); bottom: -12px; }
+  .has-cover .general-portrait-sprig-left { left: -15px; }
+  .has-cover .general-portrait-sprig-right { right: -15px; }
+  .has-cover .general-event-details { margin-top: 22px; }
   .general-event-details { grid-column: 1 / -1; }
 }
 

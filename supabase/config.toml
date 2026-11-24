@@ -1,0 +1,4 @@
+# Recovery starts while signed out. The function checks membership with a
+# server-only database function before forwarding a request to Supabase Auth.
+[functions.host-password-reset]
+verify_jwt = false

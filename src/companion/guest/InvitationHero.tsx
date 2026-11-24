@@ -14,18 +14,23 @@ export default function InvitationHero({ event, settings, momentsPath }: { event
   return <div className="general-hero-frame">
     <section className={`general-invitation ${hasCover ? 'has-cover' : 'without-cover'}`} aria-label="Wedding invitation">
       <div className="general-invitation-topline" lang="en"><span>A celebration of love</span><span aria-hidden="true">✦</span><time dateTime={event.startsAt}>{day} {month} {year}</time></div>
-      <div className="general-hero-copy">
-        <p className="general-eyebrow">With love and our elders’ blessings</p>
-        <p className="kn-h general-banni" lang="kn">ಬನ್ನಿ! <span lang="en">You’re invited</span></p>
-        <h1 className="general-couple" lang="en"><span>{event.coupleA}</span><i>&amp;</i><span>{event.coupleB}</span></h1>
-        <p className="general-welcome">{settings.welcomeMessage}</p>
-        {momentsPath && <Link className="btn btn-deep general-hero-cta" to={momentsPath}>Be part of our day <Icon size={17} d="M5 12h14m-6-6l6 6-6 6" /></Link>}
-        <p className="general-hero-note">Two hearts. Two families. One beautiful beginning.</p>
+      <div className="general-hero-layout">
+        <div className="general-hero-copy">
+          <div className="general-hero-intro">
+            <p className="general-eyebrow">With love and our elders’ blessings</p>
+            <p className="kn-h general-banni" lang="kn">ಬನ್ನಿ! <span lang="en">You’re invited</span></p>
+          </div>
+          <h1 className="general-couple" lang="en"><span>{event.coupleA}</span><i>&amp;</i><span>{event.coupleB}</span></h1>
+          <div className="general-hero-message">
+            {momentsPath && <Link className="btn btn-deep general-hero-cta" to={momentsPath}>Be part of our day <Icon size={17} d="M5 12h14m-6-6l6 6-6 6" /></Link>}
+            <p className="general-hero-note">Two hearts. Two families. One beautiful beginning.</p>
+          </div>
+        </div>
+        {hasCover && <div className={`general-portrait${originalPortrait ? ' general-portrait-photo' : ''}`}>
+          <div className="general-portrait-window"><img src={cover} alt={originalPortrait ? `${event.coupleA} and ${event.coupleB} smiling at each other beneath green leaves` : `${event.coupleA} and ${event.coupleB}`} width={originalPortrait ? 1810 : undefined} height={originalPortrait ? 2673 : undefined} fetchPriority="high" decoding="async" /></div>
+          {originalPortrait && <><PortraitSprig className="general-portrait-sprig-left" /><PortraitSprig className="general-portrait-sprig-right" /></>}
+        </div>}
       </div>
-      {hasCover && <div className={`general-portrait${originalPortrait ? ' general-portrait-photo' : ''}`}>
-        <div className="general-portrait-window"><img src={cover} alt={originalPortrait ? `${event.coupleA} and ${event.coupleB} smiling at each other beneath green leaves` : `${event.coupleA} and ${event.coupleB}`} width={originalPortrait ? 1810 : undefined} height={originalPortrait ? 2673 : undefined} fetchPriority="high" decoding="async" /></div>
-        {originalPortrait && <><PortraitSprig className="general-portrait-sprig-left" /><PortraitSprig className="general-portrait-sprig-right" /></>}
-      </div>}
       <div className="general-event-details" lang="en">
         <div className="general-event-detail">
           <span className="general-date-stamp" aria-hidden="true"><b>{day}</b><span>{month}<br />{year}</span></span>

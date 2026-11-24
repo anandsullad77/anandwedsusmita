@@ -12,7 +12,7 @@ async function main() {
   const db = new PGlite();
   try {
     await db.exec(`
-      create role anon; create role authenticated;
+      create role anon; create role authenticated; create role service_role;
       create schema auth; create schema storage; create schema extensions;
       create table auth.users (id uuid primary key, email text);
       create table auth.identities (user_id uuid references auth.users, provider text);
@@ -186,6 +186,27 @@ async function main() {
     await asUser(anonymous);
     assert.equal((await rows('storage.objects')).filter(row => row.bucket_id === 'invitation-previews').length, 0, 'Hidden photo sections do not allow new preview signatures');
     console.log('PASS: hosts manage up to three previews; public visitors see only selected images; guest photos stay private; hidden/removed previews and invalid writes are blocked');
+    await db.exec('reset role; grant usage on schema public to service_role;');
+    const recoveryHosts = [];
+    for (const [index, role] of ['owner', 'cohost', 'planner', 'photographer'].entries()) {
+      const uid = id(200 + index), email = `${role}@example.com`;
+      await db.query('insert into auth.users values ($1,$2)', [uid, email]);
+      await db.query('insert into hosts (event_id,user_id,role) values ($1,$2,$3)', [wedding, uid, role]);
+      recoveryHosts.push(email);
+    }
+    await db.query("insert into hosts (event_id,user_id,role) values ($1,$2,'owner')", [other, outsider]);
+    await db.exec('set role service_role');
+    for (const email of recoveryHosts) {
+      assert.equal((await db.query('select host_password_reset_email($1) as email', [` ${email.toUpperCase()} `])).rows[0].email, email);
+    }
+    for (const email of [`${google}@example.com`, `${outsider}@example.com`, 'unknown@example.com']) {
+      assert.equal((await db.query('select host_password_reset_email($1) as email', [email])).rows[0].email, null);
+    }
+    await db.exec('reset role; set role anon');
+    await assert.rejects(db.query('select host_password_reset_email($1)', [recoveryHosts[0]]), /permission denied/);
+    await asUser(host);
+    await assert.rejects(db.query('select host_password_reset_email($1)', [recoveryHosts[0]]), /permission denied/);
+    console.log('PASS: recovery lookup accepts wedding owners/hosts only; guests, other weddings and public callers cannot look up host emails');
   } finally { await db.close(); }
 }
 main().catch(error => { console.error(error); process.exitCode = 1; });

@@ -1,5 +1,10 @@
 .platform { background: var(--ivory); color: var(--p-ink); min-height: 100dvh; font-family: var(--sans); font-size: 14px; line-height: 1.6; }
 .platform [hidden] { display: none !important; }
+.host-auth-screen { display: grid; place-items: center; padding: 20px; }
+.host-auth-panel { width: min(420px, 100%); }
+.host-auth-title { font-size: 28px; }
+.host-auth-form { display: flex; flex-direction: column; gap: 12px; }
+.host-auth-form > p { margin: 0; }
 .adm { display: grid; grid-template-columns: 230px minmax(0, 1fr); min-height: 100dvh; }
 .adm .admin-sidebar { position: sticky; top: 0; height: 100dvh; padding: 26px 16px; border-right: 1px solid var(--p-line); display: flex; flex-direction: column; gap: 28px; background: var(--p-ivory); }
 .adm main { min-width: 0; width: 100%; max-width: 1500px; padding: 32px clamp(22px, 3vw, 44px) 60px; display: flex; flex-direction: column; gap: 22px; }

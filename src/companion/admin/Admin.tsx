@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { NavLink, Route, Routes } from 'react-router-dom';
+import { Link, NavLink, Route, Routes } from 'react-router-dom';
 import { api } from '../lib/backend';
 import { ago, inviteMessage, waLink } from '../lib/format';
 import type { AdminData, AdminHousehold, EventInfo, Person, Photo } from '../lib/types';
@@ -76,6 +76,7 @@ function Login({ onIn }: { onIn: () => Promise<number> }) {
           {api.kind === 'local' && <p style={{ margin: 0, fontSize: 14, color: 'var(--p-muted)' }}>Demo: any email and password.</p>}
           <button type="submit" className="btn btn-primary" disabled={busy || !email.trim() || !password}>{busy ? 'Signing in…' : 'Sign in'}</button>
         </form>
+        <Link className="linkbtn" to="/admin/forgot-password" state={{ email }}>Forgot password?</Link>
         {err && <p className="error" role="alert">{err}</p>}
         <WeddingTextile />
       </div>

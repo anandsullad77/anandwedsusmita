@@ -51,7 +51,7 @@ export default function InvitationExperience({ bundle, base, token, photoContext
           <a className="general-skip" href="#general-content">Skip to content</a>
           <header className="general-header">
             <div className="general-header-inner">
-              <WeddingBrand className="general-brand" tagline="Together with our families" />
+              <WeddingBrand className="general-brand" tagline="Together," title="With Love" />
               <nav className="general-nav" aria-label="Wedding" lang="en" style={{ gridTemplateColumns: `repeat(${1 + Number(hasFeed) + Number(canCreate) + Number(!!familyPage)}, minmax(0, 1fr))` }}>
                 <Link to={base} className={onInvitation ? 'active' : undefined} aria-current={onInvitation ? 'page' : undefined}><Icon d="M3 5h18v14H3zM3 5l9 7 9-7" /><span>Invitation</span></Link>
                 {canCreate && <NavLink to={`${base}/create`} className="general-upload-link"><Icon d="M12 5v14M5 12h14" /><span>Create Post</span></NavLink>}

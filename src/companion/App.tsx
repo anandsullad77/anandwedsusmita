@@ -5,6 +5,7 @@ import OpenLink from './guest/OpenLink';
 import GuestApp from './guest/GuestApp';
 import GeneralInvite from './guest/GeneralInvite';
 import Admin from './admin/Admin';
+import { ForgotHostPassword, ResetHostPassword } from './admin/HostPasswordRecovery';
 import { WEDDING_SLUG } from './lib/wedding';
 import AuthCallback from './guest/AuthCallback';
 
@@ -33,6 +34,8 @@ export default function App() {
     <Route path="/e/:slug" element={<FamilyEntry />} />
     <Route path="/g/:token/*" element={<GeneralInvite />} />
     <Route path="/app/*" element={<GuestApp />} />
+    <Route path="/admin/forgot-password" element={<ForgotHostPassword />} />
+    <Route path="/admin/reset-password" element={<ResetHostPassword />} />
     <Route path="/admin/*" element={<Admin />} />
     <Route path="*" element={<Home />} />
   </Routes>;

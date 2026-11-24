@@ -4,6 +4,8 @@ The Wedding project now also includes the Jothe Jotheyali guest and host feature
 
 **Live setup:** follow [the Supabase and deployment guide](docs/SUPABASE-SETUP.md). Without Supabase environment variables, the companion uses browser-only demo data (PIN `291126`; any email/password for demo host sign-in).
 
+**Host password recovery:** `/admin` includes **Forgot password?** for owners and hosts. Apply migration `0012_host_password_recovery.sql`, deploy the host recovery Edge Function, and allow the reset URL in Supabase using [the setup instructions](docs/HOST-PASSWORD-RECOVERY.md). Guest accounts do not receive emails from this recovery endpoint. Run `npm.cmd run test:recovery` for mocked recovery checks.
+
 **Feed and Create Post:** photos and approved wishes share `/invitation/feed`, newest first. `/invitation/create` offers Send a Wish or Upload Photos (up to 10 images in one carousel). Google sign-in returns to the selected page, form, quest and section. Existing hosts retain email/password access. Before deployment, apply `0010_photo_posts.sql` after `0009_google_guest_access.sql` and configure the custom domain/callbacks using [the setup guide](docs/GOOGLE-SIGN-IN.md).
 
 An English React wedding invitation for **29 November 2026, 12:28 p.m.**, at Shri Shakambari Mangal Karyalaya, Hosakeri Galli, Sulebhavi, Belagavi. The bride's English spelling, **Susmita**, and family surnames **Sullad** and **Pitagi** are confirmed by the owner.

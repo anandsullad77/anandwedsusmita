@@ -8,6 +8,7 @@
     "build": "npm run typecheck && vite build",
     "typecheck": "tsc --noEmit -p .",
     "test:access": "node scripts/test-google-access.cjs",
+    "test:recovery": "node scripts/test-host-recovery.cjs",
     "test:browser": "node scripts/test-wedding-browser.cjs",
     "test:feed": "node scripts/test-feed-performance.cjs",
     "test:previews": "node scripts/test-invitation-previews.cjs",

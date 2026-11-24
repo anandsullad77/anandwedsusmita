@@ -5,6 +5,7 @@ import { Icon } from './Icon';
 export default function PhotoCarousel({ photos, active, onActive, enabled = true, priority = false }: { photos: Photo[]; active: number; onActive: (index: number) => void; enabled?: boolean; priority?: boolean }) {
   const track = useRef<HTMLDivElement>(null);
   const [visited, setVisited] = useState<Set<number>>(() => new Set());
+  const [aspectRatios, setAspectRatios] = useState<Record<string, number>>({});
   useEffect(() => {
     if (!enabled) return;
     setVisited(previous => {
@@ -17,7 +18,7 @@ export default function PhotoCarousel({ photos, active, onActive, enabled = true
     track.current?.scrollTo({ left: index * track.current.clientWidth, behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth' });
   };
   return <div className="photo-carousel" role="region" aria-roledescription="carousel" aria-label={`Post with ${photos.length} photo${photos.length === 1 ? '' : 's'}`}>
-    <div ref={track} className="carousel-track" tabIndex={photos.length > 1 ? 0 : undefined} aria-label="Post photos" onKeyDown={event => {
+    <div ref={track} className="carousel-track" style={{ aspectRatio: aspectRatios[photos[active]?.id] ?? 1 }} tabIndex={photos.length > 1 ? 0 : undefined} aria-label="Post photos" onKeyDown={event => {
       if (event.key === 'ArrowRight' || event.key === 'ArrowLeft') {
         event.preventDefault(); go(Math.max(0, Math.min(photos.length - 1, active + (event.key === 'ArrowRight' ? 1 : -1))));
       }
@@ -26,7 +27,12 @@ export default function PhotoCarousel({ photos, active, onActive, enabled = true
       if (index !== active) onActive(index);
     }}>
       {photos.map((photo, i) => <div className="carousel-slide" key={photo.id} role="group" aria-roledescription="slide" aria-label={`${i + 1} of ${photos.length}`}>
-        <img src={enabled && (Math.abs(i - active) <= 1 || visited.has(i)) ? photo.url : undefined} alt={photo.caption ? `${photo.caption} — photo ${i + 1}` : `Photo ${i + 1} by ${photo.uploaderName}`} loading="eager" decoding="async" fetchPriority={priority && i === active ? 'high' : 'low'} draggable={false} />
+        <img src={enabled && (Math.abs(i - active) <= 1 || visited.has(i)) ? photo.url : undefined} alt={photo.caption ? `${photo.caption} — photo ${i + 1}` : `Photo ${i + 1} by ${photo.uploaderName}`} loading="eager" decoding="async" fetchPriority={priority && i === active ? 'high' : 'low'} draggable={false} onLoad={event => {
+          const image = event.currentTarget;
+          if (!image.naturalWidth || !image.naturalHeight) return;
+          const ratio = image.naturalWidth / image.naturalHeight;
+          setAspectRatios(previous => previous[photo.id] === ratio ? previous : { ...previous, [photo.id]: ratio });
+        }} />
       </div>)}
     </div>
     {photos.length > 1 && <>

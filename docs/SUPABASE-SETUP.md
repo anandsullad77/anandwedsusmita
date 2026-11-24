@@ -14,6 +14,8 @@ The original invitation remains at `/`. Its design, text, artwork, countdown, ma
 | `/i/<family-token>` | Personal family invitation and RSVP story |
 | `/app` | Linked family's RSVP, travel, stay, arrival, and shared guest features |
 | `/admin` | Host sign-in and administration |
+| `/admin/forgot-password` | Owner/host password recovery request |
+| `/admin/reset-password` | Set a new password from a recovery email |
 
 Existing `/e/anand-susmita` and `/g/<general-token>` links still work. Old `/celebrate` links redirect to `/invitation`, preserving subpages, query parameters, and section anchors. Invitations for other wedding slugs are not displayed. The underlying imported database tables retain their event IDs so existing data and migrations remain compatible.
 
@@ -43,6 +45,8 @@ Use the Supabase **SQL Editor** and run each file in `supabase/migrations/` in t
 11. `0011_invitation_preview_photos.sql` — three host-managed photos in the invitation before Google sign-in, with a separate private previews bucket and host-only uploads.
 
 **Run only missing migrations, in order, through 0011.** A project already on 0010 needs only 0011. These migrations are not a database reset script; rerunning `0001` against existing tables will fail. Follow [the Google sign-in guide](GOOGLE-SIGN-IN.md) to configure the custom domain and application callback before publishing. The original Jothe Jotheyali source folder has not been changed.
+
+For owner and host password recovery, apply `0012_host_password_recovery.sql` next and complete [the recovery function and email setup](HOST-PASSWORD-RECOVERY.md). The SQL migration alone does not enable recovery emails.
 
 ## 3. Configure the wedding and host access
 
