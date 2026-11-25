@@ -9,6 +9,8 @@ import InvitationPage from './InvitationPage';
 import WeddingBrand from '../components/WeddingBrand';
 import { GuestAccount, GuestContentGate } from '../components/GoogleSignIn';
 import { restoreAuthPosition } from '../lib/guestAuth';
+import { useGuestPreview } from '../lib/guestPreview';
+import { GuestPreviewBanner } from './GuestPreview';
 import './app.css';
 import './general.css';
 
@@ -25,6 +27,7 @@ type Props = {
 // Both entry points use these routes, navigation and pages. Family features are optional additions.
 export default function InvitationExperience({ bundle, base, token, photoContext, invitationPath = base, personalSection, familyPage }: Props) {
   const current = useLocation();
+  const preview = useGuestPreview();
   const sections = normalizeGeneralSettings(bundle.settings).sections;
   const hasFeed = sections.photos || sections.guestbook;
   const canCreate = sections.uploads || sections.guestbook;
@@ -48,6 +51,7 @@ export default function InvitationExperience({ bundle, base, token, photoContext
       <Route path="wishes" element={<Navigate to={`${base}/feed${current.search}`} replace />} />
       <Route path="*" element={
         <div className="gapp general-shell">
+          {preview && <GuestPreviewBanner />}
           <a className="general-skip" href="#general-content">Skip to content</a>
           <header className="general-header">
             <div className="general-header-inner">

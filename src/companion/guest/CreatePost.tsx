@@ -8,6 +8,8 @@ import { initialPhotoQuests, stashQuestPhotos } from '../lib/photoQuests';
 import { onQueueChange, pendingCount } from '../lib/uploadQueue';
 import { WeddingMark } from '../components/WeddingBrand';
 import Haaku from './Haaku';
+import { useGuestPreview } from '../lib/guestPreview';
+import { GuestPreviewNotice } from './GuestPreview';
 import WishComposer from './WishComposer';
 import { Icon } from './Icon';
 import './create-flow.css';
@@ -126,7 +128,9 @@ function Posted({ ctx, base }: { ctx: PhotoContext; base: string }) {
 export default function CreatePost({ ctx, base, token, canWish, canUpload }: { ctx: PhotoContext; base: string; token: string; canWish: boolean; canUpload: boolean }) {
   const [search] = useSearchParams();
   const auth = useGuestAuth();
+  const preview = useGuestPreview();
   const type = search.get('type');
+  if (preview) return <GuestPreviewNotice feedPath={ctx.scenePath || base} />;
   if (type === 'posted' && canUpload) return <Posted ctx={ctx} base={base} />;
   if (type === 'photos' && canUpload) return <GuestContentGate base={base} purpose="upload photos"><Haaku key={search.toString()} ctx={ctx} /></GuestContentGate>;
   if (type === 'wish' && canWish) return <GuestContentGate base={base} purpose="send a wish"><WishComposer eventId={ctx.b.event.id} token={token} guestName={ctx.me?.name ?? null} feedPath={ctx.scenePath || base} createPath={`${base}/create`} /></GuestContentGate>;

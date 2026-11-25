@@ -38,7 +38,19 @@ function savedFamily() {
   } catch { return null; }
 }
 
+function guestPreview() { try { return sessionStorage.getItem('as-wedding-guest-preview') === '1'; } catch { return false; } }
+
 function WelcomeBack() {
+  const [preview] = useState(guestPreview);
+  if (preview) return <aside className="welcome-back" aria-label="Guest preview">
+    <div><p className="welcome-back-title">Guest preview</p><p>This is the live website your guests see.</p></div>
+    <a className="welcome-back-open" href="/invitation">App</a>
+    <a className="welcome-back-open" href="/admin" onClick={() => { try { sessionStorage.removeItem('as-wedding-guest-preview'); } catch { /* ignore */ } }}>Admin</a>
+  </aside>;
+  return <FamilyWelcome />;
+}
+
+function FamilyWelcome() {
   const [family] = useState(savedFamily);
   const [hidden, setHidden] = useState(() => { try { return sessionStorage.getItem('as-wedding-welcome-hidden') === '1'; } catch { return false; } });
   if (!family || hidden) return null;

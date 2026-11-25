@@ -9,6 +9,7 @@ import { Icon } from './Icon';
 import { photoQuest, PHOTO_QUESTS } from '../lib/photoQuests';
 import { usePhotoQuestSummary } from './usePhotoQuestSummary';
 import PhotoViewer from './PhotoViewer';
+import { useGuestPreview } from '../lib/guestPreview';
 import './photo-quests.css';
 import './feed.css';
 import './gallery.css';
@@ -31,6 +32,7 @@ export default function Scene({ ctx, canUpload = true, canWish = true, showPhoto
   const [search, setSearch] = useSearchParams();
   const quest = showPhotos && ctx.questsEnabled !== false ? photoQuest(search.get('quest')) : undefined;
   const { summary } = usePhotoQuestSummary(b.event.id);
+  const preview = useGuestPreview();
   const [photos, setPhotos] = useState<Photo[]>([]);
   const [wishes, setWishes] = useState<Wish[]>([]);
   const [visible, setVisible] = useState(PAGE);
@@ -214,7 +216,7 @@ export default function Scene({ ctx, canUpload = true, canWish = true, showPhoto
       {visible < (tab === 'wishes' ? approvedWishes.length : shown.length) && <button className="btn btn-ghost gallery-more" onClick={() => setVisible(n => n + PAGE)}>Show more</button>}
       {loaded && (photos.length >= 200 || wishes.length === 50) && <p className="guest-meta">Showing the latest photos and up to 50 wishes.</p>}
 
-      {viewer !== null && shown.length > 0 && <PhotoViewer photos={shown} start={viewer} total={shown.length} reacting={reacting}
+      {viewer !== null && shown.length > 0 && <PhotoViewer photos={shown} start={viewer} total={shown.length} reacting={reacting} readOnly={preview}
         onClose={() => setViewer(null)} onReact={react} onFlag={(p, removal) => void flag(p, removal)} />}
     </div>
   );

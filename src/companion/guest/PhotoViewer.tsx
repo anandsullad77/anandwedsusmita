@@ -7,6 +7,7 @@ import { photoQuest } from '../lib/photoQuests';
 import ReactionSymbol from './ReactionSymbol';
 import { Icon } from './Icon';
 import './gallery.css';
+import './guest-preview.css';
 
 // Stroke icons for the reactions; Blessings keeps its rice-grain symbol.
 const REACTION_ICON: Record<Exclude<ReactionKind, 'akshate'>, string> = {
@@ -25,10 +26,11 @@ type Props = {
   onClose: () => void;
   onReact: (photo: Photo, reaction: ReactionKind | null) => Promise<void>;
   onFlag: (photo: Photo, removal: boolean) => void;
+  readOnly?: boolean;
 };
 
 /** Full-screen viewer that swipes through every photo in the gallery, not just one post. */
-export default function PhotoViewer({ photos, start, total, reacting, onClose, onReact, onFlag }: Props) {
+export default function PhotoViewer({ photos, start, total, reacting, onClose, onReact, onFlag, readOnly = false }: Props) {
   const [index, setIndex] = useState(Math.min(start, photos.length - 1));
   const [menu, setMenu] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -96,13 +98,13 @@ export default function PhotoViewer({ photos, start, total, reacting, onClose, o
     <header className="photo-viewer-top">
       <button ref={closeButton} type="button" className="photo-viewer-round" aria-label="Close" onClick={onClose}><Icon size={20} d="M6 6l12 12M18 6 6 18" /></button>
       <span aria-live="polite">{index + 1} of {total} {total === 1 ? 'photo' : 'photos'}</span>
-      <div className="photo-viewer-more">
+      {readOnly ? <span style={{ width: 44 }} /> : <div className="photo-viewer-more">
         <button type="button" className="photo-viewer-round" aria-label="More options" aria-expanded={menu} onClick={() => setMenu(open => !open)}><Icon size={18} d="M5 12h.01M12 12h.01M19 12h.01" /></button>
         {menu && <div className="photo-viewer-menu">
           <button type="button" onClick={() => { setMenu(false); onFlag(photo, true); }}>Request removal</button>
           <button type="button" onClick={() => { setMenu(false); onFlag(photo, false); }}>Report this photo</button>
         </div>}
-      </div>
+      </div>}
     </header>
 
     <div ref={track} className="photo-viewer-track" aria-roledescription="carousel" aria-label="All gallery photos" onScroll={event => {
@@ -127,12 +129,13 @@ export default function PhotoViewer({ photos, start, total, reacting, onClose, o
         {REACTIONS.map(r => {
           const on = photo.myReaction === r.id;
           const count = photo.reactionCounts[r.id];
-          return <button key={r.id} type="button" aria-pressed={on} disabled={reacting.has(photo.id)} onClick={() => void react(r.id)} style={on ? { ['--reaction' as string]: r.id === 'akshate' ? '#E9A21B' : r.color } : undefined}>
+          return <button key={r.id} type="button" aria-pressed={on} disabled={readOnly || reacting.has(photo.id)} onClick={() => void react(r.id)} style={on ? { ['--reaction' as string]: r.id === 'akshate' ? '#E9A21B' : r.color } : undefined}>
             <span className="photo-viewer-reaction-dot">{r.id === 'akshate' ? <ReactionSymbol kind="akshate" /> : <Icon size={22} d={REACTION_ICON[r.id]} />}</span>
             {r.id === 'akshate' ? 'Bless' : r.label}{count > 0 ? ` ${count}` : ''}
           </button>;
         })}
       </div>
+      {readOnly && <p className="photo-viewer-preview-note">Reactions are turned off in guest preview.</p>}
       {error && <p className="photo-viewer-error" role="alert">{error}</p>}
       <button type="button" className="photo-viewer-save" disabled={saving} onClick={() => void save()}><Icon size={18} d="M12 4v11M7.5 10.5 12 15l4.5-4.5M5 19h14" />{saving ? 'Saving…' : 'Save to phone'}</button>
     </div>

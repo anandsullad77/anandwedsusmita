@@ -1,0 +1,16 @@
+/* Host "view as guest" mode. */
+.guest-preview-banner { position: relative; z-index: 60; display: flex; align-items: center; gap: 10px; padding: 10px 14px; background: var(--deep); color: #FFF7EB; font-size: 13px; line-height: 1.4; }
+.guest-preview-banner > svg { flex: 0 0 auto; color: #F3DDE2; }
+.guest-preview-banner p { flex: 1; min-width: 0; margin: 0; }
+.guest-preview-banner p span { color: #D5DDD3; }
+.guest-preview-actions { flex: 0 0 auto; display: flex; align-items: center; gap: 8px; }
+.guest-preview-actions a { color: #FFF7EB; font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }
+.guest-preview-actions button { min-height: 36px; padding: 0 14px; border: 0; border-radius: 999px; background: #FFF7EB; color: var(--deep); font-size: 13px; font-weight: 600; cursor: pointer; }
+.guest-preview-notice-icon { width: 56px; height: 56px; margin: 0 auto; border-radius: 50%; display: grid; place-items: center; background: #F3DDE2; color: var(--primary); }
+.guest-preview-notice-icon + h1 { margin-top: 14px; }
+.photo-viewer-preview-note { margin: 12px 0 0; font-size: 12px; color: #BDB6AA; text-align: center; }
+@media (max-width: 600px) {
+  .guest-preview-banner { flex-wrap: wrap; }
+  .guest-preview-banner p span { display: block; }
+  .guest-preview-actions { width: 100%; justify-content: flex-end; }
+}
