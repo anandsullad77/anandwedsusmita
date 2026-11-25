@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { api } from '../lib/backend';
 import { useGuestAuth } from '../lib/useGuestAuth';
 
-export default function WishComposer({ eventId, token, guestName, feedPath }: { eventId: string; token: string; guestName: string | null; feedPath: string }) {
+export default function WishComposer({ eventId, token, guestName, feedPath, createPath }: { eventId: string; token: string; guestName: string | null; feedPath: string; createPath?: string }) {
   const { user } = useGuestAuth();
   const key = `as-wedding-wish-draft:${eventId}:${user?.id}`;
   const [draft, setDraft] = useState(() => {
@@ -24,6 +24,15 @@ export default function WishComposer({ eventId, token, guestName, feedPath }: { 
     } catch (error) { setError((error as Error).message); }
     finally { lock.current = false; setBusy(false); }
   }
+  if (sent) return <section className="create-done" lang="en" aria-labelledby="wish-sent-title">
+    <figure className="create-wish-card"><blockquote>“{draft.message.trim()}”</blockquote><figcaption>{draft.name.trim()}</figcaption></figure>
+    <h1 id="wish-sent-title">Your wish is on its way</h1>
+    <p>Anand and Susmita read every wish before it appears in the gallery.</p>
+    <div className="create-done-actions">
+      <Link className="btn btn-deep btn-block" to={feedPath}>Back to the gallery</Link>
+      {createPath && <Link className="btn btn-ghost btn-block" to={createPath}>Add photos too</Link>}
+    </div>
+  </section>;
   return <section className="post-composer" aria-labelledby="wish-compose-title" lang="en">
     <p className="guest-eyebrow">Create Post</p><h1 id="wish-compose-title">Send a Wish</h1>
     {sent ? <div className="card composer-receipt" role="status"><p>Thank you! Your wish has been sent to the hosts for approval.</p><Link className="btn btn-deep" to={feedPath}>Back to Feed</Link></div>

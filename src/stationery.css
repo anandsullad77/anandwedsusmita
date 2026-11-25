@@ -270,3 +270,14 @@ img { display: block; max-width: 100%; }
   *, *::before, *::after { animation: none !important; transition: none !important; }
   .reveal { opacity: 1; transform: none; }
 }
+
+/* A way back into the wedding app from the invitation website. */
+.header-app { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 0 14px; border-radius: 999px; background: var(--rose); color: var(--ivory); font-size: .8125rem; font-weight: 600; white-space: nowrap; text-decoration: none; }
+.header-app:hover { background: #8e2745; color: var(--ivory); }
+.welcome-back { position: fixed; left: 12px; right: 12px; bottom: max(16px, env(safe-area-inset-bottom)); z-index: 40; max-width: 520px; margin: 0 auto; display: flex; align-items: center; gap: 12px; padding: 14px 10px 14px 16px; border-radius: 18px; background: var(--deep); color: var(--ivory); box-shadow: 0 14px 30px -14px rgba(20, 26, 22, .7); }
+.welcome-back > div { flex: 1; min-width: 0; }
+.welcome-back p { margin: 0; font-size: .8125rem; line-height: 1.4; color: #d5ddd3; }
+.welcome-back .welcome-back-title { font-size: .9375rem; font-weight: 600; color: var(--ivory); }
+.welcome-back-open { flex: 0 0 auto; display: inline-flex; align-items: center; min-height: 42px; padding: 0 16px; border-radius: 999px; background: var(--ivory); color: var(--deep); font-size: .875rem; font-weight: 600; text-decoration: none; }
+.welcome-back-close { flex: 0 0 auto; width: 36px; height: 36px; border: 0; background: transparent; color: #d5ddd3; display: grid; place-items: center; cursor: pointer; }
+@media (max-width: 420px) { .header-directions span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); } .header-directions { padding-inline: 11px; } .header-app { padding: 0 12px; } }

@@ -1,22 +1,30 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { api } from '../lib/backend';
-import { ago, shortDate } from '../lib/format';
-import { framedCopy } from '../lib/image';
 import { onQueueChange, pendingCount } from '../lib/uploadQueue';
 import type { Photo, PhotoContext, ReactionKind, Wish } from '../lib/types';
 import { withReaction } from '../lib/reactions';
 import { weddingFeed } from '../lib/feed';
-import PhotoPost from './PhotoPost';
-import PhotoReactions from './PhotoReactions';
 import { Icon } from './Icon';
-import MomentTag from './MomentTag';
 import { photoQuest, PHOTO_QUESTS } from '../lib/photoQuests';
 import { usePhotoQuestSummary } from './usePhotoQuestSummary';
+import PhotoViewer from './PhotoViewer';
 import './photo-quests.css';
 import './feed.css';
+import './gallery.css';
 
-const getVar = (n: string) => getComputedStyle(document.documentElement).getPropertyValue(n).trim() || '#283A2D';
+type Tab = 'photos' | 'wishes' | 'mine';
+const TABS: { id: Tab; label: string; d: string }[] = [
+  { id: 'photos', label: 'Photos', d: 'M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z' },
+  { id: 'wishes', label: 'Wishes', d: 'M5 6h14v10H9l-4 3z' },
+  { id: 'mine', label: 'Mine', d: 'M12 12a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7zM5 20c1-4 4-6 7-6s6 2 7 6' },
+];
+const PAGE = 30;
+
+/** Flatten posts into one newest-first list of photos, keeping each post's own order. */
+function galleryPhotos(photos: Photo[]) {
+  return weddingFeed(photos, []).flatMap(post => post.kind === 'photos' ? post.photos : []);
+}
 
 export default function Scene({ ctx, canUpload = true, canWish = true, showPhotos = true }: { ctx: PhotoContext; canUpload?: boolean; canWish?: boolean; showPhotos?: boolean }) {
   const { b } = ctx;
@@ -25,10 +33,12 @@ export default function Scene({ ctx, canUpload = true, canWish = true, showPhoto
   const { summary } = usePhotoQuestSummary(b.event.id);
   const [photos, setPhotos] = useState<Photo[]>([]);
   const [wishes, setWishes] = useState<Wish[]>([]);
-  const [visible, setVisible] = useState(12);
+  const [visible, setVisible] = useState(PAGE);
   const [pending, setPending] = useState(0);
-  const [menu, setMenu] = useState<string | null>(null);
-  const [filter, setFilter] = useState<'all' | 'mine'>('all');
+  const [tab, setTab] = useState<Tab>(showPhotos ? 'photos' : 'wishes');
+  const [pinnedOnly, setPinnedOnly] = useState(false);
+  const [questsOpen, setQuestsOpen] = useState(false);
+  const [viewer, setViewer] = useState<number | null>(null);
   const [reacting, setReacting] = useState<Set<string>>(() => new Set());
   const pendingReactions = useRef(new Map<string, ReactionKind | null>());
   const reactionVersions = useRef(new Map<string, number>());
@@ -60,11 +70,16 @@ export default function Scene({ ctx, canUpload = true, canWish = true, showPhoto
     setLoadError(failed); setLoaded(true);
   }, [b.event.id, quest?.id, canWish, showPhotos]);
   const createBase = ctx.scenePath?.endsWith('/feed') ? `${ctx.scenePath.slice(0, -5)}/create` : '/app/create';
-  const uploadPath = quest && ctx.questsEnabled !== false ? `${createBase}?type=photos&quest=${quest.id}` : createBase;
-  const selectCollection = (id: string) => { setSearch(previous => { if (id) previous.set('quest', id); else previous.delete('quest'); return previous; }); window.scrollTo({ top: 0, behavior: 'instant' }); };
+  const photoPath = `${createBase}?type=photos${quest ? `&quest=${quest.id}` : ''}`;
+  const wishPath = `${createBase}?type=wish`;
+  const selectCollection = (id: string) => {
+    setPinnedOnly(false); setQuestsOpen(false); setTab('photos'); setVisible(PAGE);
+    setSearch(previous => { if (id) previous.set('quest', id); else previous.delete('quest'); return previous; });
+    window.scrollTo({ top: 0, behavior: 'instant' });
+  };
 
   useEffect(() => {
-    setLoaded(false); setLoadError(false); setPhotos([]); setWishes([]); setMenu(null); setVisible(12);
+    setLoaded(false); setLoadError(false); setPhotos([]); setWishes([]); setVisible(PAGE); setViewer(null);
     void load();
     pendingCount(b.event.id).then(setPending);
     const off = onQueueChange(() => { void pendingCount(b.event.id).then(setPending); void load(); });
@@ -93,93 +108,114 @@ export default function Scene({ ctx, canUpload = true, canWish = true, showPhoto
     }
   }
 
-  async function share(p: Photo) {
-    const blob = await framedCopy(p.url, `${b.event.coupleA} & ${b.event.coupleB}`, shortDate(b.event.startsAt), { deep: getVar('--deep'), paper: getVar('--paper') });
-    if (!blob) return;
-    const file = new File([blob], 'wedding-photo.jpg', { type: 'image/jpeg' });
-    if (navigator.canShare?.({ files: [file] })) await navigator.share({ files: [file], text: `${b.event.coupleA} & ${b.event.coupleB}` }).catch(() => {});
-    else { const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'wedding-photo.jpg'; a.click(); }
-  }
-
   async function flag(p: Photo, removal: boolean) {
     if (flagging) return;
-    setMenu(null);
-    setFlagging(true);
-    setNotice(null);
-    setError(null);
+    setFlagging(true); setNotice(null); setError(null);
     try {
       await api.flagPhoto(p.id, removal ? 'Please remove this photo' : 'Not appropriate', removal);
       setNotice(removal ? 'Removal request sent to the hosts for review.' : 'Report sent to the hosts for review.');
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Could not send your request. Please try again.');
-    } finally {
-      setFlagging(false);
-    }
+    } finally { setFlagging(false); }
   }
 
-  const shown = weddingFeed(filter === 'mine' ? photos.filter(p => p.uploadedByMe) : photos, filter === 'mine' ? [] : wishes);
+  const all = useMemo(() => galleryPhotos(photos), [photos]);
+  const approvedWishes = useMemo(() => weddingFeed([], wishes).flatMap(post => post.kind === 'wish' ? [post.wish] : []), [wishes]);
+  const postSizes = useMemo(() => {
+    const sizes = new Map<string, number>();
+    for (const p of all) if (p.postId) sizes.set(p.postId, (sizes.get(p.postId) ?? 0) + 1);
+    return sizes;
+  }, [all]);
+  const shown = tab === 'mine' ? all.filter(p => p.uploadedByMe) : pinnedOnly ? all.filter(p => p.pinned) : all;
+  const pinned = all.filter(p => p.pinned);
+  const guests = new Set([...all.map(p => p.uploaderName.trim().toLowerCase()), ...approvedWishes.map(w => w.name.trim().toLowerCase())]).size;
+  const questCollections = PHOTO_QUESTS
+    .map(q => ({ quest: q, count: summary?.counts[q.id] ?? 0, cover: all.find(p => p.questId === q.id) }))
+    .filter(c => c.count > 0)
+    .sort((a, b) => b.count - a.count);
+  const circles = [
+    ...(pinned.length ? [{ id: 'pinned', label: 'Pinned', cover: pinned[0], on: pinnedOnly, pick: () => { selectCollection(''); setPinnedOnly(true); } }] : []),
+    ...questCollections.slice(0, pinned.length ? 3 : 4).map(c => ({ id: c.quest.id, label: c.quest.tag, cover: c.cover, on: quest?.id === c.quest.id, pick: () => selectCollection(c.quest.id) })),
+  ];
+  const showCollections = showPhotos && ctx.questsEnabled !== false;
+
+  const emptyCopy = tab === 'wishes'
+    ? { title: 'The first wish could be yours', text: 'Words for Anand and Susmita’s next chapter.' }
+    : tab === 'mine' ? { title: 'Your moments belong here', text: 'Photos you share will gather here, ready to save.' }
+      : quest ? { title: 'This collection is waiting for its first photo', text: quest.prompt }
+        : { title: 'The first photo could be yours', text: 'Every photo and wish here becomes part of the couple’s album.' };
+  const isEmpty = loaded && !loadError && (tab === 'wishes' ? !approvedWishes.length : !shown.length);
 
   return (
-    <>
-      <header className="guest-page-heading scene-heading" lang="en"><div><p className="guest-eyebrow">Our memories &amp; blessings</p><h1>Feed</h1><p>Photos and wishes, together. Newest moments first.</p></div><span className="scene-count">{shown.length} {shown.length === 1 ? 'post' : 'posts'}</span></header>
-      <div className="scene-toolbar" lang="en"><div className="scene-filters">
-        <button className="chip" aria-pressed={filter === 'all'} onClick={() => setFilter('all')}>All</button>
-        {showPhotos && <button className="chip" aria-pressed={filter === 'mine'} onClick={() => setFilter('mine')}>My photos</button>}
-      </div>{(canUpload || canWish) && <Link className="btn btn-deep" to={uploadPath}><Icon size={18} d="M12 5v14M5 12h14" />Create Post</Link>}</div>
-      {(quest || photos.some(p => p.questId) || Object.keys(summary?.counts ?? {}).length > 0) && <div className="quest-collection-picker"><label htmlFor="photo-collection">Photo quest collection</label><select id="photo-collection" className="input" value={quest?.id ?? ''} onChange={e => selectCollection(e.target.value)}><option value="">All photos</option>{PHOTO_QUESTS.map(q => <option key={q.id} value={q.id}>{q.tag}{summary?.counts[q.id] ? ` (${summary.counts[q.id]})` : ''}</option>)}</select>{quest && <div className="quest-selected-collection"><MomentTag label={quest.tag} /><p>{quest.prompt}</p><button className="guest-text-link" onClick={() => selectCollection('')}>Back to all photos</button></div>}</div>}
+    <div className="gallery" lang="en">
+      <h1 className="gallery-title">Gallery</h1>
+      <div className="gallery-stats">
+        {showPhotos && <div><b>{all.length}</b><span>{all.length === 1 ? 'photo' : 'photos'}</span></div>}
+        {canWish && <div><b>{approvedWishes.length}</b><span>{approvedWishes.length === 1 ? 'wish' : 'wishes'}</span></div>}
+        <div><b>{guests}</b><span>guests sharing</span></div>
+      </div>
 
-      {notice && <div className="card" role="status" lang="en" style={{ padding: '10px 12px' }}>{notice}</div>}
-      {error && <p className="error" role="alert" lang="en">{error}</p>}
+      {showCollections && (circles.length > 0 || summary) && <div className="gallery-collections" aria-label="Collections">
+        {circles.map(c => <button key={c.id} type="button" className="gallery-circle" aria-pressed={c.on} onClick={c.on ? () => selectCollection('') : c.pick}>
+          <span className="gallery-circle-ring">{c.cover ? <img src={c.cover.url} alt="" loading="lazy" /> : <Icon size={22} d="M4 8.5h3l1.6-2.5h6.8L17 8.5h3V19H4zM12 16.6a3.4 3.4 0 1 0 0-6.8 3.4 3.4 0 0 0 0 6.8z" />}</span>
+          <span className="gallery-circle-label">{c.label}</span>
+        </button>)}
+        <button type="button" className="gallery-circle" aria-expanded={questsOpen} onClick={() => setQuestsOpen(open => !open)}>
+          <span className="gallery-circle-ring gallery-circle-more"><Icon size={22} d="M5 12h.01M12 12h.01M19 12h.01" /></span>
+          <span className="gallery-circle-label">{PHOTO_QUESTS.length} quests</span>
+        </button>
+      </div>}
+      {questsOpen && <div className="gallery-quest-list" role="group" aria-label="Photo quests">
+        {PHOTO_QUESTS.map(q => <button key={q.id} type="button" className="chip" aria-pressed={quest?.id === q.id} onClick={() => selectCollection(q.id)}>{q.tag}{summary?.counts[q.id] ? ` · ${summary.counts[q.id]}` : ''}</button>)}
+      </div>}
+      {(quest || pinnedOnly) && <div className="gallery-filter-note" role="status">
+        <span><b>{quest ? quest.tag : 'Pinned by the couple'}</b>{quest ? ` · ${quest.prompt}` : ''}</span>
+        <button type="button" onClick={() => selectCollection('')}>All photos</button>
+      </div>}
 
-      {pending > 0 && (
-        <div role="status" className="card" style={{ padding: '10px 12px', borderStyle: 'dashed' }} lang="en">
-          <b style={{ fontSize: 14 }}>{pending} of your photo{pending > 1 ? 's are' : ' is'} waiting for signal</b>
-          <div style={{ fontSize: 13, color: 'var(--muted)' }}>They'll post on their own — keep the app open.</div>
+      {pending > 0 && <div className="gallery-waiting" role="status">
+        <Icon size={20} d="M3 11.5a13 13 0 0 1 18 0M6.5 15a8 8 0 0 1 11 0M10 18.5a3 3 0 0 1 4 0" />
+        <div><b>{pending} {pending === 1 ? 'photo' : 'photos'} waiting for signal</b><span>They’re safe on this phone and will post on their own.</span></div>
+      </div>}
+      {notice && <p className="gallery-notice" role="status">{notice}</p>}
+      {error && <p className="error" role="alert">{error}</p>}
+
+      <div className="gallery-tabs" role="tablist" aria-label="Show">
+        {TABS.filter(t => t.id === 'wishes' ? canWish : showPhotos).map(t => <button key={t.id} type="button" role="tab" aria-selected={tab === t.id} onClick={() => { setTab(t.id); setVisible(PAGE); if (t.id !== 'photos') setPinnedOnly(false); }}>
+          <Icon size={18} d={t.d} />{t.label}
+        </button>)}
+      </div>
+
+      {loadError && <div className="gallery-empty" role="alert"><p>Some photos could not be refreshed.</p><button className="btn btn-ghost" onClick={() => void load()}>Try again</button></div>}
+      {!loaded && <p className="guest-meta gallery-loading" role="status">Gathering the memories…</p>}
+
+      {isEmpty && <div className="gallery-empty">
+        <div className="gallery-empty-frames" aria-hidden="true"><span /><span><Icon size={24} d={tab === 'wishes' ? 'M5 6h14v10H9l-4 3z' : 'M4 8.5h3l1.6-2.5h6.8L17 8.5h3V19H4zM12 16.6a3.4 3.4 0 1 0 0-6.8 3.4 3.4 0 0 0 0 6.8z'} /></span><span /></div>
+        <h2>{emptyCopy.title}</h2>
+        <p>{emptyCopy.text}</p>
+        <div className="gallery-empty-actions">
+          {canUpload && tab !== 'wishes' && <Link className="btn btn-primary btn-block" to={photoPath}><Icon size={18} d="M12 5v14M5 12h14" />Add photos</Link>}
+          {canWish && <Link className={`btn btn-block ${tab === 'wishes' ? 'btn-primary' : 'btn-ghost'}`} to={wishPath}>Write a wish</Link>}
         </div>
-      )}
+      </div>}
 
-      {loadError && <div className="scene-empty card" role="alert"><p>Some posts could not be refreshed.</p><button className="btn btn-ghost" onClick={() => void load()}>Try again</button></div>}
-      {!loaded && !shown.length && <p className="guest-meta" role="status">Gathering the memories…</p>}
-      {loaded && !loadError && !shown.length && <div className="scene-empty card" lang="en"><Icon size={32} d="M3 6h18v14H3zM21 16l-5-5-9 9" /><h2>{quest ? 'This collection is waiting for its first memory.' : filter === 'mine' ? 'Your moments belong here.' : 'The first posts are on their way.'}</h2><p>Photos and wishes from the people who make this day special.</p>{(canUpload || canWish) && <Link className="btn btn-primary" to={uploadPath}>Create Post</Link>}</div>}
-      {loaded && (photos.length >= 200 || wishes.length === 50) && <p className="guest-meta">Showing the latest photos and up to 50 approved wishes.</p>}
+      {tab !== 'wishes' && shown.length > 0 && <div className="gallery-grid">
+        {shown.slice(0, visible).map((p, i) => <button key={p.id} type="button" className="gallery-tile" aria-label={`Open photo by ${p.uploaderName}${p.caption ? `: ${p.caption}` : ''}`} onClick={() => setViewer(i)}>
+          <img src={p.url} alt="" loading={i < 12 ? 'eager' : 'lazy'} decoding="async" />
+          {p.postId && (postSizes.get(p.postId) ?? 0) > 1 && <svg className="gallery-tile-multi" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><rect x="7" y="7" width="13" height="13" rx="2" /><path d="M4 16V5a1 1 0 0 1 1-1h11" /></svg>}
+        </button>)}
+      </div>}
+      {tab === 'wishes' && approvedWishes.length > 0 && <div className="gallery-wishes">
+        {approvedWishes.slice(0, visible).map(w => <article key={w.id} className="gallery-wish">
+          <p>“{w.message}”</p>
+          <span>{w.name}</span>
+        </article>)}
+      </div>}
+      {visible < (tab === 'wishes' ? approvedWishes.length : shown.length) && <button className="btn btn-ghost gallery-more" onClick={() => setVisible(n => n + PAGE)}>Show more</button>}
+      {loaded && (photos.length >= 200 || wishes.length === 50) && <p className="guest-meta">Showing the latest photos and up to 50 wishes.</p>}
 
-      {shown.slice(0, visible).map((post, index) => post.kind === 'wish' ? (
-        <article key={post.id} className="post feed-post feed-wish" data-post-type="wish">
-          <div className="post-header"><div className="post-avatar" aria-hidden="true">{post.wish.name.slice(0, 2).toUpperCase()}</div><div className="post-author"><b className="post-author-name">{post.wish.name}</b><div className="post-metadata"><MomentTag label="Wish & blessing" /><time className="post-timestamp" dateTime={post.createdAt}>{ago(post.createdAt)}</time></div></div></div>
-          <p className="feed-wish-message">{post.wish.message}</p>
-        </article>
-      ) : (
-        <PhotoPost key={post.id} photos={post.photos} priority={index === 0}>{(p, carousel, celebrate) => <>
-          <div className="post-header" lang="en">
-            <div className="post-avatar" aria-hidden="true">{p.uploaderName.slice(0, 2).toUpperCase()}</div>
-            <div className="post-author">
-              <b className="post-author-name">{p.uploaderName}</b>
-              <div className="post-metadata">
-                {p.moment && <MomentTag label={p.moment} />}
-                {photoQuest(p.questId) && <MomentTag label={photoQuest(p.questId)!.tag} />}
-                {p.pinned && <span className="post-pinned"><Icon size={12} d="M16 3l5 5-4 1-4 5v3l-3-3-6 6m6-6l-3-3h3l5-4 1-4z" />Pinned</span>}
-                <time className="post-timestamp" dateTime={p.createdAt}>{ago(p.createdAt)}</time>
-              </div>
-            </div>
-            <button aria-label="More options" aria-expanded={menu === p.id} disabled={flagging} className="chip post-more" onClick={() => setMenu(menu === p.id ? null : p.id)}>⋯</button>
-          </div>
-          {menu === p.id && (
-            <div className="menu" lang="en">
-              <button disabled={flagging} onClick={() => flag(p, true)}>Request removal</button>
-              <button disabled={flagging} onClick={() => flag(p, false)}>Report this photo</button>
-            </div>
-          )}
-          {carousel}
-          <div style={{ padding: '10px 14px 12px', display: 'flex', flexDirection: 'column', gap: 10 }}>
-            {p.caption && <p className="post-caption" lang="en" style={{ margin: 0, fontSize: 15, lineHeight: 1.45 }}>{p.caption}</p>}
-            <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
-              <PhotoReactions key={p.id} photo={p} pending={reacting.has(p.id)} onChange={async reaction => { await react(p, reaction); celebrate(reaction); }} />
-              <button className="chip" onClick={() => share(p)} style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }} lang="en"><Icon size={18} d="M4 20l1.3-3.9A8 8 0 1 1 8 19z" />Share</button>
-            </div>
-          </div>
-        </>}</PhotoPost>
-      ))}
-      {visible < shown.length && <button className="btn btn-ghost" onClick={() => setVisible(n => n + 12)}>Load more posts</button>}
-    </>
+      {viewer !== null && shown.length > 0 && <PhotoViewer photos={shown} start={viewer} total={shown.length} reacting={reacting}
+        onClose={() => setViewer(null)} onReact={react} onFlag={(p, removal) => void flag(p, removal)} />}
+    </div>
   );
 }

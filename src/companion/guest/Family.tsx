@@ -12,7 +12,7 @@ export default function Family({ ctx }: { ctx: Ctx }) {
   const [changes, setChanges] = useState<Change[]>([]);
   useEffect(() => { api.changes(b.household.id).then(setChanges).catch(() => {}); }, [b]);
   return <>
-    <header className="guest-page-heading"><p hidden={individual} className="guest-eyebrow" lang="kn">ನಮ್ಮ ಕುಟುಂಬ</p><h1>{individual ? "Your RSVP" : "Your family"}</h1><p>{b.household.name}{!individual && ` \u00b7 ${b.people.length} of ${b.household.cap} places`}</p></header>
+    <header className="guest-page-heading"><h1>{individual ? "Your RSVP" : "Your family"}</h1><p>{b.household.name}{!individual && ` \u00b7 ${b.people.length} of ${b.household.cap} places`}</p></header>
     <section className="card family-people" aria-label="Family members">
       {b.people.map(p => <div className="family-person" key={p.id}><span className={`family-person-avatar ${p.attending.length ? 'is-coming' : ''}`} aria-hidden="true">{Array.from(p.name)[0]}</span><div><b>{p.name}{p.id === me?.id && <span className="family-you">You</span>}</b><p>{[p.relation, p.isChild ? 'Child' : null].filter(Boolean).join(' · ') || (p.isChild ? 'Child' : individual ? 'Guest' : 'Family member')}</p></div><span className={`guest-status ${p.attending.length ? 'answered' : ''}`}>{p.attending.length ? 'Coming' : b.household.coming ? 'Not coming' : 'No reply yet'}</span></div>)}
     </section>

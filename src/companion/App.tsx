@@ -8,10 +8,17 @@ import Admin from './admin/Admin';
 import { ForgotHostPassword, ResetHostPassword } from './admin/HostPasswordRecovery';
 import { WEDDING_SLUG } from './lib/wedding';
 import AuthCallback from './guest/AuthCallback';
+import { getSession } from './lib/familySession';
 
 function Home() {
   useEffect(() => { window.location.replace('/'); }, []);
   return <p><a href="/">Open Anand and Susmita's invitation</a></p>;
+}
+
+// The installed app opens here: families go to their own invitation, everyone else to the shared one.
+function AppStart() {
+  const saved = getSession();
+  return <Navigate to={saved?.slug === WEDDING_SLUG && saved.householdToken ? '/app' : '/invitation'} replace />;
 }
 
 function FamilyEntry() {
@@ -27,6 +34,7 @@ function LegacyInvitation() {
 export default function App() {
   return <Routes>
     <Route path="/auth/callback" element={<AuthCallback />} />
+    <Route path="/start" element={<AppStart />} />
     <Route path="/invitation/*" element={<GeneralInvite />} />
     <Route path="/celebrate/*" element={<LegacyInvitation />} />
     <Route path="/rsvp" element={<FamilyEntry />} />

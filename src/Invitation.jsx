@@ -13,7 +13,7 @@ export default function Invitation({ countdown, menuOpen, setMenuOpen, mapUrl, o
           <div className="nav-group"><a href="#couple" onClick={closeMenu}>The Couple</a><a href="#muhurtha" onClick={closeMenu}>The Muhurta</a></div>
           <div className="nav-group"><a href="#venue" onClick={closeMenu}>The Venue</a></div>
         </nav>
-        <div className="header-actions"><a className="header-directions" href={mapUrl} target="_blank" rel="noreferrer"><Icon name="pin" size={17} /><span>Get Directions</span></a><button className="menu-toggle" aria-label={menuOpen ? 'Close menu' : 'Open menu'} aria-expanded={menuOpen} aria-controls="main-navigation" onClick={() => setMenuOpen(!menuOpen)}><Icon name={menuOpen ? 'close' : 'menu'} size={25} /></button></div>
+        <div className="header-actions"><a className="header-app" href="/start"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true"><rect x="6" y="3" width="12" height="18" rx="2.5" /><path d="M10.5 17.5h3" /></svg><span>Wedding app</span></a><a className="header-directions" href={mapUrl} target="_blank" rel="noreferrer"><Icon name="pin" size={17} /><span>Get Directions</span></a><button className="menu-toggle" aria-label={menuOpen ? 'Close menu' : 'Open menu'} aria-expanded={menuOpen} aria-controls="main-navigation" onClick={() => setMenuOpen(!menuOpen)}><Icon name={menuOpen ? 'close' : 'menu'} size={25} /></button></div>
       </div>
     </header>
 
