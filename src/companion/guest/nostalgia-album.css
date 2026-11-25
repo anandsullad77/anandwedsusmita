@@ -1,0 +1,26 @@
+/* Nostalgia: an uncropped two-column album (approved design). */
+.nostalgia-album-page { max-width: 760px; margin: 0 auto; padding: 24px 0 24px; }
+.nostalgia-album-page .nostalgia-head h1 { margin: 0; font: 600 40px/1.05 var(--serif); letter-spacing: -.01em; }
+.nostalgia-album-page .nostalgia-head h1 i { display: inline; color: var(--primary); font-weight: 500; }
+.nostalgia-head > p { margin: 10px 0 0; max-width: 46ch; font-size: 15px; line-height: 1.55; color: #556457; }
+.nostalgia-switch { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); max-width: 420px; margin-top: 20px; padding: 4px; border-radius: 999px; background: #F3E8D6; }
+.nostalgia-switch button { min-height: 40px; border: 0; border-radius: 999px; background: transparent; color: #556457; font: 600 14px/1 var(--sans); cursor: pointer; }
+.nostalgia-switch button[aria-pressed="true"] { background: #FFFFFF; color: var(--deep); box-shadow: 0 1px 3px rgba(40, 58, 45, .16); }
+.nostalgia-set { margin-top: 30px; }
+.nostalgia-set-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
+.nostalgia-set-head h2 { margin: 0; font: 600 26px/1.1 var(--serif); color: var(--deep); }
+.nostalgia-set-head span { font-size: 13px; color: #556457; }
+.nostalgia-masonry { column-count: 2; column-gap: 12px; }
+.nostalgia-tile { display: block; width: 100%; margin: 0 0 16px; padding: 0; border: 0; background: none; color: var(--deep); text-align: left; break-inside: avoid; cursor: pointer; }
+.nostalgia-tile-frame { display: block; border-radius: 12px; overflow: hidden; background: #EFE3CF; box-shadow: 0 6px 16px -10px rgba(40, 58, 45, .45); }
+.nostalgia-tile-frame img { display: block; width: 100%; height: 100%; object-fit: contain; transition: transform .4s var(--ease); }
+.nostalgia-tile:hover .nostalgia-tile-frame img { transform: scale(1.02); }
+.nostalgia-tile:focus-visible { outline: 3px solid var(--primary); outline-offset: 3px; border-radius: 12px; }
+.nostalgia-tile-title { display: block; margin-top: 7px; font: italic 500 17px/1.2 var(--serif); }
+.nostalgia-end { margin-top: 36px; padding-top: 26px; border-top: 1px solid var(--line); text-align: center; }
+.nostalgia-end h2 { margin: 0; font: 600 28px/1.15 var(--serif); }
+.nostalgia-end h2 i { color: var(--primary); font-weight: 500; }
+.nostalgia-end p { max-width: 36ch; margin: 10px auto 0; font-size: 15px; line-height: 1.55; color: #556457; }
+.nostalgia-end a { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; margin-top: 10px; font-weight: 600; text-decoration: none; }
+@media (min-width: 768px) { .nostalgia-masonry { column-count: 3; column-gap: 16px; } }
+@media (prefers-reduced-motion: reduce) { .nostalgia-tile-frame img { transition: none; } }
