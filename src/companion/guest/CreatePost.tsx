@@ -21,6 +21,8 @@ function ChooseSheet({ ctx, base, canWish, canUpload }: { ctx: PhotoContext; bas
   const nav = useNavigate();
   const [search] = useSearchParams();
   const camera = useRef<HTMLInputElement>(null);
+  const gallery = useRef<HTMLInputElement>(null);
+  const [photosOpen, setPhotosOpen] = useState(false);
   const feedPath = ctx.scenePath || base;
   const today = ctx.questsEnabled !== false ? initialPhotoQuests(ctx.b.event.id)[0] : undefined;
   const close = () => nav(feedPath);
@@ -43,11 +45,18 @@ function ChooseSheet({ ctx, base, canWish, canUpload }: { ctx: PhotoContext; bas
       <h1 id="create-sheet-title">Share a memory</h1>
       <p className="create-sheet-intro">Everything you add goes into {ctx.b.event.coupleA} and {ctx.b.event.coupleB}’s album.</p>
       <input ref={camera} type="file" accept="image/*" capture="environment" hidden onChange={event => { pick(event.target.files); event.target.value = ''; }} />
+      <input ref={gallery} type="file" accept="image/*" multiple hidden onChange={event => { pick(event.target.files); event.target.value = ''; }} />
       <div className="create-sheet-options">
-        {canUpload && <button type="button" className="create-option" onClick={() => camera.current?.click()}>
-          <span className="create-option-icon create-option-rose"><Icon size={24} d="M4 8.5h3l1.6-2.5h6.8L17 8.5h3V19H4zM12 16.6a3.4 3.4 0 1 0 0-6.8 3.4 3.4 0 0 0 0 6.8z" /></span>
-          <span><b>Take a photo</b><small>Opens your camera</small></span><Icon size={18} d={CHEVRON} />
-        </button>}
+        {canUpload && <div className={`create-option-group${photosOpen ? ' is-open' : ''}`}>
+          <button type="button" className="create-option" aria-expanded={photosOpen} aria-controls="create-photo-sources" onClick={() => setPhotosOpen(open => !open)}>
+            <span className="create-option-icon create-option-rose"><Icon size={24} d="M4 8.5h3l1.6-2.5h6.8L17 8.5h3V19H4zM12 16.6a3.4 3.4 0 1 0 0-6.8 3.4 3.4 0 0 0 0 6.8z" /></span>
+            <span><b>Add photos</b><small>Take one now or choose up to 10</small></span><Icon size={18} d={photosOpen ? 'm6 15 6-6 6 6' : 'm6 9 6 6 6-6'} />
+          </button>
+          {photosOpen && <div className="create-photo-sources" id="create-photo-sources">
+            <button type="button" className="create-photo-source create-option-rose" onClick={() => camera.current?.click()}><Icon size={24} d="M4 8.5h3l1.6-2.5h6.8L17 8.5h3V19H4zM12 16.6a3.4 3.4 0 1 0 0-6.8 3.4 3.4 0 0 0 0 6.8z" />Camera</button>
+            <button type="button" className="create-photo-source create-option-deep" onClick={() => gallery.current?.click()}><Icon size={24} d="M3.5 4.5h17v15h-17zM4 16l5-5 4 4 2.5-2.5L20 17M15.5 9h.01" />Gallery</button>
+          </div>}
+        </div>}
         {canWish && <Link className="create-option" to={`${base}/create?type=wish`}>
           <span className="create-option-icon create-option-soft"><Icon size={24} d="M5 6h14v10H9l-4 3z" /></span>
           <span><b>Write a wish</b><small>A few words for the couple</small></span><Icon size={18} d={CHEVRON} />
