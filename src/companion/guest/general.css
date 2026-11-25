@@ -284,6 +284,7 @@
 .general-upload-circle { display: contents; }
 @media (max-width: 767px) {
   .general-nav { padding-top: 8px; }
+  .general-nav a > span { min-width: 0; max-width: 100%; white-space: normal; overflow-wrap: anywhere; text-align: center; }
   .general-nav a.general-upload-link, .general-nav a.general-upload-link:hover, .general-nav a.general-upload-link.active { margin: -36px auto 0; width: auto; max-width: none; min-height: 0; padding: 0; gap: 6px; border-radius: 0; outline: 0; background: transparent; color: var(--deep); box-shadow: none; font-size: 12px; font-weight: 600; }
   .general-upload-circle { display: grid; place-items: center; width: 64px; height: 64px; box-sizing: border-box; border-radius: 50%; background: var(--primary); color: var(--paper); border: 5px solid var(--paper); box-shadow: 0 0 0 1px var(--line), 0 10px 20px -8px rgba(165, 48, 81, .6); }
   .general-nav a.general-upload-link .general-upload-circle svg { width: 26px; height: 26px; }
