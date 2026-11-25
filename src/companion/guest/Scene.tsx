@@ -14,11 +14,10 @@ import './photo-quests.css';
 import './feed.css';
 import './gallery.css';
 
-type Tab = 'photos' | 'wishes' | 'mine';
+type Tab = 'photos' | 'wishes';
 const TABS: { id: Tab; label: string; d: string }[] = [
   { id: 'photos', label: 'Photos', d: 'M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z' },
   { id: 'wishes', label: 'Wishes', d: 'M5 6h14v10H9l-4 3z' },
-  { id: 'mine', label: 'Mine', d: 'M12 12a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7zM5 20c1-4 4-6 7-6s6 2 7 6' },
 ];
 const PAGE = 30;
 
@@ -128,7 +127,7 @@ export default function Scene({ ctx, canUpload = true, canWish = true, showPhoto
     for (const p of all) if (p.postId) sizes.set(p.postId, (sizes.get(p.postId) ?? 0) + 1);
     return sizes;
   }, [all]);
-  const shown = tab === 'mine' ? all.filter(p => p.uploadedByMe) : pinnedOnly ? all.filter(p => p.pinned) : all;
+  const shown = pinnedOnly ? all.filter(p => p.pinned) : all;
   const pinned = all.filter(p => p.pinned);
   const guests = new Set([...all.map(p => p.uploaderName.trim().toLowerCase()), ...approvedWishes.map(w => w.name.trim().toLowerCase())]).size;
   const questCollections = PHOTO_QUESTS
@@ -143,8 +142,7 @@ export default function Scene({ ctx, canUpload = true, canWish = true, showPhoto
 
   const emptyCopy = tab === 'wishes'
     ? { title: 'The first wish could be yours', text: 'Words for Anand and Susmita’s next chapter.' }
-    : tab === 'mine' ? { title: 'Your moments belong here', text: 'Photos you share will gather here, ready to save.' }
-      : quest ? { title: 'This collection is waiting for its first photo', text: quest.prompt }
+    : quest ? { title: 'This collection is waiting for its first photo', text: quest.prompt }
         : { title: 'The first photo could be yours', text: 'Every photo and wish here becomes part of the couple’s album.' };
   const isEmpty = loaded && !loadError && (tab === 'wishes' ? !approvedWishes.length : !shown.length);
 
