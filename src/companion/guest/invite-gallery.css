@@ -1,0 +1,42 @@
+/* Invitation page gallery mosaic and the WhatsApp status keepsake. */
+.invite-gallery { margin-top: 44px; color: var(--deep); }
+.invite-gallery-head { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 14px; }
+.invite-gallery-head h2 { margin: 0; font: 600 30px/1.1 var(--serif); }
+.invite-gallery-head a { font-size: 14px; font-weight: 600; color: var(--primary); text-decoration: none; }
+.invite-mosaic { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); grid-template-rows: repeat(3, 120px); grid-template-areas: "p1 p1 w1 w1" "p1 p1 p2 p3" "w2 w2 p4 p5"; gap: 5px; margin-inline: -6px; }
+.invite-tile { position: relative; display: block; overflow: hidden; border-radius: 14px; background: #EFE3CF; color: var(--deep); text-decoration: none; }
+.invite-tile img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.invite-tile.p1 { grid-area: p1; } .invite-tile.w1 { grid-area: w1; } .invite-tile.p2 { grid-area: p2; } .invite-tile.p3 { grid-area: p3; }
+.invite-tile.w2 { grid-area: w2; } .invite-tile.p4 { grid-area: p4; } .invite-tile.p5 { grid-area: p5; }
+.invite-tile-badge { position: absolute; left: 10px; bottom: 10px; padding: 5px 10px; border-radius: 999px; background: rgba(20, 26, 22, .6); color: #FFF7EB; font-size: 12px; font-weight: 600; }
+.invite-tile-empty { background: #F3E8D6; }
+.invite-wish { padding: 14px; box-sizing: border-box; display: flex; flex-direction: column; justify-content: space-between; gap: 6px; background: #F3DDE2; }
+.invite-wish span { font: italic 500 19px/1.2 var(--serif); display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; overflow-wrap: anywhere; }
+.invite-wish small { font-size: 12px; font-weight: 600; color: #7F2440; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.invite-wish-prompt { background: #F6ECDB; }
+.invite-add, .invite-see-all { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; font-size: 13px; font-weight: 600; }
+.invite-add { background: transparent; border: 1.5px dashed color-mix(in srgb, var(--primary) 50%, transparent); color: var(--primary); }
+.invite-see-all { background: var(--deep); color: var(--paper); }
+.invite-gallery-open { width: 100%; margin-top: 14px; }
+.invite-gallery-empty { padding: 26px 16px; border-radius: 18px; background: #F6ECDB; text-align: center; }
+.invite-gallery-empty p { margin: 16px 0; font: 600 24px/1.2 var(--serif); }
+.invite-gallery-frames { display: flex; justify-content: center; gap: 8px; }
+.invite-gallery-frames span { width: 54px; height: 70px; border-radius: 10px; border: 1.5px dashed color-mix(in srgb, var(--deep) 25%, transparent); }
+.invite-gallery-frames span:first-child { transform: rotate(-6deg); } .invite-gallery-frames span:last-child { transform: rotate(6deg); }
+.invite-gallery-frames span:nth-child(2) { border: 0; background: #F3DDE2; color: var(--primary); display: grid; place-items: center; }
+
+.invite-keepsake { position: relative; margin: 84px 0 0; padding: 22px 20px 20px; border-radius: 20px; background: var(--deep); color: #FFF7EB; }
+.invite-keepsake-card { position: absolute; right: 12px; top: -58px; width: 120px; height: 180px; box-sizing: border-box; border-radius: 12px; overflow: hidden; transform: rotate(7deg); border: 4px solid #FFF7EB; box-shadow: 0 22px 34px -14px rgba(20, 26, 22, .65), 0 4px 10px rgba(20, 26, 22, .18); }
+.invite-keepsake-card img { width: 100%; height: 100%; object-fit: cover; object-position: 50% 20%; display: block; }
+.invite-keepsake-copy { max-width: calc(100% - 150px); min-width: 160px; }
+.invite-keepsake h2 { margin: 0; font: italic 500 26px/1.1 var(--serif); }
+.invite-keepsake p { margin: 6px 0 0; font-size: 13px; line-height: 1.45; color: #D5DDD3; }
+.invite-keepsake-share { margin-top: 18px; min-height: 48px; padding: 8px 18px; display: inline-flex; align-items: center; gap: 8px; border: 0; border-radius: 999px; background: #FFF7EB; color: var(--deep); font-size: 15px; font-weight: 600; cursor: pointer; }
+.invite-keepsake-share:disabled { opacity: .7; }
+.invite-keepsake-foot { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 14px; margin-top: 12px; font-size: 12px; color: #D5DDD3; }
+.invite-keepsake-save { min-height: 32px; padding: 0; border: 0; background: none; color: #FFF7EB; font-size: 13px; font-weight: 600; text-decoration: underline; text-underline-offset: 3px; display: inline-flex; align-items: center; gap: 6px; cursor: pointer; }
+.invite-keepsake-status { margin: 12px 0 0; font-size: 13px; line-height: 1.45; color: #FFF7EB; }
+@media (min-width: 768px) {
+  .invite-mosaic { grid-template-rows: repeat(3, 160px); margin-inline: 0; }
+  .invite-gallery-open { width: auto; }
+}

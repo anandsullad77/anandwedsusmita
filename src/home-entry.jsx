@@ -26,11 +26,49 @@ function useCountdown() {
   return remaining;
 }
 
+// The opening plays once per browser; the footer button can still replay it.
+const OPENING_KEY = 'as-wedding-opening-seen';
+function openingSeen() { try { return localStorage.getItem(OPENING_KEY) === '1'; } catch { return false; } }
+function markOpeningSeen() { try { localStorage.setItem(OPENING_KEY, '1'); } catch { /* Private mode: replay next time. */ } }
+
+function savedFamily() {
+  try {
+    const session = JSON.parse(localStorage.getItem('as-wedding-session') || 'null');
+    return session?.slug === 'anand-susmita' && session.householdToken ? session : null;
+  } catch { return null; }
+}
+
+function guestPreview() { try { return sessionStorage.getItem('as-wedding-guest-preview') === '1'; } catch { return false; } }
+
+function WelcomeBack() {
+  const [preview] = useState(guestPreview);
+  if (preview) return <aside className="welcome-back" aria-label="Guest preview">
+    <div><p className="welcome-back-title">Guest preview</p><p>This is the live website your guests see.</p></div>
+    <a className="welcome-back-open" href="/invitation">App</a>
+    <a className="welcome-back-open" href="/admin" onClick={() => { try { sessionStorage.removeItem('as-wedding-guest-preview'); } catch { /* ignore */ } }}>Admin</a>
+  </aside>;
+  return <FamilyWelcome />;
+}
+
+function FamilyWelcome() {
+  const [family] = useState(savedFamily);
+  const [hidden, setHidden] = useState(() => { try { return sessionStorage.getItem('as-wedding-welcome-hidden') === '1'; } catch { return false; } });
+  if (!family || hidden) return null;
+  const individual = family.invitationType === 'individual';
+  return <aside className="welcome-back" aria-label="Continue in the wedding app">
+    <div><p className="welcome-back-title">Welcome back</p><p>{individual ? 'Your RSVP, photos and wishes are in the app.' : 'Your family’s RSVP, photos and wishes are in the app.'}</p></div>
+    <a className="welcome-back-open" href="/start">Open</a>
+    <button type="button" className="welcome-back-close" aria-label="Hide" onClick={() => { try { sessionStorage.setItem('as-wedding-welcome-hidden', '1'); } catch { /* ignore */ } setHidden(true); }}>
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18" /></svg>
+    </button>
+  </aside>;
+}
+
 function App() {
-  const [introActive, setIntroActive] = useState(() => !window.location.hash && !window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+  const [introActive, setIntroActive] = useState(() => !window.location.hash && !openingSeen() && !window.matchMedia('(prefers-reduced-motion: reduce)').matches);
   const [menuOpen, setMenuOpen] = useState(false);
   const countdown = useCountdown();
-  const finishOpening = useCallback(() => setIntroActive(false), []);
+  const finishOpening = useCallback(() => { markOpeningSeen(); setIntroActive(false); }, []);
   const replayOpening = useCallback(() => {
     setMenuOpen(false);
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
@@ -62,7 +100,7 @@ function App() {
     return () => observer.disconnect();
   }, []);
 
-  return <><div className="invitation-app" inert={introActive ? true : undefined} aria-hidden={introActive ? true : undefined}><Invitation countdown={countdown} menuOpen={menuOpen} setMenuOpen={setMenuOpen} mapUrl={MAP_URL} onReplayOpening={replayOpening} /><WeddingLinks /></div>{introActive && <InvitationOpening onComplete={finishOpening} />}</>;
+  return <><div className="invitation-app" inert={introActive ? true : undefined} aria-hidden={introActive ? true : undefined}><Invitation countdown={countdown} menuOpen={menuOpen} setMenuOpen={setMenuOpen} mapUrl={MAP_URL} onReplayOpening={replayOpening} /><WeddingLinks /></div>{!introActive && <WelcomeBack />}{introActive && <InvitationOpening onComplete={finishOpening} />}</>;
 }
 
 createRoot(document.getElementById('root')).render(<App />);

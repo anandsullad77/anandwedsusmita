@@ -30,7 +30,7 @@ export default defineConfig(({ mode }) => {
       theme_color: '#a53051',
       background_color: '#FFF7EB',
       display: 'standalone',
-      start_url: '/',
+      start_url: '/start',
       icons: [{ src: '/favicon.svg', sizes: 'any', type: 'image/svg+xml', purpose: 'any maskable' }],
     },
     workbox: {

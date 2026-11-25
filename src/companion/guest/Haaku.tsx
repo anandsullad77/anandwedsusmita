@@ -23,7 +23,7 @@ export default function Haaku({ ctx }: { ctx: PhotoContext }) {
   const [questId, setQuestId] = useState(initialQuest?.id ?? '');
   const [questPickerOpen, setQuestPickerOpen] = useState(!!initialQuest);
   const selectedQuest = photoQuest(questId);
-  const [files, setFiles] = useState<File[]>(() => questDraftFiles(search.get('draft'), b.event.id, initialQuest?.id ?? null));
+  const [files, setFiles] = useState<File[]>(() => questDraftFiles(search.get('draft'), b.event.id, initialQuest?.id ?? ''));
   const [previews, setPreviews] = useState<string[]>([]);
   const [active, setActive] = useState(0);
   const [moment, setMoment] = useState<string>(b.functions[0]?.nameEn ?? 'Candid');
@@ -81,7 +81,9 @@ export default function Haaku({ ctx }: { ctx: PhotoContext }) {
       await enqueuePost(b.event.id, images, { moment, questId: selectedQuest?.id, caption: caption.trim() || undefined, uploaderName: general ? name.trim() : me!.name, personId: general ? null : me!.id, generalToken: ctx.generalToken, authUserId: account.id });
       await draftWrites.current.catch(() => {});
       await del(draftKey).catch(() => {});
-      nav(selectedQuest && scenePath.endsWith('/feed') ? `${scenePath}?quest=${selectedQuest.id}` : scenePath);
+      const done = new URLSearchParams({ type: 'posted', n: String(files.length) });
+      if (selectedQuest) done.set('questTitle', selectedQuest.tag);
+      nav(`${scenePath.endsWith('/feed') ? scenePath.slice(0, -5) : '/app'}/create?${done}`);
     } catch (e) { setErr((e as Error).message); }
     finally { lock.current = false; setBusy(false); }
   }

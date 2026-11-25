@@ -312,3 +312,9 @@ body:has(.admin-menu-dialog[open]), body:has(.family-dialog[open]) { overflow: h
   .admin-mobile-brand b { font-size: 21px; }
   .tbl tr { padding: 16px; }
 }
+
+/* View the live wedding as a guest, read-only. */
+.admin-view-as-guest { display: flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; margin: 0 0 16px; padding: 0 16px; border-radius: 999px; border: 1px solid var(--p-line); background: #FFFFFF; color: var(--p-ink); font-size: 14px; font-weight: 600; text-decoration: none; }
+.admin-view-as-guest:hover { border-color: var(--p-kumkuma); color: var(--p-kumkuma); }
+.admin-view-as-guest-compact { margin: 0 0 0 auto; min-height: 40px; padding: 0 12px; font-size: 13px; white-space: nowrap; }
+@media (max-width: 380px) { .admin-view-as-guest-compact span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); } }

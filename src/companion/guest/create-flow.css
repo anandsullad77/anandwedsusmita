@@ -1,0 +1,53 @@
+/* Create Post flow: choose sheet, first-time sign-in, sharing and thank-you screens. */
+.create-sheet-backdrop { position: fixed; inset: 0; z-index: 120; display: flex; align-items: flex-end; justify-content: center; background: rgba(20, 26, 22, .5); animation: create-fade .2s ease-out; }
+.create-sheet { width: 100%; max-width: 520px; max-height: calc(100dvh - 40px); overflow-y: auto; box-sizing: border-box; padding: 10px 20px max(26px, env(safe-area-inset-bottom)); border-radius: 26px 26px 0 0; background: var(--paper); color: var(--deep); box-shadow: 0 -10px 30px -10px rgba(20, 26, 22, .4); animation: create-rise .32s cubic-bezier(.16, 1, .3, 1); }
+.create-sheet-center { text-align: center; }
+.create-sheet-center > svg, .create-sheet-center > img { margin: 0 auto; }
+.create-sheet-handle { display: block; width: 40px; height: 5px; margin: 0 auto 18px; border-radius: 999px; background: color-mix(in srgb, var(--deep) 20%, transparent); }
+.create-sheet h1 { margin: 0; font: 600 30px/1.1 var(--serif); }
+.create-sheet-center h1 { margin-top: 14px; }
+.create-sheet-intro { margin: 6px 0 18px; font-size: 14px; line-height: 1.5; color: #556457; }
+.create-sheet-center .create-sheet-intro { max-width: 300px; margin-inline: auto; font-size: 15px; }
+.create-sheet-options { display: flex; flex-direction: column; gap: 10px; }
+.create-option { display: flex; align-items: center; gap: 14px; width: 100%; padding: 14px; box-sizing: border-box; border-radius: 16px; border: 1px solid var(--line); background: #FFFFFF; color: var(--deep); text-align: left; text-decoration: none; cursor: pointer; font: inherit; }
+.create-option > span:nth-child(2) { flex: 1; min-width: 0; }
+.create-option b { display: block; font-size: 16px; font-weight: 600; }
+.create-option small { display: block; margin-top: 3px; font-size: 13px; color: #556457; }
+.create-option > svg { color: #556457; flex: 0 0 auto; }
+.create-option:hover { border-color: color-mix(in srgb, var(--primary) 45%, transparent); }
+.create-option-icon { width: 48px; height: 48px; flex: 0 0 auto; border-radius: 14px; display: grid; place-items: center; }
+.create-option-rose { background: var(--primary); color: var(--paper); }
+.create-option-deep { background: var(--deep); color: var(--paper); }
+.create-option-soft { background: #F3DDE2; color: var(--primary); }
+.create-sheet-quest { display: flex; align-items: center; gap: 10px; margin-top: 16px; padding: 12px 14px; border-radius: 14px; background: #F3E8D6; color: var(--deep); font-size: 13px; text-decoration: none; }
+.create-sheet-quest-try { margin-left: auto; font-weight: 600; color: var(--primary); }
+.create-sheet-cancel { display: block; width: 100%; min-height: 48px; margin-top: 8px; border: 0; background: none; color: #556457; font-size: 15px; font-weight: 600; line-height: 48px; text-align: center; text-decoration: none; cursor: pointer; }
+.create-google { width: 100%; min-height: 54px; margin-top: 22px; display: flex; align-items: center; justify-content: center; gap: 12px; border-radius: 999px; border: 1px solid color-mix(in srgb, var(--deep) 20%, transparent); background: #FFFFFF; color: var(--deep); font-size: 16px; font-weight: 600; box-shadow: 0 2px 6px -2px rgba(40, 58, 45, .2); cursor: pointer; }
+.create-sheet-note { margin: 14px 0 0; font-size: 13px; color: #556457; }
+
+.create-done { position: relative; max-width: 420px; margin: 0 auto; padding: 56px 8px 24px; text-align: center; color: var(--deep); }
+.create-done h1 { margin: 26px 0 0; font: 600 34px/1.1 var(--serif); text-wrap: balance; }
+.create-done > p { max-width: 300px; margin: 10px auto 0; font-size: 15px; line-height: 1.55; color: #556457; }
+.create-done-actions { display: flex; flex-direction: column; gap: 10px; margin-top: 36px; }
+.create-done-actions .btn { min-height: 52px; }
+.create-done-note { display: flex; gap: 12px; align-items: flex-start; margin-top: 26px; padding: 14px 16px; border-radius: 14px; background: #F3E8D6; text-align: left; font-size: 14px; line-height: 1.5; }
+.create-done-note svg { flex: 0 0 auto; margin-top: 2px; }
+.create-done-spinner { display: block; width: 56px; height: 56px; margin: 0 auto; border-radius: 50%; border: 4px solid #F3DDE2; border-top-color: var(--primary); animation: create-spin 1s linear infinite; }
+.create-done-check { width: 72px; height: 72px; margin: 0 auto; border-radius: 50%; display: grid; place-items: center; background: var(--primary); color: var(--paper); box-shadow: 0 14px 28px -12px rgba(165, 48, 81, .6); }
+.create-done-grains { position: absolute; inset: 0 0 auto; height: 220px; pointer-events: none; }
+.create-done-grains i { position: absolute; width: 7px; height: 11px; border-radius: 50%; background: #E9A21B; opacity: 0; animation: create-grain 1.4s cubic-bezier(.16, 1, .3, 1) forwards; }
+.create-done-grains i:nth-child(1) { left: 18%; top: 40px; } .create-done-grains i:nth-child(2) { left: 30%; top: 12px; animation-delay: .05s; }
+.create-done-grains i:nth-child(3) { left: 72%; top: 24px; animation-delay: .1s; } .create-done-grains i:nth-child(4) { left: 84%; top: 70px; animation-delay: .15s; }
+.create-done-grains i:nth-child(5) { left: 12%; top: 110px; animation-delay: .08s; } .create-done-grains i:nth-child(6) { left: 82%; top: 130px; animation-delay: .12s; }
+.create-done-grains i:nth-child(7) { left: 40%; top: 0; animation-delay: .18s; } .create-done-grains i:nth-child(8) { left: 62%; top: 4px; animation-delay: .02s; }
+.create-wish-card { margin: 0; padding: 26px 22px; border-radius: 20px; background: #F3DDE2; text-align: left; transform: rotate(-1.5deg); box-shadow: 0 16px 30px -16px rgba(165, 48, 81, .45); }
+.create-wish-card blockquote { margin: 0; font: italic 500 24px/1.3 var(--serif); overflow-wrap: anywhere; white-space: pre-wrap; }
+.create-wish-card figcaption { margin-top: 14px; font-size: 13px; font-weight: 600; color: #7F2440; }
+@keyframes create-fade { from { opacity: 0; } }
+@keyframes create-rise { from { transform: translateY(40px); opacity: 0; } }
+@keyframes create-spin { to { transform: rotate(360deg); } }
+@keyframes create-grain { 0% { opacity: 0; transform: translateY(-24px) rotate(0); } 30% { opacity: .9; } 100% { opacity: .8; transform: translateY(0) rotate(35deg); } }
+@media (prefers-reduced-motion: reduce) {
+  .create-sheet-backdrop, .create-sheet, .create-done-grains i { animation: none; opacity: .8; }
+  .create-done-spinner { animation-duration: 3s; }
+}

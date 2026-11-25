@@ -18,7 +18,7 @@ export default function InvitationHero({ event, settings, momentsPath }: { event
         <div className="general-hero-copy">
           <div className="general-hero-intro">
             <p className="general-eyebrow">With love and our elders’ blessings</p>
-            <p className="kn-h general-banni" lang="kn">ಬನ್ನಿ! <span lang="en">You’re invited</span></p>
+            <p className="kn-h general-banni" lang="en">You’re invited</p>
           </div>
           <h1 className="general-couple" lang="en"><span>{event.coupleA}</span><i>&amp;</i><span>{event.coupleB}</span></h1>
           <div className="general-hero-message">

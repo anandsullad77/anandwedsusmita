@@ -9,6 +9,8 @@ import InvitationPage from './InvitationPage';
 import WeddingBrand from '../components/WeddingBrand';
 import { GuestAccount, GuestContentGate } from '../components/GoogleSignIn';
 import { restoreAuthPosition } from '../lib/guestAuth';
+import { useGuestPreview } from '../lib/guestPreview';
+import { GuestPreviewBanner } from './GuestPreview';
 import './app.css';
 import './general.css';
 
@@ -25,6 +27,7 @@ type Props = {
 // Both entry points use these routes, navigation and pages. Family features are optional additions.
 export default function InvitationExperience({ bundle, base, token, photoContext, invitationPath = base, personalSection, familyPage }: Props) {
   const current = useLocation();
+  const preview = useGuestPreview();
   const sections = normalizeGeneralSettings(bundle.settings).sections;
   const hasFeed = sections.photos || sections.guestbook;
   const canCreate = sections.uploads || sections.guestbook;
@@ -48,13 +51,14 @@ export default function InvitationExperience({ bundle, base, token, photoContext
       <Route path="wishes" element={<Navigate to={`${base}/feed${current.search}`} replace />} />
       <Route path="*" element={
         <div className="gapp general-shell">
+          {preview && <GuestPreviewBanner />}
           <a className="general-skip" href="#general-content">Skip to content</a>
           <header className="general-header">
             <div className="general-header-inner">
               <WeddingBrand className="general-brand" tagline="Together," title="With Love" />
               <nav className="general-nav" aria-label="Wedding" lang="en" style={{ gridTemplateColumns: `repeat(${1 + Number(hasFeed) + Number(canCreate)}, minmax(0, 1fr))` }}>
                 <Link to={base} className={onInvitation ? 'active' : undefined} aria-current={onInvitation ? 'page' : undefined}><Icon d="M3 5h18v14H3zM3 5l9 7 9-7" /><span>Invitation</span></Link>
-                {canCreate && <NavLink to={`${base}/create`} className="general-upload-link"><Icon d="M12 5v14M5 12h14" /><span>Create Post</span></NavLink>}
+                {canCreate && <NavLink to={`${base}/create`} className="general-upload-link"><span className="general-upload-circle"><Icon d="M12 5v14M5 12h14" /></span><span>Create Post</span></NavLink>}
                 {hasFeed && <NavLink to={`${base}/feed`}><Icon d="M3 6h18v14H3zM7 10h10M7 15h6" /><span>Feed</span></NavLink>}
               </nav>
               <GuestAccount base={base} />
