@@ -11,6 +11,7 @@ import GeneralInvitationAdmin from './GeneralInvitationAdmin';
 import AdminNavigation from './AdminNavigation';
 import Analytics from './Analytics';
 import HostTeam from './HostTeam';
+import PlaygroundAdmin from './PlaygroundAdmin';
 import { Icon } from '../guest/Icon';
 import { useVisibleViewport } from '../lib/useVisibleViewport';
 import MomentTag from '../guest/MomentTag';
@@ -52,6 +53,7 @@ export default function Admin() {
             <Route path="photos" element={<Photos d={data} reload={reload} />} />
             <Route path="analytics" element={<Analytics eventId={data.event.id} />} />
             <Route path="hosts" element={<HostTeam eventId={data.event.id} />} />
+            <Route path="polls" element={<PlaygroundAdmin d={data} />} />
             <Route path="updates" element={<Updates d={data} reload={reload} />} />
             <Route path="settings" element={<Settings d={data} reload={reload} />} />
           </Routes>

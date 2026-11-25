@@ -75,6 +75,7 @@ async function scenario(browser, { width = 390, initial = 'anonymous', family = 
     if (url.pathname.endsWith('/logout')) { mode = 'anonymous'; return route.fulfill({ status: 204 }); }
     if (privatePath(url.pathname) && mode !== 'google' && mode !== 'host') return json({ message: 'Sign in with Google' }, 403);
     if (url.pathname.endsWith('/rpc/open_wedding_invite')) return json({ token, bundle: bundle() });
+    if (url.pathname.endsWith('/rpc/wedding_playground')) return json({polls:[],teams:[],myTeam:null,stats:{votes:0,voters:0,completed:0},pendingWords:[]});
     if (url.pathname.endsWith('/rpc/record_wedding_visit') || url.pathname.endsWith('/rpc/record_wedding_signin')) return json(null);
     if (url.pathname.endsWith('/rpc/admin_wedding_guests')) return json({ total: 0, guests: [] });
     if (url.pathname.endsWith('/rpc/admin_wedding_guest_posts')) return json({ total: 0, posts: [] });
@@ -160,7 +161,11 @@ async function scenario(browser, { width = 390, initial = 'anonymous', family = 
 }
 const wait = async (check, message) => { for (let i = 0; i < 100; i++) { if (await check()) return; await new Promise(resolve => setTimeout(resolve, 100)); } throw new Error(message); };
 const nav = page => page.getByRole('navigation', { name: 'Wedding', exact: true });
-async function assertLayout(page) { assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), 'No horizontal page overflow'); }
+async function assertLayout(page) {
+  // Resizing updates the viewport before Chrome commits its media-query styles.
+  await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+  assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), 'No horizontal page overflow');
+}
 
 if (require.main === module) (async () => {
   const browser = await playwright.chromium.launch({ executablePath: process.env.CHROME_PATH || (process.platform === 'win32' ? 'C:/Program Files/Google/Chrome/Application/chrome.exe' : undefined), headless: true });

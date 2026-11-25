@@ -57,7 +57,7 @@ export type Household = {
 };
 
 export type InviteBundle = { event: EventInfo; functions: Fn[]; household: Household; people: Person[] };
-export type GeneralSections = { cover: boolean; schedule: boolean; photos: boolean; uploads: boolean; updates: boolean; guestbook: boolean; download: boolean; quests: boolean };
+export type GeneralSections = { cover: boolean; schedule: boolean; photos: boolean; uploads: boolean; updates: boolean; guestbook: boolean; download: boolean; quests: boolean; nostalgia: boolean; playground: boolean };
 export type InvitationPreviewPhoto = { path: string | null; url: string | null };
 export type GeneralInvitationSettings = { welcomeMessage: string; coverPath: string | null; coverUrl: string | null; previewPhotos: InvitationPreviewPhoto[]; sections: GeneralSections };
 export type GeneralInviteBundle = { event: EventInfo; functions: Fn[]; guestName: string | null; settings?: GeneralInvitationSettings };

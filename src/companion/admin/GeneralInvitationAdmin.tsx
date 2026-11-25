@@ -10,7 +10,7 @@ import '../guest/general.css';
 
 const sectionLabels: Record<keyof GeneralSections, string> = {
   cover: 'Cover photo', schedule: 'Celebration schedule', photos: 'Photo gallery (Scene)', uploads: 'Guest photo uploads',
-  updates: 'Updates from the hosts', guestbook: 'Wishes & blessings', download: 'Invitation card download', quests: 'Photo quests'
+  updates: 'Updates from the hosts', guestbook: 'Wishes & blessings', download: 'Invitation card download', quests: 'Photo quests', nostalgia: 'Nostalgia childhood albums', playground: 'The Wedding Playground'
 };
 
 export default function GeneralInvitationAdmin({ d }: { d: AdminData }) {

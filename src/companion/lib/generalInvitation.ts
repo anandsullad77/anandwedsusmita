@@ -1,7 +1,7 @@
 import type { GeneralInvitationSettings, GeneralSections } from './types';
 
 export const DEFAULT_WELCOME = 'Warmly invite you to celebrate their wedding.';
-export const DEFAULT_SECTIONS: GeneralSections = { cover: true, schedule: true, photos: true, uploads: true, updates: true, guestbook: true, download: true, quests: true };
+export const DEFAULT_SECTIONS: GeneralSections = { cover: true, schedule: true, photos: true, uploads: true, updates: true, guestbook: true, download: true, quests: true, nostalgia: true, playground: true };
 export const defaultGeneralSettings = (): GeneralInvitationSettings => ({ welcomeMessage: DEFAULT_WELCOME, coverPath: null, coverUrl: null, previewPhotos: [], sections: { ...DEFAULT_SECTIONS } });
 export function normalizeGeneralSettings(settings?: Partial<GeneralInvitationSettings> | null): GeneralInvitationSettings {
   return { ...defaultGeneralSettings(), ...settings, previewPhotos: settings?.previewPhotos ?? [], sections: { ...DEFAULT_SECTIONS, ...settings?.sections } };

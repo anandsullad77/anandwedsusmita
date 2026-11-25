@@ -9,6 +9,7 @@ import InvitationHero from './InvitationHero';
 import InvitationDownloads from './InvitationDownloads';
 import InviteGallery from './InviteGallery';
 import { siteOrigin } from '../../siteOrigin';
+import { WeddingVerdict } from './WeddingPlayground';
 import { WeddingSignoff } from '../components/WeddingBrand';
 import { useGuestAuth } from '../lib/useGuestAuth';
 import './invitation-page.css';
@@ -62,6 +63,7 @@ export default function InvitationPage({ bundle, base, token, invitationPath, ch
     </section>}
 
     {hasMoments && <InviteGallery base={base} photos={previewPhotos} wishes={wishes} canUpload={sections.uploads} canWish={sections.guestbook} locked={!canAccess} />}
+    {sections.playground && <WeddingVerdict eventId={event.id} base={base} />}
     {sections.download && <InvitationDownloads bundle={bundle} settings={settings} link={`${location.origin}${invitationPath}`} publicLink={`${siteOrigin()}/?from=status`} />}
     <div className="general-closing" lang="en"><p className="general-eyebrow">The best part of our day?</p><p>Having you in it.</p><span>With love, {event.coupleA} &amp; {event.coupleB}</span></div>
     <WeddingSignoff />

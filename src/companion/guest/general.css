@@ -7,7 +7,7 @@
 .general-brand-label { display: block; font-size: 9px; line-height: 1.5; text-transform: uppercase; letter-spacing: .14em; color: var(--muted); }
 .general-brand b { display: block; font: 600 27px/1.2 var(--serif); overflow-wrap: anywhere; }
 .general-nav { display: flex; align-items: center; gap: 4px; flex-shrink: 0; }
-.general-nav a { min-height: 46px; display: flex; align-items: center; justify-content: center; gap: 7px; padding: 0 14px; color: var(--muted); font-size: 13px; font-weight: 600; border-radius: 10px; text-decoration: none; }
+.general-nav a { min-width: 44px; min-height: 46px; display: flex; align-items: center; justify-content: center; gap: 7px; padding: 0 14px; color: var(--muted); font-size: 13px; font-weight: 600; border-radius: 10px; text-decoration: none; }
 .general-nav a svg { width: 18px; height: 18px; }
 .general-nav a:hover, .general-nav a.active { background: var(--card); color: var(--deep); }
 .general-nav a.general-upload-link { margin-inline: 8px; border-radius: 999px; background: var(--deep); color: var(--paper); font-weight: 700; box-shadow: 0 3px 10px #283A2D26; }
@@ -212,6 +212,12 @@
   .general-brand-label { font-size: 8px; }
   .general-brand b { font-size: 24px; }
 }
+@media (min-width: 768px) and (max-width: 1100px) {
+  .general-nav { gap: 1px; }
+  .general-nav a { flex-direction: column; gap: 4px; padding: 8px 7px; font-size: 11px; }
+  .general-nav a.general-upload-link { margin-inline: 3px; padding-inline: 10px; }
+  .general-header-inner { gap: 12px; }
+}
 @media (max-width: 767px) {
   /* Keep the fixed bottom nav relative to the viewport, outside a backdrop-filter containing block. */
   .general-header { backdrop-filter: none; }
@@ -219,10 +225,10 @@
   .general-brand { gap: 10px; }
   .general-brand b { font-size: 23px; }
   .general-brand-label { font-size: 8px; letter-spacing: .12em; }
-  .general-nav { position: fixed; bottom: 0; left: 0; right: 0; z-index: 50; display: grid; padding: 6px 10px calc(8px + env(safe-area-inset-bottom)); gap: 4px; background: var(--paper); border-top: 1px solid var(--line); }
-  .general-nav a { min-height: 52px; border-radius: 10px; flex-direction: column; gap: 4px; padding: 6px 2px; font-size: 11px; line-height: 1.4; }
+  .general-nav { position: fixed; bottom: 0; left: 0; right: 0; z-index: 50; display: grid; padding: 6px 8px calc(8px + env(safe-area-inset-bottom)); gap: 2px; background: var(--paper); border-top: 1px solid var(--line); }
+  .general-nav a { min-width: 0; min-height: 54px; border-radius: 10px; flex-direction: column; gap: 4px; padding: 6px 1px; font-size: 10px; line-height: 1.4; white-space: nowrap; }
   .general-nav a svg { width: 20px; height: 20px; }
-  .general-nav a.general-upload-link { margin: -18px auto 0; width: 80px; max-width: calc(100% - 8px); min-height: 80px; border-radius: 50%; outline: 4px solid var(--paper); background: var(--deep); color: var(--paper); font-size: 11px; gap: 3px; box-shadow: 0 6px 16px #283A2D33; }
+  .general-nav a.general-upload-link { margin: -15px auto 0; width: 66px; max-width: calc(100% - 2px); aspect-ratio: 1; min-height: 0; align-self: start; border-radius: 50%; outline: 4px solid var(--paper); background: var(--deep); color: var(--paper); font-size: 9px; gap: 3px; box-shadow: 0 6px 16px #283A2D33; }
   .general-nav a.general-upload-link.active { box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--paper) 60%, transparent), 0 6px 16px #283A2D33; }
   .general-nav a.general-upload-link svg { width: 24px; height: 24px; }
   .general-nav a.active { color: var(--primary); background: var(--card); }
@@ -261,6 +267,8 @@
   .general-signoff { padding: 34px 0 22px; }
 }
 @media (max-width: 360px) {
+  .general-nav a { font-size: 9px; }
+  .general-nav a.general-upload-link { font-size: 8px; }
   .general-shell main.general-main { padding-inline: 14px; }
   .general-invitation { padding-inline: 18px; }
   .general-couple { font-size: 38px; gap: 7px; }

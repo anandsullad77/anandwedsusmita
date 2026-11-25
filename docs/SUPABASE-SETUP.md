@@ -10,6 +10,10 @@ The original invitation remains at `/`. Its design, text, artwork, countdown, ma
 | `/invitation` | Wedding companion: photos, wishes, quests, host updates, and invitation downloads |
 | `/invitation/feed` | Photos and approved wishes, newest first |
 | `/invitation/create` | Choose Send a Wish or Upload Photos, including an offline queue |
+| `/invitation/nostalgia` | Public "Before We Said Yes" childhood albums, filters and full photo viewer |
+| `/invitation/playground` | Anand vs Susmita, Predict Our Future, Know the Couple and Photo Awards |
+| `/invitation/playground/<activity>` | Dedicated activity page; cards open questions directly, with a link back to all activities |
+| `/admin/polls` | Host poll editor, schedules, quiz answers, engagement totals and CSV export |
 | `/rsvp` | Wedding PIN, find your family, or join as a new family |
 | `/i/<family-token>` | Personal family invitation and RSVP story |
 | `/app` | Linked family's RSVP, travel, stay, arrival, and shared guest features |
@@ -18,6 +22,8 @@ The original invitation remains at `/`. Its design, text, artwork, countdown, ma
 | `/admin/reset-password` | Set a new password from a recovery email |
 
 Existing `/e/anand-susmita` and `/g/<general-token>` links still work. Old `/celebrate` links redirect to `/invitation`, preserving subpages, query parameters, and section anchors. Invitations for other wedding slugs are not displayed. The underlying imported database tables retain their event IDs so existing data and migrations remain compatible.
+
+“The wedding verdict” shows pinned poll summaries below the Playground activity cards and after the invitation's photos and wishes section. Each preview includes a **Go to Playground** button; guests vote on the separate activity pages. Signed-out visitors see an introduction, while results follow the existing guest sign-in and poll visibility rules. No additional migration is required for these previews.
 
 ## 1. Supabase project and authentication
 
@@ -55,6 +61,14 @@ For **Guest contacts & memories**, run the next missing migrations in order: `00
 In **Analytics → Guest contacts & memories**, export the complete guest list and posts/wishes separately as CSV, or open one guest's memories to export that guest's content. Exported photo Storage paths are durable references for hosts, not public links or embedded photo files. Open the corresponding private photos from the guest's memory view to save the images. Account deletion and missing historical ownership prevent recovery or reliable email matching; display names alone are never used to assign a post. First/latest recorded dates do not represent a complete historical visit log. `npm.cmd run test:memories` checks desktop/mobile views, complete paginated exports, same-name accounts, retries, private previews, UTF-8 text and spreadsheet safety.
 
 ## 3. Configure the wedding and host access
+
+The guest menu is ordered **Invitation, Nostalgia, Create Post, Feed, Playground**. Nostalgia displays the 13 supplied childhood photographs as Anand and Susmita albums, with filters and a keyboard/touch photo viewer. Guests can browse without Google sign-in; linked families see the same albums at `/app/nostalgia`. Display JPEGs ship in `public/images/nostalgia/`; originals remain in `Nostalgia/`. There is no visitor or host upload/editing workflow and no database table, migration or Storage bucket to configure. The existing Nostalgia visibility setting still applies. Run `npm.cmd run test:nostalgia` for responsive photo, filtering and viewer checks. The Invitation page retains its original content; Playground is a separate route.
+
+For **The Wedding Playground**, apply **`0019_wedding_playground.sql` after 0018**, then deploy the frontend. The app offers four activities: **Anand vs Susmita, Predict Our Future, Know the Couple and Photo Awards**, in that order. Existing verified Google/host identity and invitation access are reused. Polls refresh every 20 seconds while the tab is visible; no new Edge Function, environment variable or Realtime publication is needed. Starter polls are seeded for an existing wedding; fresh installs seed them when `seed_anand_susmita.sql` runs. Reruns preserve existing questions.
+
+Open **Admin > Wedding Playground** (`/admin/polls`; on mobile, under **More**). Confirm the three provisional quiz answer keys before opening them, and nominate visible feed photos for Photo Awards. Hosts can create questions in the four retained categories, including single/multiple choice and rating predictions; schedule opens, closes and reveals in IST; choose result visibility; feature polls in The Wedding Verdict; duplicate questions; and export aggregate results. Options and keys are locked after the first ballot. Quiz ballots get one attempt; other open polls allow replacing a choice. Reveals require closed voting and the reveal time to have arrived. Predictions close one day after the ceremony and remain saved for the anniversary.
+
+Live Polls, Team Battle, Secret Answers and Words of Love have been removed from guest pages, host tools and result previews. Their old activity URLs return to the Playground overview. Existing database records are preserved; installations already on 0019 need only the updated frontend. General invitation settings can hide the Nostalgia or Playground menu entries. Run `npm.cmd run test:celebration-db` and `npm.cmd run test:celebration` (browser checks use `WEDDING_TEST_ORIGIN`, default port 5175). These checks use local fixtures and send no real votes to Supabase.
 
 For **Individual / Family** links, apply `0018_individual_invitations.sql` after 0017 before deploying the app. Existing links remain Family. New contact imports default to Individual with one place; the editor/import review lets hosts switch the type. The database rejects extra members on individual links and refuses to convert a link that already has multiple members. Family RSVP still permits additions within the host's configured maximum. No existing guests, replies or invite tokens are removed.
 

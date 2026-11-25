@@ -1,0 +1,173 @@
+.wedding-playground { min-width: 0; }
+.wedding-playground :is(h3,h4) { font-family: var(--serif); font-weight: 500; letter-spacing: -.025em; color: var(--deep); }
+.playground-intro { display: grid; gap: 60px; align-items: center; }
+.wedding-playground .general-section-heading h1 { font: 500 clamp(38px,4.2vw,56px)/1.04 var(--serif); letter-spacing: -.035em; margin: 12px 0 20px; color: var(--deep); }
+.wedding-playground .general-section-heading h1 i { display: block; font-weight: 400; color: var(--primary); }
+.playground-panel-heading { display: flex; justify-content: space-between; align-items: center; gap: 20px; }
+.playground-panel-heading h3 { margin: 6px 0 0; font-size: 30px; line-height: 1.15; }
+.celebration-text-link { display: inline-flex; align-items: center; justify-content: center; gap: 7px; color: var(--primary); border: 0; background: transparent; padding: 10px 2px; min-height: 44px; font: 600 12px/1.6 var(--sans); text-underline-offset: 4px; cursor: pointer; }
+.celebration-filters { display: flex; flex-wrap: wrap; gap: 7px; }
+.celebration-filters .chip { min-height: 44px; font-size: 12px; }
+.celebration-empty { display: grid; justify-items: center; text-align: center; padding: 30px 24px; border: 1px dashed var(--line); border-radius: 6px; background: #ffffff33; color: var(--muted); }
+.celebration-empty > svg { color: var(--primary); margin-bottom: 8px; }
+.celebration-empty h4 { font-size: 28px; line-height: 1.2; margin: 9px 0; }
+.celebration-empty p { font-size: 13px; line-height: 1.8; max-width: 50ch; margin: 8px 0; }
+.celebration-empty .google-sign-in { width: min(100%,470px); margin-top: 10px; }
+.celebration-help { color: var(--muted); font-size: 11px; line-height: 1.8; }
+.celebration-notice { padding: 16px 20px; border-left: 3px solid var(--deep); background: #283a2d0a; color: var(--deep); font-size: 13px; line-height: 1.8; }
+.playground-intro { grid-template-columns: minmax(0,1.5fr) minmax(0,1fr); }
+.playground-monogram { display: flex; flex-wrap: wrap; justify-content: center; align-items: baseline; gap: 10px; color: var(--deep); }
+.playground-monogram > span { font: 400 clamp(70px,8vw,105px)/1 var(--serif); }
+.playground-monogram > i { font: italic 400 48px/1 var(--serif); color: var(--primary); }
+.playground-monogram > small { width: 100%; text-align: center; letter-spacing: .18em; font-size: 9px; margin-top: 12px; color: var(--muted); }
+.playground-categories { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 10px; margin: 26px 0 30px; }
+.playground-categories > a { position: relative; min-width: 0; min-height: 112px; padding: 19px 17px; display: flex; flex-direction: column; align-items: flex-start; gap: 12px; text-align: left; text-decoration: none; border: 1px solid var(--line); border-radius: 6px; background: #ffffff4d; color: var(--deep); cursor: pointer; transition: background .2s ease,border-color .2s ease; }
+.playground-categories > a:hover { background: var(--deep); color: var(--paper); border-color: var(--deep); }
+.playground-categories > a > span:not(.playground-category-arrow) { min-width: 0; }
+.playground-categories b { display: block; font: 600 20px/1.15 var(--serif); overflow-wrap: anywhere; }
+.playground-categories small { display: block; margin-top: 6px; font: 400 10px/1.6 var(--sans); opacity: .8; }
+.playground-category-arrow { position: absolute; top: 17px; right: 17px; opacity: .65; }
+.playground-panel { padding: 26px; background: #ffffff40; border: 1px solid var(--line); border-radius: 6px; min-width: 0; }
+.playground-panel-heading { margin: 0 0 24px; }
+.playground-panel-heading > div { min-width: 0; }
+.playground-panel-heading > button { flex-shrink: 0; }
+.playground-polls { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 16px; align-items: start; }
+.playground-poll { padding: 22px; border: 1px solid var(--line); border-radius: 5px; background: var(--paper); min-width: 0; }
+.poll-meta { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 6px; font-size: 9px; line-height: 1.6; color: var(--muted); }
+.poll-meta > span:first-child { letter-spacing: .1em; }
+.poll-meta > span:last-child { color: var(--primary); }
+.playground-poll h4 { margin: 15px 0 19px; font-size: 27px; line-height: 1.15; overflow-wrap: anywhere; }
+.poll-options { display: grid; gap: 9px; }
+.poll-option { position: relative; display: block; min-height: 56px; width: 100%; min-width: 0; text-align: left; padding: 0; color: var(--deep); background: #ffffff66; border: 1px solid var(--line); border-radius: 5px; overflow: hidden; cursor: pointer; font: 500 13px/1.5 var(--sans); }
+.poll-option:disabled { cursor: default; opacity: 1; }
+.poll-option.chosen { border-color: var(--primary); background: #a530510a; }
+.poll-option.correct { border-color: var(--deep); }
+.poll-option-content { display: flex; gap: 11px; align-items: center; padding: 13px; min-width: 0; }
+.poll-choice-mark { flex: 0 0 25px; height: 25px; display: grid; place-items: center; font-size: 10px; border: 1px solid var(--line); border-radius: 50%; color: var(--muted); }
+.poll-option.chosen .poll-choice-mark { background: var(--primary); color: var(--paper); border-color: var(--primary); }
+.poll-option-content > span:nth-child(2) { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.poll-option-content b { font-size: 12px; flex-shrink: 0; font-variant-numeric: tabular-nums; }
+.poll-option-content small { display: block; font-size: 10px; color: var(--muted); margin-top: 3px; }
+.poll-result-track { display: block; height: 3px; background: #283a2d08; }
+.poll-result-track > span { display: block; height: 100%; background: #283a2d66; }
+.chosen .poll-result-track > span { background: var(--primary); }
+.poll-option img { width: 100%; aspect-ratio: 4/3; display: block; object-fit: cover; }
+.poll-photo-options { grid-template-columns: repeat(2,minmax(0,1fr)); }
+.poll-photo-options .poll-choice-mark { display: none; }
+.poll-photo-options .poll-option-content { padding: 10px; gap: 7px; font-size: 11px; }
+.poll-bottom { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 6px; margin-top: 16px; font-size: 10px; line-height: 1.7; color: var(--muted); }
+.poll-notice { color: var(--primary); font-size: 11px; line-height: 1.8; margin-bottom: 0; }
+.playground-poll .error { margin: 14px 0 0; font-size: 12px; line-height: 1.7; }
+.poll-submit { margin-top: 14px; }
+.prediction-keepsake { display: flex; align-items: center; gap: 14px; padding: 17px; background: #a5305109; border-left: 2px solid var(--primary); margin-bottom: 20px; color: var(--primary); }
+.prediction-keepsake svg { flex-shrink: 0; }
+.prediction-keepsake p { margin: 0; font-size: 12px; line-height: 1.8; }
+.prediction-keepsake span { display: block; color: var(--muted); font-size: 11px; }
+.quiz-progress { display: flex; flex-direction: column; gap: 7px; margin-bottom: 20px; padding: 18px; background: #283a2d09; font-size: 12px; color: var(--deep); }
+.quiz-progress small { font-size: 11px; color: var(--muted); line-height: 1.7; }
+.poll-word-form { display: flex; flex-wrap: wrap; gap: 10px; }
+.poll-word-form input { flex: 1 1 140px; }
+.poll-word-form button { flex: 0 0 auto; }
+.love-word-cloud { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 12px; margin-top: 24px; }
+.love-word-cloud > span { font-family: var(--serif); color: var(--primary); overflow-wrap: anywhere; min-width: 0; max-width: 100%; }
+.love-word-cloud > span:nth-child(2n) { color: var(--deep); font-style: italic; }
+.love-word-cloud small { margin-left: 4px; font: 400 10px var(--sans); color: var(--muted); }
+.couple-secret-reveal { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 10px; padding-top: 20px; }
+.couple-secret-reveal > div { border-top: 1px solid var(--line); padding-top: 12px; min-width: 0; }
+.couple-secret-reveal small, .couple-secret-reveal b { display: block; overflow-wrap: anywhere; }
+.couple-secret-reveal small { font-size: 10px; color: var(--muted); }
+.couple-secret-reveal b { font: 600 24px var(--serif); margin-top: 6px; }
+.playground-footnote { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px 20px; margin-top: 16px; color: var(--muted); font-size: 10px; line-height: 1.8; }
+.playground-footnote p { display: flex; gap: 6px; align-items: flex-start; margin: 0; }
+.playground-footnote svg { flex-shrink: 0; margin-top: 2px; }
+.playground-footnote a { color: var(--primary); text-underline-offset: 4px; min-height: 32px; }
+.team-battle > p { font-size: 13px; line-height: 1.8; color: var(--muted); }
+.team-cards { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 14px; margin-top: 22px; }
+.team-card { display: flex; flex-direction: column; align-items: center; gap: 12px; min-width: 0; padding: 28px 14px; background: var(--paper); color: var(--deep); border: 1px solid var(--line); border-radius: 6px; text-align: center; cursor: pointer; }
+.team-card[aria-pressed=true] { border-color: var(--primary); box-shadow: inset 0 0 0 1px var(--primary); }
+.team-card h4 { font-size: 28px; line-height: 1.15; margin: 0; overflow-wrap: anywhere; }
+.team-card > b { font: 500 48px/1 var(--serif); font-variant-numeric: tabular-nums; }
+.team-card > b small { display: block; font: 400 10px/1.7 var(--sans); margin-top: 5px; color: var(--muted); }
+.team-card > span { font: 400 11px/1.7 var(--sans); color: var(--muted); }
+.team-card em { font: 600 11px/1.6 var(--sans); margin-top: auto; padding-top: 9px; color: var(--primary); }
+.team-both { background: #283a2d06; }
+.team-verdict { text-align: center; }
+.team-scoring { font-size: 12px; color: var(--muted); }
+.team-scoring summary { cursor: pointer; min-height: 44px; padding-block: 12px; }
+.team-scoring dl { max-width: 440px; }
+.team-scoring dl > div { display: flex; justify-content: space-between; gap: 16px; padding-block: 8px; border-bottom: 1px solid var(--line); }
+.team-scoring dd { font-weight: 700; color: var(--primary); margin: 0; }
+.team-scoring p { font-size: 11px; line-height: 1.8; max-width: 70ch; }
+@media (max-width: 1000px) {
+  .playground-categories { grid-template-columns: repeat(4,minmax(0,1fr)); }
+  .playground-categories > a { padding: 16px 12px; }
+  .playground-categories b { font-size: 18px; }
+}
+@media (max-width: 767px) {
+  .playground-intro { grid-template-columns: minmax(0,1fr); gap: 0; }
+  .playground-monogram { display: none; }
+  .playground-categories { grid-template-columns: repeat(2,minmax(0,1fr)); gap: 9px; margin: 24px 0; }
+  .playground-categories > a { padding: 16px 14px; min-height: 122px; gap: 13px; }
+  .playground-categories b { font-size: 21px; line-height: 1.15; }
+  .playground-categories small { font-size: 10px; }
+  .playground-panel { padding: 20px 15px; }
+  .playground-panel-heading { gap: 8px; align-items: flex-start; }
+  .playground-panel-heading h3 { font-size: 29px; }
+  .playground-panel-heading .general-eyebrow { font-size: 8px; }
+  .playground-panel-heading > button { font-size: 10px; gap: 4px; }
+  .playground-panel-heading > button svg { width: 13px; }
+  .playground-polls { grid-template-columns: minmax(0,1fr); gap: 14px; }
+  .playground-poll { padding: 18px 14px; }
+  .playground-poll h4 { font-size: 27px; line-height: 1.2; }
+  .poll-option-content { padding: 12px 10px; gap: 9px; }
+  .poll-meta { font-size: 8px; }
+  .prediction-keepsake { padding: 14px 12px; gap: 10px; }
+  .prediction-keepsake p { font-size: 11px; }
+  .prediction-keepsake span { font-size: 10px; margin-top: 3px; }
+  .team-cards { grid-template-columns: repeat(2,minmax(0,1fr)); gap: 10px; }
+  .team-card { padding: 22px 10px; }
+  .team-card h4 { font-size: 25px; }
+  .team-card > b { font-size: 43px; }
+  .team-both { grid-column: 1 / -1; padding-block: 18px; }
+  .team-both svg { width: 22px; height: 22px; }
+  .celebration-empty { padding: 24px 17px; }
+}
+@media (max-width: 360px) {
+  .playground-panel { padding-inline: 10px; }
+  .playground-poll { padding-inline: 12px; }
+  .playground-categories > a { padding-inline: 12px; }
+  .playground-categories b { font-size: 20px; }
+  .poll-photo-options { grid-template-columns: minmax(0,1fr); }
+  .playground-panel-heading { flex-wrap: wrap; }
+}
+@media (prefers-reduced-motion: reduce) { .playground-categories > a { transition: none; } }
+.celebration-page .general-section { padding-top: 24px; border-top: 0; }
+.playground-back { margin-bottom: 8px; }
+.playground-activity-heading { margin-bottom: 22px; }
+.playground-results { margin-top: 40px; }
+.playground-results > .general-section-heading { margin-bottom: 24px; }
+.playground-result-card { min-width: 0; padding: 24px; border: 1px solid var(--line); border-radius: 6px; background: #ffffff40; }
+.playground-result-card h3 { margin: 0 0 20px; font-size: 28px; line-height: 1.15; overflow-wrap: anywhere; }
+.playground-result-card dl { margin: 0; }
+.playground-result-card dl > div { margin-bottom: 14px; }
+.playground-result-card dt { font-size: 12px; line-height: 1.7; overflow-wrap: anywhere; }
+.playground-result-card dd { margin: 4px 0 0; }
+.playground-result-card dd > span:first-child { display: block; text-align: right; font-size: 11px; color: var(--muted); }
+.overview-result-track { display: block; height: 6px; margin-top: 5px; border-radius: 3px; background: #283a2d12; overflow: hidden; }
+.overview-result-track > span { display: block; height: 100%; background: var(--primary); }
+.playground-categories > a:focus-visible { outline: 2px solid var(--primary); outline-offset: 4px; }
+.wedding-verdict { margin-top: 32px; min-width: 0; }
+.invitation-page > .wedding-verdict { margin-top: 0; border-top: 1px solid var(--line); }
+.verdict-heading { display: flex; align-items: center; justify-content: space-between; gap: 18px; margin-bottom: 20px; }
+.verdict-heading > div { min-width: 0; }
+.verdict-heading h2 { margin: 10px 0 0; color: var(--deep); font: 500 clamp(32px,4vw,46px)/1.1 var(--serif); letter-spacing: -.025em; }
+.verdict-panel { padding: 24px; border: 1px solid var(--line); border-radius: 6px; background: #ffffff40; min-width: 0; }
+.wedding-verdict .celebration-empty h3 { margin: 9px 0; color: var(--deep); font: 500 28px/1.2 var(--serif); }
+.verdict-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 12px 24px; margin-top: 22px; }
+.verdict-update-note { margin-top: 12px; }
+@media (max-width: 767px) {
+  .verdict-panel { padding: 17px; }
+  .verdict-poll { padding: 18px; }
+  .verdict-actions > .btn { width: 100%; }
+  .verdict-heading { gap: 12px; }
+}

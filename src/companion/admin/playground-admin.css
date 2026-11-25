@@ -1,0 +1,38 @@
+.playground-admin { display: flex; flex-direction: column; gap: 22px; min-width: 0; }
+.playground-admin-heading { display: flex; align-items: center; justify-content: space-between; gap: 18px; flex-wrap: wrap; }
+.playground-admin-heading > div { min-width: 0; }
+.playground-admin-heading h1 { margin: 0; }
+.celebration-admin-tabs, .playground-admin-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; }
+.celebration-admin-tabs .chip { min-height: 44px; }
+.playground-admin .kpis { grid-template-columns: repeat(3,minmax(0,1fr)); }
+.admin-poll-list, .admin-memory-list { display: flex; flex-direction: column; gap: 16px; }
+.admin-poll-card, .admin-word-card { display: flex; justify-content: space-between; gap: 20px; align-items: flex-start; }
+.admin-poll-card > div, .admin-word-card > div { min-width: 0; }
+.admin-poll-card h2, .admin-memory-card h2, .admin-word-card h2 { margin: 8px 0 12px; font-size: 25px; line-height: 1.2; overflow-wrap: anywhere; }
+.admin-poll-card p { font-size: 12px; line-height: 1.7; color: var(--p-muted); }
+.admin-poll-results { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 12px; }
+.admin-poll-results span { overflow-wrap: anywhere; }
+.admin-poll-card .playground-admin-actions { flex-shrink: 0; }
+.poll-editor-fields { border: 0; padding: 0; margin: 20px 0; display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 20px; min-width: 0; }
+.poll-editor-fields .field { min-width: 0; }
+.poll-editor .memory-wide { grid-column: 1 / -1; }
+.poll-editor .input { min-width: 0; width: 100%; min-height: 48px; font-size: 16px; }
+.poll-editor-check { display: flex; gap: 10px; align-items: center; font-size: 13px; line-height: 1.8; min-height: 48px; }
+.poll-editor-check input { width: 18px; height: 18px; flex-shrink: 0; }
+.admin-memory-list { margin-top: 18px; }
+.admin-memory-card { display: grid; grid-template-columns: minmax(0,180px) minmax(0,1fr); gap: 24px; }
+.admin-memory-card:not(:has(img)) { grid-template-columns: minmax(0,1fr); }
+.admin-memory-card img, .admin-poll-photo { display: block; width: 100%; max-height: 240px; object-fit: contain; }
+.admin-poll-photo { max-width: 240px; margin-top: 10px; }
+.admin-memory-card p { white-space: pre-wrap; overflow-wrap: anywhere; font-size: 13px; line-height: 1.9; }
+.admin-word-card { margin-top: 15px; }
+@media (max-width: 767px) {
+  .playground-admin .kpis { grid-template-columns: minmax(0,1fr); }
+  .admin-poll-card, .admin-word-card { flex-direction: column; gap: 12px; }
+  .poll-editor-fields, .admin-memory-card { grid-template-columns: minmax(0,1fr); }
+  .admin-memory-card > a { max-width: 300px; }
+  .celebration-admin-tabs { gap: 6px; }
+  .celebration-admin-tabs .chip { font-size: 12px; }
+  .playground-admin-heading h1 { font-size: 30px; }
+  .playground-admin .abtn { min-height: 44px; }
+}

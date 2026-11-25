@@ -64,5 +64,8 @@ begin
     select wedding_id, u.id, 'owner', u.email from auth.users u
     where lower(u.email) in (select lower(btrim(value)) from unnest(host_emails) as value)
     on conflict (event_id, user_id) do nothing;
+  if to_regprocedure('public.seed_wedding_playground(uuid)') is not null then
+    perform public.seed_wedding_playground(wedding_id);
+  end if;
 end $$;
 commit;
