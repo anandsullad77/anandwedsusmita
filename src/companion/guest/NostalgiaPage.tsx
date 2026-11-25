@@ -6,7 +6,7 @@ import { nostalgiaAlbums, nostalgiaMemories, memoryImage, memorySrcSet, type Nos
 import './nostalgia.css';
 import './nostalgia-album.css';
 
-type AlbumFilter = 'all' | NostalgiaMemory['person'];
+type AlbumFilter = NostalgiaMemory['person'];
 
 function MemoryPhoto({ memory, sizes, eager = false }: { memory: NostalgiaMemory; sizes: string; eager?: boolean }) {
   return <img src={memoryImage(memory, 960)} srcSet={memorySrcSet(memory)} sizes={sizes}
@@ -87,9 +87,9 @@ function MemoryViewer({ memories, initialIndex, onClose }: { memories: Nostalgia
 }
 
 export default function NostalgiaPage({ base }: { base: string }) {
-  const [filter, setFilter] = useState<AlbumFilter>('all');
+  const [filter, setFilter] = useState<AlbumFilter>('Anand');
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const visibleMemories = nostalgiaMemories.filter(memory => filter === 'all' || memory.person === filter);
+  const visibleMemories = nostalgiaMemories.filter(memory => memory.person === filter);
   const selectedIndex = visibleMemories.findIndex(memory => memory.id === selectedId);
 
   return <section className="nostalgia-page nostalgia-album-page" lang="en" aria-labelledby="nostalgia-title">
@@ -97,11 +97,11 @@ export default function NostalgiaPage({ base }: { base: string }) {
       <h1 id="nostalgia-title">Before we <i>said yes</i></h1>
       <p>Birthday candles, family portraits and little adventures. Where Anand and Susmita began.</p>
       <div className="nostalgia-switch" role="group" aria-label="Show">
-        {(['all', 'Anand', 'Susmita'] as const).map(person => <button type="button" key={person} aria-pressed={filter === person} onClick={() => setFilter(person)}>{person === 'all' ? 'Both' : person}</button>)}
+        {nostalgiaAlbums.map(({ person }) => <button type="button" key={person} aria-pressed={filter === person} onClick={() => setFilter(person)}>{person}</button>)}
       </div>
     </header>
 
-    {nostalgiaAlbums.filter(album => filter === 'all' || album.person === filter).map(album => {
+    {nostalgiaAlbums.filter(album => album.person === filter).map(album => {
       const memories = visibleMemories.filter(memory => memory.person === album.person);
       return <section key={album.person} className="nostalgia-set" aria-labelledby={`nostalgia-${album.person.toLowerCase()}-title`}>
         <div className="nostalgia-set-head"><h2 id={`nostalgia-${album.person.toLowerCase()}-title`}>{album.person}’s little world</h2><span>{memories.length} photos</span></div>

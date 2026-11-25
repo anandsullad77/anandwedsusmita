@@ -3,7 +3,7 @@
 .nostalgia-album-page .nostalgia-head h1 { margin: 0; font: 600 40px/1.05 var(--serif); letter-spacing: -.01em; }
 .nostalgia-album-page .nostalgia-head h1 i { display: inline; color: var(--primary); font-weight: 500; }
 .nostalgia-head > p { margin: 10px 0 0; max-width: 46ch; font-size: 15px; line-height: 1.55; color: #556457; }
-.nostalgia-switch { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); max-width: 420px; margin-top: 20px; padding: 4px; border-radius: 999px; background: #F3E8D6; }
+.nostalgia-switch { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); max-width: 420px; margin-top: 20px; padding: 4px; border-radius: 999px; background: #F3E8D6; }
 .nostalgia-switch button { min-height: 40px; border: 0; border-radius: 999px; background: transparent; color: #556457; font: 600 14px/1 var(--sans); cursor: pointer; }
 .nostalgia-switch button[aria-pressed="true"] { background: #FFFFFF; color: var(--deep); box-shadow: 0 1px 3px rgba(40, 58, 45, .16); }
 .nostalgia-set { margin-top: 30px; }

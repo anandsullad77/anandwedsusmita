@@ -13,7 +13,7 @@ const PLAY_ICON = 'M8 21h8M12 17v4M7 3h10v7a5 5 0 0 1-10 0V3M7 5H3v3a4 4 0 0 0 4
 // Anand vs Susmita answers use one fixed childhood photo each, from the Nostalgia album.
 const COUPLE_PHOTOS: Record<string, { src: string; position: string }> = {
   anand: { src: '/images/nostalgia/anand-little-gentleman-480.jpg', position: '50% 20%' },
-  susmita: { src: '/images/nostalgia/susmita-flowers-480.jpg', position: '50% 30%' },
+  susmita: { src: '/images/nostalgia/susmita-balcony-480.jpg', position: '50% 30%' },
 };
 
 export function usePlayground(eventId: string, admin = false) {
