@@ -1,0 +1,65 @@
+/* Invitation page: phone tidy-ups plus the approved desktop layout (Round 6, combined). */
+
+/* Host update as an icon card, not a side stripe (all sizes). */
+.invitation-page .general-host-updates { align-items: center; gap: 16px; padding: 16px 20px; border: 1px solid var(--line); border-radius: 18px; background: #fff; }
+.invitation-page .general-update-icon { flex: 0 0 auto; width: 44px; height: 44px; padding: 0; border-radius: 12px; display: grid; place-items: center; background: #F3DDE2; }
+.invitation-page .general-update-content h2 { font-size: 14px; }
+.invitation-page .general-update-content p { font-size: 14px; line-height: 1.6; }
+
+/* Phone and tablet: the desktop-only pieces stay out of the way. */
+.invite-ed-aside, .invite-inside, .invite-gallery-add, .invite-see-all-desktop { display: none; }
+
+@media (min-width: 1024px) {
+  .invite-inside { display: grid; gap: 14px; margin-top: 40px; }
+  .invite-inside a { display: flex; align-items: center; gap: 14px; min-width: 0; padding: 18px 20px; border-radius: 18px; background: #F6ECDB; color: var(--deep); text-decoration: none; transition: transform .2s ease, background-color .2s ease; }
+  .invite-inside a:nth-child(odd) { background: #F3DDE2; }
+  .invite-inside a:hover { transform: translateY(-2px); }
+  .invite-inside a > span:nth-child(2) { flex: 1; min-width: 0; }
+  .invite-inside b { display: block; font-size: 16px; }
+  .invite-inside small { display: block; margin-top: 2px; font-size: 13px; color: #556457; }
+  .invite-inside-icon { flex: 0 0 auto; width: 44px; height: 44px; border-radius: 12px; display: grid; place-items: center; background: var(--paper); color: var(--primary); }
+  .invite-inside a > svg:last-child { flex: 0 0 auto; color: var(--deep); }
+
+  .invitation-page .general-host-updates { margin-top: 40px; }
+
+  /* Editorial sections: title on the left, content on the right. */
+  .invite-ed { display: grid; grid-template-columns: 280px minmax(0, 1fr); gap: 60px; align-items: start; margin-top: 80px; }
+  .invite-ed-aside { display: block; position: sticky; top: 120px; }
+  .invite-ed-title { margin: 0; font: 600 44px/1.05 var(--serif); color: var(--deep); }
+  .invite-ed-aside p:not(.invite-ed-title) { margin: 12px 0 0; font-size: 16px; line-height: 1.55; color: #556457; }
+  .invite-ed .invite-gallery { margin-top: 0; }
+  .invite-ed .invite-gallery-head { align-items: center; gap: 16px; justify-content: flex-end; }
+  .invite-ed .invite-gallery-head h2 { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  .invite-gallery-add { display: inline-flex; align-items: center; gap: 8px; height: 44px; padding: 0 18px; border-radius: 999px; border: 1.5px solid color-mix(in srgb, var(--primary) 45%, transparent); color: var(--primary); font-size: 15px; font-weight: 600; text-decoration: none; }
+  .invite-gallery-head > a:not(.invite-gallery-add) { font-size: 15px; }
+  .invite-mosaic { grid-template-rows: repeat(3, 180px); gap: 10px; margin-inline: 0; }
+  .invite-tile { border-radius: 16px; }
+  .invite-wish { padding: 22px 24px; }
+  .invite-wish span { font-size: 26px; line-height: 1.25; }
+  .invite-wish small { font-size: 13px; }
+  .invite-see-all-desktop { display: flex; font-size: 15px; }
+  .invite-see-all-desktop + .p5 { display: none; }
+  .invite-gallery-open { display: flex; width: max-content; margin: 22px auto 0; padding: 0 26px; min-height: 50px; border-radius: 999px; }
+  .invite-gallery-open.invite-gallery-open-phone { display: none; }
+  .invite-gallery-note { margin-top: 12px; }
+
+  /* Playground card fills its column. */
+  .invite-ed .pg-teaser, .invite-ed .pg-verdict-invite { max-width: none; margin: 0; }
+  .invite-ed .pg-teaser { padding: 26px 28px; border-radius: 22px; gap: 18px; }
+  .invite-ed .pg-teaser b { font: 600 30px/1.1 var(--serif); }
+  .invite-ed .pg-teaser small { font-size: 15px; margin-top: 6px; }
+  .invite-ed .pg-verdict-invite { padding: 28px 32px; border-radius: 22px; background: #F3DDE2; }
+
+  /* Status card A: light split with an upright preview inside the card. */
+  .invitation-page .invite-keepsake { display: grid; grid-template-columns: 300px auto minmax(0, 1fr); grid-template-rows: 1fr 1fr auto; column-gap: 0; align-items: center; margin: 80px 0 0; padding: 40px 64px; border-radius: 28px; background: #F3E8D6; color: var(--deep); }
+  .invitation-page .invite-keepsake-card { position: static; grid-column: 1; grid-row: 1 / 3; justify-self: center; width: 196px; height: 348px; border: 7px solid #141A16; border-radius: 24px; transform: rotate(-3deg); box-shadow: 0 26px 44px -22px rgba(20, 26, 22, .65); }
+  .invitation-page .invite-keepsake-card img { border-radius: 16px; object-position: 50% 30%; }
+  .invitation-page .invite-keepsake-copy { grid-column: 2 / 4; grid-row: 1; max-width: none; min-width: 0; align-self: end; margin-left: 56px; }
+  .invitation-page .invite-keepsake h2 { font-size: 48px; line-height: 1.05; }
+  .invitation-page .invite-keepsake p { margin-top: 14px; max-width: 44ch; font-size: 17px; line-height: 1.55; color: #556457; }
+  .invitation-page .invite-keepsake-share { grid-column: 2; grid-row: 2; align-self: start; justify-self: start; display: inline-flex; margin: 28px 0 0 56px; min-height: 52px; padding: 0 24px; background: var(--deep); color: var(--paper); }
+  .invitation-page .invite-keepsake-foot { grid-column: 3; grid-row: 2; align-self: start; justify-self: start; margin: 28px 0 0 14px; }
+  .invitation-page .invite-keepsake-foot > span { display: none; }
+  .invitation-page .invite-keepsake-save { min-height: 52px; padding: 0 22px; border: 1.5px solid rgba(40, 58, 45, .25); border-radius: 999px; color: var(--deep); font-size: 15px; text-decoration: none; }
+  .invitation-page .invite-keepsake-status, .invitation-page .invite-keepsake > .error { grid-row: 3; margin-left: 56px; grid-column: 2 / 4; color: var(--deep); }
+}

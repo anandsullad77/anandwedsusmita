@@ -100,6 +100,7 @@ export default function Haaku({ ctx }: { ctx: PhotoContext }) {
     </header>
     <input ref={galRef} type="file" accept="image/*" multiple aria-label="Choose photos from gallery" hidden disabled={busy} onChange={e => { add(e.target.files); e.target.value = ''; }} />
     <div className="compose-body">
+      <div className="compose-media">
       {current ? <>
         <div className="compose-preview">
           <img className="compose-preview-fill" src={current} alt="" aria-hidden="true" />
@@ -117,6 +118,8 @@ export default function Haaku({ ctx }: { ctx: PhotoContext }) {
         <Icon size={30} d="M3.5 4.5h17v15h-17zM4 16l5-5 4 4 2.5-2.5L20 17M15.5 9h.01" />
         <b>Choose photos</b><span>Up to 10 from your gallery</span>
       </button>}
+      </div>
+      <div className="compose-details">
 
       <div className="compose-field">
         <label htmlFor="cap">Caption</label>
@@ -140,6 +143,7 @@ export default function Haaku({ ctx }: { ctx: PhotoContext }) {
         : <p className="compose-as">Posting as <b>{name.trim()}</b> · <button type="button" disabled={busy} onClick={() => setEditName(true)}>Change</button></p>)}
       {!general && me && <p className="compose-as">Posting as <b>{me.name}</b></p>}
       {err && <p className="error" role="alert">{err}</p>}
+      </div>
     </div>
     <footer className="compose-actions">
       <button type="button" className="btn btn-primary btn-block" disabled={!canShare} onClick={post}>{shareLabel}</button>

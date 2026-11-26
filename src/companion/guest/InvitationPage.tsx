@@ -13,6 +13,26 @@ import { WeddingVerdict } from './WeddingPlayground';
 import { WeddingSignoff } from '../components/WeddingBrand';
 import { useGuestAuth } from '../lib/useGuestAuth';
 import './invitation-page.css';
+import './invite-desktop.css';
+
+// Desktop only: a section title in a left column, content on the right. Phones see the content alone.
+function Editorial({ title, lead, children }: { title: string; lead: string; children: ReactNode }) {
+  return <div className="invite-ed"><div className="invite-ed-aside" aria-hidden="true"><p className="invite-ed-title">{title}</p><p>{lead}</p></div><div className="invite-ed-body">{children}</div></div>;
+}
+
+// Desktop only: laptops have no bottom tab bar, so point to the other parts of the app under the hero.
+function InsideRow({ base, sections }: { base: string; sections: ReturnType<typeof normalizeGeneralSettings>['sections'] }) {
+  const items = [
+    sections.nostalgia && { to: `${base}/nostalgia`, title: 'Nostalgia', note: 'Their childhood albums', icon: 'M4 4h6v16H4zM14 4h6v16h-6' },
+    (sections.photos || sections.guestbook) && { to: `${base}/feed`, title: 'Feed', note: 'Photos & wishes live', icon: 'M3 6h18v14H3zM7 10h10M7 15h6' },
+    (sections.uploads || sections.guestbook) && { to: `${base}/create`, title: 'Share a memory', note: 'Add photos or a wish', icon: 'M12 5v14M5 12h14' },
+    sections.playground && { to: `${base}/playground`, title: 'Playground', note: 'Vote, predict, play', icon: 'M8 21h8M12 17v4M7 3h10v7a5 5 0 0 1-10 0V3M7 5H3v3a4 4 0 0 0 4 4M17 5h4v3a4 4 0 0 1-4 4' },
+  ].filter(Boolean) as { to: string; title: string; note: string; icon: string }[];
+  if (!items.length) return null;
+  return <nav className="invite-inside" aria-label="What’s inside" lang="en" style={{ gridTemplateColumns: `repeat(${items.length}, minmax(0, 1fr))` }}>
+    {items.map(item => <Link key={item.to} to={item.to}><span className="invite-inside-icon"><Icon size={20} d={item.icon} /></span><span><b>{item.title}</b><small>{item.note}</small></span><Icon size={18} d="M5 12h14M13 6l6 6-6 6" /></Link>)}
+  </nav>;
+}
 
 export default function InvitationPage({ bundle, base, token, children }: { bundle: GeneralInviteBundle; base: string; token: string; children?: ReactNode }) {
   const { hash } = useLocation();
@@ -49,6 +69,7 @@ export default function InvitationPage({ bundle, base, token, children }: { bund
   return (<div className="invitation-page">
     <InvitationHero event={event} settings={settings} momentsPath={hasMoments ? `${base}#moments` : undefined} />
     {children}
+    <InsideRow base={base} sections={sections} />
 
     {sections.updates && announcements.length > 0 && <section className="general-host-updates" aria-labelledby="host-updates-title" lang="en">
       <div className="general-update-icon"><Icon d="M3 10v4h4l10 5V5L7 10H3zM7 14l2 7h3M21 8v8" size={22} /></div>
@@ -62,8 +83,8 @@ export default function InvitationPage({ bundle, base, token, children }: { bund
       <div className="general-schedule-list">{functions.map((f, i) => <article key={f.id}><span className="general-schedule-number">{String(i + 1).padStart(2, '0')}</span><div><h3>{f.nameEn}</h3><time dateTime={f.startsAt}>{fmtDate(f.startsAt)} · {fmtTime(f.startsAt)} IST</time>{f.venue && <p>{f.venue}</p>}</div></article>)}</div>
     </section>}
 
-    {hasMoments && <InviteGallery base={base} photos={previewPhotos} wishes={wishes} canUpload={sections.uploads} canWish={sections.guestbook} locked={!canAccess} />}
-    {sections.playground && <WeddingVerdict eventId={event.id} base={base} />}
+    {hasMoments && <Editorial title="Gallery" lead="Photos and wishes from the family, as they come in."><InviteGallery base={base} photos={previewPhotos} wishes={wishes} canUpload={sections.uploads} canWish={sections.guestbook} locked={!canAccess} /></Editorial>}
+    {sections.playground && <Editorial title="Playground" lead="A little game while you wait for the muhurta."><WeddingVerdict eventId={event.id} base={base} /></Editorial>}
     {sections.download && <InvitationDownloads bundle={bundle} settings={settings} publicLink={`${PUBLIC_SITE_ORIGIN}/invitation?from=status`} />}
     <div className="general-closing" lang="en"><p className="general-eyebrow">The best part of our day?</p><p>Having you in it.</p><span>With love, {event.coupleA} &amp; {event.coupleB}</span></div>
     <WeddingSignoff />
