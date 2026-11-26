@@ -14,7 +14,7 @@ const fits = page => page.evaluate(() => document.documentElement.scrollWidth <=
   const browser = await playwright.chromium.launch({ executablePath: process.env.CHROME_PATH || 'C:/Program Files/Google/Chrome/Application/chrome.exe', headless: true });
   try {
     for (const width of [320, 390, 768, 1024, 1440]) {
-      const run = await scenario(browser, { width });
+      const run = await scenario(browser, { width, initial: 'google' });
       const { page } = run;
       try {
         const failedPhotos = [];

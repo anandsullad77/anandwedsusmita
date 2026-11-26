@@ -74,7 +74,7 @@ export default function InvitationExperience({ bundle, base, token, photoContext
               <Route index element={current.hash === '#wishes' ? <Navigate to={`${base}/feed${current.search}`} replace /> : <InvitationPage bundle={bundle} base={base} token={token}>{personalSection}</InvitationPage>} />
               <Route path="feed" element={hasFeed ? <GuestContentGate base={base} purpose="view the wedding Feed"><Scene ctx={ctx} canUpload={sections.uploads} canWish={sections.guestbook} showPhotos={sections.photos} /></GuestContentGate> : <Navigate to={base} replace />} />
               <Route path="create" element={<CreatePost ctx={ctx} base={base} token={token} canWish={sections.guestbook} canUpload={sections.uploads} />} />
-              <Route path="nostalgia" element={sections.nostalgia ? <NostalgiaPage base={base} /> : <Navigate to={base} replace />} />
+              <Route path="nostalgia" element={sections.nostalgia ? <GuestContentGate base={base} purpose="see Anand and Susmita’s childhood photos"><NostalgiaPage base={base} /></GuestContentGate> : <Navigate to={base} replace />} />
               <Route path="playground" element={sections.playground ? <div className="invitation-page celebration-page"><WeddingPlayground event={bundle.event} base={base} /></div> : <Navigate to={base} replace />} />
               <Route path="playground/:activity" element={sections.playground ? <div className="invitation-page celebration-page"><WeddingPlayground event={bundle.event} base={base} /></div> : <Navigate to={base} replace />} />
               {familyPage && <Route path="family" element={familyPage} />}
