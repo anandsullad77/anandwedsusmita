@@ -1,3 +1,4 @@
+-- Follows 0026_playground_sealed_until_wedding_ends.sql from main.
 begin;
 
 -- Retried requests may be repeated, but must not silently discard a changed reply.

@@ -183,7 +183,7 @@ const results = [];
         });
       } finally { await browser.close(); }
     }
-    const fix = fs.readdirSync(files).find(file => file.startsWith('0026'));
+    const fix = fs.readdirSync(files).find(file => file.endsWith('_rsvp_reply_integrity.sql'));
     if (fix) await check('RSVP migration is safe to rerun without changing saved replies', async () => {
       await save(); const before = await state(); await apply(fix); await apply(fix);
       assert.deepEqual(await state(), before);
