@@ -26,3 +26,5 @@
 .guest-account-error { margin: 8px 10px; font-size: 12px; }
 .locked-wishes { padding-block: 36px; }
 .locked-wishes .general-section-heading { margin-bottom: 20px; }
+.sign-in-reassurance { display: flex; gap: 10px; align-items: flex-start; margin: 0; padding: 12px 14px; border-radius: 12px; background: #F3E8D6; color: var(--deep); font-size: .875rem; line-height: 1.5; text-align: left; }
+.sign-in-reassurance svg { flex: 0 0 auto; margin-top: 1px; color: var(--primary); }

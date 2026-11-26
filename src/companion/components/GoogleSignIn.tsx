@@ -18,10 +18,20 @@ export function GoogleSignIn({ returnTo, purpose = 'share in the celebration' }:
       try { await signInWithGoogle(returnTo); }
       catch (error) { setError((error as Error).message); setBusy(false); }
     }}><img src="/images/google-sign-in.png" width={20} height={20} alt="" aria-hidden="true" />{busy ? 'Opening Google…' : 'Continue with Google'}</button>
+    <SignInReassurance />
     <small>Your invitation stays public. Photos and wishes are shared with signed-in wedding guests.</small>
     <small>Your Google name and email are visible only to the wedding hosts. They may use your email to send you wedding memories, including your posts.</small>
+    <small>By continuing you agree to the <a href="/terms">Terms of Service</a> and <a href="/privacy">Privacy Policy</a>.</small>
     {error && <p className="error" role="alert">{error}</p>}
   </div>;
+}
+
+/** Google's screen names Supabase's address until the brand is verified; tell guests before they see it. */
+export function SignInReassurance() {
+  return <p className="sign-in-reassurance" role="note">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 3l7 3v5c0 4.5-3 8.3-7 10-4-1.7-7-5.5-7-10V6z" /><path d="m9 12 2 2 4-4" /></svg>
+    <span>Google will say you’re continuing to <b>supabase.co</b>. That’s our secure sign-in partner, and it’s expected. Only the wedding hosts see your name and email.</span>
+  </p>;
 }
 
 export function GuestContentGate({ children, base, purpose, standalone = false }: { children: ReactNode; base: string; purpose: string; standalone?: boolean }) {

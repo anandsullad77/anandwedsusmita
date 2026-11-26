@@ -50,3 +50,4 @@
   .create-sheet-backdrop, .create-sheet, .create-done-grains i { animation: none; opacity: .8; }
   .create-done-spinner { animation-duration: 3s; }
 }
+.create-sheet .sign-in-reassurance { margin-top: 14px; }

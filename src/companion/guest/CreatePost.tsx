@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, Navigate, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import type { PhotoContext } from '../lib/types';
-import { GuestContentGate } from '../components/GoogleSignIn';
+import { GuestContentGate, SignInReassurance } from '../components/GoogleSignIn';
 import { signInWithGoogle } from '../lib/guestAuth';
 import { useGuestAuth } from '../lib/useGuestAuth';
 import { initialPhotoQuests, stashQuestPhotos } from '../lib/photoQuests';
@@ -77,7 +77,7 @@ function SignInSheet({ ctx, base }: { ctx: PhotoContext; base: string }) {
         setBusy(true); setError(null);
         try { await signInWithGoogle(pathname + search); } catch (e) { setError((e as Error).message); setBusy(false); }
       }}><img src="/images/google-sign-in.png" width={20} height={20} alt="" aria-hidden="true" />{busy ? 'Opening Google…' : 'Continue with Google'}</button>
-      <p className="create-sheet-note">Only the wedding hosts see your name and email.</p>
+      <SignInReassurance />
       {error && <p className="error" role="alert">{error}</p>}
       <Link className="create-sheet-cancel" to={ctx.scenePath || base}>Not now</Link>
     </section>

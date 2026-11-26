@@ -3,3 +3,5 @@
 .wedding-links > p:not(.eyebrow) { max-width: 480px; margin: 0 auto; font-size: 1rem; }
 .wedding-links nav { margin: 24px auto; display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
 .wedding-host-link { font-size: .875rem; text-decoration: underline; text-underline-offset: 4px; }
+.wedding-legal-links { margin: 14px 0 0; font-size: .8125rem; }
+.wedding-legal-links a { color: inherit; text-underline-offset: 3px; }

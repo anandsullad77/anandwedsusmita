@@ -1,0 +1,13 @@
+/* Privacy Policy and Terms of Service pages. */
+.legal { min-height: 100dvh; background: var(--paper); color: var(--deep); font-family: 'Noto Sans', system-ui, sans-serif; }
+.legal-top { display: flex; align-items: center; justify-content: space-between; max-width: 720px; margin: 0 auto; padding: 14px 20px; border-bottom: 1px solid var(--line); }
+.legal-top nav { display: flex; gap: 18px; }
+.legal-top nav a { font-size: 14px; font-weight: 600; text-decoration: none; }
+.legal-body { max-width: 680px; margin: 0 auto; padding: 32px 20px 56px; font-size: 15px; line-height: 1.65; }
+.legal-body h1 { margin: 0; font: 600 40px/1.1 var(--serif); }
+.legal-updated { margin: 8px 0 24px; font-size: 13px; color: #556457; }
+.legal-body h2 { margin: 30px 0 8px; font: 600 24px/1.2 var(--serif); }
+.legal-body p { margin: 0 0 12px; max-width: 68ch; }
+.legal-body ul { margin: 0 0 12px; padding-left: 20px; max-width: 68ch; }
+.legal-body li { margin-bottom: 8px; }
+.legal-contact { margin-top: 32px !important; padding: 14px 16px; border-radius: 14px; background: #F3E8D6; }
