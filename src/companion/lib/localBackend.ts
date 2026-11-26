@@ -8,10 +8,11 @@ import { photoQuest } from './photoQuests';
 import { demoVisitorCount } from './visitAnalytics';
 import { isReaction, reactionFields } from './reactions';
 import type {
-  AdminData, AdminHousehold, AnalyticsPost, Announcement, Backend, Change, EventInfo, Fn, GeneralInvitationSettings, HostTeamMember, Household, InviteBundle, ListMatch, Person, Photo, ReactionKind, RsvpPayload, Wish
+  AdminData, AdminHousehold, AnalyticsPost, Announcement, Backend, Change, EventInfo, Fn, GeneralInvitationSettings, HostTeamMember, Household, InviteBundle, ListMatch, Person, Photo, PostReview, PostReviewOptions, PostReviewQueue, ReactionKind, RsvpPayload, Wish
 } from './types';
 
-type DBPhoto = Omit<Photo, 'url' | 'mine' | 'akshate' | 'uploadedByMe' | 'reactionCounts' | 'myReaction'> & { eventId: string; personId: string | null; uploadedBy?: string; akshateBy: string[]; reactionsBy?: Record<string, ReactionKind>; flaggedBy: string[] };
+type DBPhoto = Omit<Photo, 'url' | 'mine' | 'akshate' | 'uploadedByMe' | 'reactionCounts' | 'myReaction'> & { eventId: string; personId: string | null; uploadedBy?: string; akshateBy: string[]; reactionsBy?: Record<string, ReactionKind>; flaggedBy: string[];
+  reviewedAt?: string; hadReports?: boolean; reportDetails?: Record<string, { reason: string | null; removal: boolean; createdAt: string }> };
 const photoReactionMap = (photo: DBPhoto): Record<string, ReactionKind> => ({ ...Object.fromEntries(photo.akshateBy.map(id => [id, 'akshate'])), ...photo.reactionsBy });
 type DB = {
   hostTeam?: (HostTeamMember & { eventId: string })[];
@@ -121,6 +122,42 @@ function requirePhotoGuest(db: DB, eventId: string) {
   if (hostEmail || db.devices.some(d => d.device === me && d.eventId === eventId)
     || db.visitors.some(v => v.device === me && v.eventId === eventId)) return;
   throw new Error('This phone is not linked to the event yet');
+}
+
+async function localReviewQueue(db: DB, eventId: string, options: PostReviewOptions = {}): Promise<PostReviewQueue> {
+  const groups = new Map<string, DBPhoto[]>();
+  for (const photo of db.photos.filter(p => p.eventId === eventId)) {
+    const key = photo.postId ?? photo.id;
+    groups.set(key, [...(groups.get(key) ?? []), photo]);
+  }
+  const posts: PostReview[] = [...groups].map(([id, photos]) => {
+    photos.sort((a, b) => (a.postPosition ?? 0) - (b.postPosition ?? 0));
+    return { id, kind: 'photo', name: photos[0].uploaderName, text: photos[0].caption ?? null,
+      status: photos.some(p => p.status === 'pending') ? 'pending' : photos.every(p => p.status === 'rejected') ? 'rejected' : 'approved',
+      hidden: photos.some(p => p.hidden), flags: photos.reduce((n, p) => n + p.flaggedBy.length, 0), createdAt: photos[0].createdAt,
+      reviewedAt: photos[0].reviewedAt ?? null, photos: photos.map(p => ({ id: p.id, path: p.id, caption: p.caption ?? null,
+        moment: p.moment ?? null, questId: p.questId ?? null, hidden: p.hidden, status: p.status ?? 'approved',
+        reports: p.flaggedBy.map(reporter => p.reportDetails?.[reporter] ?? { reason: null, removal: false, createdAt: p.createdAt }) })) };
+  });
+  posts.push(...db.wishes.filter(w => w.eventId === eventId).map(w => ({ id: w.id, kind: 'wish' as const, name: w.name,
+    text: w.message, status: w.status, hidden: w.status === 'rejected', flags: 0, createdAt: w.createdAt, reviewedAt: null, photos: [] })));
+  const query = options.query?.trim().toLowerCase() ?? '';
+  const matching = posts.filter(p => (!options.kind || options.kind === 'all' || p.kind === options.kind)
+    && (!query || `${p.name} ${p.text ?? ''}`.toLowerCase().includes(query)) && (!options.questId || p.photos.some(photo => photo.questId === options.questId)));
+  const counts = { all: matching.length, review: 0, feed: 0, hidden: 0, pending: 0, reported: 0 };
+  const matches = (p: PostReview, filter: string) => filter === 'all' || (filter === 'review' && (p.status === 'pending' || p.flags > 0))
+    || (filter === 'feed' && p.status === 'approved' && !p.hidden) || (filter === 'hidden' && (p.hidden || p.status === 'rejected') && p.status !== 'pending');
+  for (const p of matching) {
+    for (const filter of ['review', 'feed', 'hidden'] as const) if (matches(p, filter)) counts[filter]++;
+    if (p.status === 'pending') counts.pending++;
+    if (p.flags > 0) counts.reported++;
+  }
+  const filtered = matching.filter(p => matches(p, options.filter ?? 'review')).sort((a, b) =>
+    (options.filter ?? 'review') === 'review' ? a.createdAt.localeCompare(b.createdAt) || a.id.localeCompare(b.id) : b.createdAt.localeCompare(a.createdAt) || a.id.localeCompare(b.id));
+  const offset = options.offset ?? 0;
+  const page = filtered.slice(offset, offset + (options.limit ?? 12));
+  for (const post of page) for (const photo of post.photos) photo.url = await photoUrl(photo.id);
+  return { counts, total: filtered.length, canReview: !!hostEmail, posts: page };
 }
 
 export const localBackend: Backend = {
@@ -324,11 +361,11 @@ export const localBackend: Backend = {
     if (options?.includeHidden && !hostEmail) throw new Error('Only hosts can review hidden photos');
     const me = device();
     const personId = db.devices.find(d => d.device === me && d.eventId === eventId)?.personId;
-    const rows = db.photos.filter(p => p.eventId === eventId && (options?.includeHidden || !p.hidden) && (!options?.questId || p.questId === options.questId)).sort((a, b) => Number(b.pinned) - Number(a.pinned) || b.createdAt.localeCompare(a.createdAt));
+    const rows = db.photos.filter(p => p.eventId === eventId && (options?.includeHidden || (!p.hidden && (!p.status || p.status === 'approved'))) && (!options?.questId || p.questId === options.questId)).sort((a, b) => Number(b.pinned) - Number(a.pinned) || b.createdAt.localeCompare(a.createdAt));
     return Promise.all((options?.preview ? rows.slice(0, 3) : rows).map(async p => ({
-      id: p.id, postId: p.postId, postPosition: p.postPosition, uploaderName: p.uploaderName, moment: p.moment, questId: p.questId, caption: p.caption, createdAt: p.createdAt, pinned: p.pinned, hidden: p.hidden, flags: options?.includeHidden ? p.flaggedBy.length : undefined,
+      id: p.id, postId: p.postId, postPosition: p.postPosition, uploaderName: p.uploaderName, moment: p.moment, questId: p.questId, caption: p.caption, createdAt: p.createdAt, pinned: p.pinned, hidden: p.hidden, status: p.status ?? 'approved', flags: options?.includeHidden ? p.flaggedBy.length : undefined,
       ...reactionFields(photoReactionMap(p), me),
-      uploadedByMe: p.uploadedBy ? p.uploadedBy === me : !!p.personId && p.personId === personId, url: await photoUrl(p.id)
+      uploadedByMe: p.uploadedBy ? p.uploadedBy === me : !!p.personId && p.personId === personId, reportLocked: p.reportLocked ?? false, url: await photoUrl(p.id)
     })));
   },
 
@@ -365,7 +402,7 @@ export const localBackend: Backend = {
     await idbSet('photo-' + id, blob);
     const db = load();
     db.photos.push({ id, eventId, personId: meta.personId, uploadedBy: device(), uploaderName: meta.uploaderName, moment: meta.moment ?? null, questId: meta.questId ?? null, caption: meta.caption ?? null,
-      createdAt: now(), pinned: false, hidden: false, akshateBy: [], flaggedBy: [] });
+      createdAt: now(), pinned: false, hidden: true, status: 'pending', akshateBy: [], flaggedBy: [] });
     save(db);
   },
 
@@ -376,11 +413,13 @@ export const localBackend: Backend = {
     requirePhotoGuest(access, eventId);
     if (!hostEmail && meta.personId && myDevice(access, eventId).personId !== meta.personId) throw new Error('Upload as the guest linked to this phone');
     if (!hostEmail && !meta.personId && !access.visitors.some(v => v.device === device() && v.eventId === eventId && v.name)) throw new Error('Add your name before posting');
+    if (access.photos.some(p => p.postId === postId && (p.eventId !== eventId || p.uploadedBy !== device()))) throw new Error('Post belongs to another uploader');
     if (images.every(image => access.photos.some(p => p.id === image.id))) return;
+    if (access.photos.some(p => p.postId === postId && p.status !== 'pending')) throw new Error('This post has already been reviewed. Start a new post');
     for (const image of images) await idbSet('photo-' + image.id, image.blob);
     const db = load(), createdAt = now();
     images.forEach((image, postPosition) => db.photos.push({ ...meta, id: image.id, postId, postPosition, eventId, uploadedBy: device(),
-      createdAt, pinned: false, hidden: false, akshateBy: [], flaggedBy: [] }));
+      createdAt, pinned: false, hidden: true, status: 'pending', akshateBy: [], flaggedBy: [] }));
     save(db);
   },
 
@@ -391,7 +430,7 @@ export const localBackend: Backend = {
   async setPhotoReaction(photoId, reaction) {
     const db = load();
     const p = db.photos.find(x => x.id === photoId);
-    if (!p || (p.hidden && !hostEmail)) throw new Error('Photo is unavailable');
+    if (!p || (!hostEmail && (p.hidden || (p.status && p.status !== 'approved')))) throw new Error('Photo is unavailable');
     requirePhotoGuest(db, p.eventId);
     if (reaction !== null && !isReaction(reaction)) throw new Error('Choose a valid reaction');
     const me = device();
@@ -402,12 +441,16 @@ export const localBackend: Backend = {
     save(db);
   },
 
-  async flagPhoto(photoId, _reason, _removal) {
+  async flagPhoto(photoId, reason, removal) {
     const db = load();
     const p = db.photos.find(x => x.id === photoId);
-    if (!p) throw new Error('Photo not found');
+    if (!p || p.hidden || (p.status && p.status !== 'approved')) throw new Error('Photo is unavailable');
     requirePhotoGuest(db, p.eventId);
+    if (p.reportLocked) throw new Error('This photo has already been reviewed by the hosts and cannot be reported again');
+    p.hadReports = true;
     if (!p.flaggedBy.includes(device())) p.flaggedBy.push(device());
+    p.reportDetails ??= {};
+    p.reportDetails[device()] = { reason: reason || null, removal, createdAt: now() };
     // Reports and removal requests wait for a host; guests cannot change visibility.
     save(db);
   },
@@ -461,8 +504,8 @@ export const localBackend: Backend = {
     const e = db.events.find(x => x.id === eventId)!;
     const { pin: _p, ...event } = e;
     const photos = await Promise.all(db.photos.filter(p => p.eventId === eventId).sort((a, b) => b.createdAt.localeCompare(a.createdAt)).map(async p => ({
-      id: p.id, uploaderName: p.uploaderName, moment: p.moment, questId: p.questId, caption: p.caption, createdAt: p.createdAt, pinned: p.pinned, hidden: p.hidden,
-      ...reactionFields(photoReactionMap(p), device()), uploadedByMe: p.uploadedBy === device(), flags: p.flaggedBy.length, url: await photoUrl(p.id)
+      id: p.id, postId: p.postId, postPosition: p.postPosition, uploaderName: p.uploaderName, moment: p.moment, questId: p.questId, caption: p.caption, createdAt: p.createdAt, pinned: p.pinned, hidden: p.hidden, status: p.status ?? 'approved',
+      ...reactionFields(photoReactionMap(p), device()), uploadedByMe: p.uploadedBy === device(), reportLocked: p.reportLocked ?? false, flags: p.flaggedBy.length, url: await photoUrl(p.id)
     })));
     return {
       event,
@@ -471,9 +514,36 @@ export const localBackend: Backend = {
       functions: db.functions.filter(f => f.eventId === eventId),
       households: db.households.filter(h => h.eventId === eventId),
       photos,
+      postsToReview: (await localReviewQueue(db, eventId, { limit: 0 })).counts.review,
       announcements: db.announcements.filter(a => a.eventId === eventId).sort((a, b) => b.at.localeCompare(a.at)),
       requests: db.requests.filter(r => r.eventId === eventId)
     } satisfies AdminData;
+  },
+  async postReviewQueue(eventId, options) {
+    requirePhotoHost();
+    return localReviewQueue(load(), eventId, options);
+  },
+  async reviewPosts(eventId, posts, action) {
+    requirePhotoHost();
+    if (!['approve', 'hide'].includes(action) || posts.length < 1 || posts.length > 24) throw new Error('Choose between 1 and 24 posts to review');
+    const db = load();
+    for (const post of posts) {
+      if (post.kind === 'photo') {
+        const photos = db.photos.filter(p => p.eventId === eventId && (p.postId ?? p.id) === post.id);
+        if (!photos.length) throw new Error('Post not found. Refresh the review queue');
+        for (const photo of photos) {
+          photo.hadReports ||= photo.flaggedBy.length > 0;
+          if (action === 'approve' && photo.hadReports) photo.reportLocked = true;
+          photo.status = action === 'approve' ? 'approved' : 'rejected'; photo.hidden = action !== 'approve';
+          photo.flaggedBy = []; photo.reportDetails = {}; photo.reviewedAt = now();
+        }
+      } else {
+        const wish = db.wishes.find(w => w.eventId === eventId && w.id === post.id);
+        if (!wish) throw new Error('Wish not found. Refresh the review queue');
+        wish.status = action === 'approve' ? 'approved' : 'rejected';
+      }
+    }
+    save(db);
   },
   async adminAnalytics(eventId) {
     if (!hostEmail) throw new Error('Only hosts can view analytics');
@@ -489,7 +559,7 @@ export const localBackend: Backend = {
       const first = photos[0];
       return { id, kind: 'photo', name: first.uploaderName, text: first.caption ?? null, photos: photos.length,
         createdAt: photos.map(p => p.createdAt).sort().at(-1)!, previewId: first.id,
-        status: photos.every(p => p.hidden) ? 'hidden' : photos.some(p => p.hidden) ? 'partly_hidden' : 'shared' };
+        status: photos.some(p => p.status === 'pending') ? 'pending' : photos.every(p => p.status === 'rejected') ? 'rejected' : photos.every(p => p.hidden) ? 'hidden' : photos.some(p => p.hidden) ? 'partly_hidden' : 'shared' };
     });
     const wishes: AnalyticsPost[] = db.wishes.filter(w => w.eventId === eventId).map(w => ({
       id: w.id, kind: 'wish', name: w.name, text: w.message, photos: 0, createdAt: w.createdAt, status: w.status,
@@ -570,8 +640,10 @@ export const localBackend: Backend = {
   async setPhoto(photoId, patch) {
     requirePhotoHost();
     const db = load();
-    const p = db.photos.find(x => x.id === photoId); if (p) Object.assign(p, patch);
-    save(db);
+    const p = db.photos.find(x => x.id === photoId);
+    if (!p) throw new Error('Photo not found');
+    if (patch.pinned !== undefined) { p.pinned = patch.pinned; save(db); }
+    if (patch.hidden !== undefined) await localBackend.reviewPosts(p.eventId, [{ id: p.postId ?? p.id, kind: 'photo' }], patch.hidden ? 'hide' : 'approve');
   },
   async deletePhoto(photoId) {
     requirePhotoHost();

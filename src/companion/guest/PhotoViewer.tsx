@@ -135,7 +135,7 @@ export default function PhotoViewer({ photos, start, total, reacting, onClose, o
           }
         }}>
           <button type="button" role="menuitem" disabled={saving} onClick={() => void save()}><Icon size={18} d="M12 4v11M7.5 10.5 12 15l4.5-4.5M5 19h14" />{saving ? 'Saving…' : 'Save to phone'}</button>
-          {!readOnly && <>
+          {!readOnly && !photo.reportLocked && <>
             <button type="button" role="menuitem" onClick={() => { setMenu(false); moreButton.current?.focus({ preventScroll: true }); onFlag(photo, true); }}>Request removal</button>
             <button type="button" role="menuitem" onClick={() => { setMenu(false); moreButton.current?.focus({ preventScroll: true }); onFlag(photo, false); }}>Report this photo</button>
           </>}

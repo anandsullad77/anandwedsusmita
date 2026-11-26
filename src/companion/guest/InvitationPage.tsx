@@ -8,13 +8,13 @@ import { Icon } from './Icon';
 import InvitationHero from './InvitationHero';
 import InvitationDownloads from './InvitationDownloads';
 import InviteGallery from './InviteGallery';
-import { siteOrigin } from '../../siteOrigin';
+import { PUBLIC_SITE_ORIGIN } from '../../siteOrigin';
 import { WeddingVerdict } from './WeddingPlayground';
 import { WeddingSignoff } from '../components/WeddingBrand';
 import { useGuestAuth } from '../lib/useGuestAuth';
 import './invitation-page.css';
 
-export default function InvitationPage({ bundle, base, token, invitationPath, children }: { bundle: GeneralInviteBundle; base: string; token: string; invitationPath: string; children?: ReactNode }) {
+export default function InvitationPage({ bundle, base, token, children }: { bundle: GeneralInviteBundle; base: string; token: string; children?: ReactNode }) {
   const { hash } = useLocation();
   const { canAccess, user } = useGuestAuth();
   const { event, functions } = bundle;
@@ -64,7 +64,7 @@ export default function InvitationPage({ bundle, base, token, invitationPath, ch
 
     {hasMoments && <InviteGallery base={base} photos={previewPhotos} wishes={wishes} canUpload={sections.uploads} canWish={sections.guestbook} locked={!canAccess} />}
     {sections.playground && <WeddingVerdict eventId={event.id} base={base} />}
-    {sections.download && <InvitationDownloads bundle={bundle} settings={settings} link={`${location.origin}${invitationPath}`} publicLink={`${siteOrigin()}/?from=status`} />}
+    {sections.download && <InvitationDownloads bundle={bundle} settings={settings} publicLink={`${PUBLIC_SITE_ORIGIN}/invitation?from=status`} />}
     <div className="general-closing" lang="en"><p className="general-eyebrow">The best part of our day?</p><p>Having you in it.</p><span>With love, {event.coupleA} &amp; {event.coupleB}</span></div>
     <WeddingSignoff />
   </div>);

@@ -21,13 +21,12 @@ type Props = {
   base: string;
   token: string;
   photoContext: PhotoContext;
-  invitationPath?: string;
   personalSection?: ReactNode;
   familyPage?: ReactNode;
 };
 
 // Both entry points use these routes, navigation and pages. Family features are optional additions.
-export default function InvitationExperience({ bundle, base, token, photoContext, invitationPath = base, personalSection, familyPage }: Props) {
+export default function InvitationExperience({ bundle, base, token, photoContext, personalSection, familyPage }: Props) {
   const current = useLocation();
   const preview = useGuestPreview();
   const sections = normalizeGeneralSettings(bundle.settings).sections;
@@ -72,7 +71,7 @@ export default function InvitationExperience({ bundle, base, token, photoContext
           </header>
           <main id="general-content" tabIndex={-1} className={`general-main${onScene || onCreate ? ' general-main-scene' : onFamily ? ' general-main-family' : ''}`}>
             <Routes>
-              <Route index element={current.hash === '#wishes' ? <Navigate to={`${base}/feed${current.search}`} replace /> : <InvitationPage bundle={bundle} base={base} token={token} invitationPath={invitationPath}>{personalSection}</InvitationPage>} />
+              <Route index element={current.hash === '#wishes' ? <Navigate to={`${base}/feed${current.search}`} replace /> : <InvitationPage bundle={bundle} base={base} token={token}>{personalSection}</InvitationPage>} />
               <Route path="feed" element={hasFeed ? <GuestContentGate base={base} purpose="view the wedding Feed"><Scene ctx={ctx} canUpload={sections.uploads} canWish={sections.guestbook} showPhotos={sections.photos} /></GuestContentGate> : <Navigate to={base} replace />} />
               <Route path="create" element={<CreatePost ctx={ctx} base={base} token={token} canWish={sections.guestbook} canUpload={sections.uploads} />} />
               <Route path="nostalgia" element={sections.nostalgia ? <NostalgiaPage base={base} /> : <Navigate to={base} replace />} />

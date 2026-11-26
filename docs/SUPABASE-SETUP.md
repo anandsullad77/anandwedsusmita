@@ -58,6 +58,10 @@ For the **Admin → Analytics** tab, apply `0013_wedding_analytics.sql` after 00
 
 For **Guest contacts & memories**, run the next missing migrations in order: `0014_streamlined_rsvp.sql`, then **`0015_guest_memory_directory.sql`**. A project already through 0014 needs only 0015. The latter adds the latest recorded wedding sign-in timestamp and host-only, paginated guest/contact/post queries. It derives names/emails from verified Google identities already stored in Auth and ties posts to their original account IDs. Anonymous guests, other guests and hosts of another wedding cannot read this list or its internal views. There is no new browser secret or Gmail scope. Deploy the frontend after the migration. The sign-in screen includes the wedding-memory email notice; no email-sending service is configured or used.
 
+For **Review posts**, apply **`0023_post_approval.sql` after 0022 and before deploying the frontend**. Every new photo post and wish stays private until an owner, co-owner or host approves it. Existing photos retain their current visibility. The queue includes new posts, guest reports, bulk decisions and a **Return to feed** action for hidden posts. See [post approval setup](POST-APPROVAL.md) for the daily workflow and local checks.
+
+Apply **`0024_lock_reviewed_photo_reports.sql` after 0023** to disable further guest reports and removal requests on reported images that hosts approve or return to the feed. The lock is enforced in the database and also covers previously restored images with resolved reports. Unreported images, downloads and reactions retain their usual behavior.
+
 In **Analytics → Guest contacts & memories**, export the complete guest list and posts/wishes separately as CSV, or open one guest's memories to export that guest's content. Exported photo Storage paths are durable references for hosts, not public links or embedded photo files. Open the corresponding private photos from the guest's memory view to save the images. Account deletion and missing historical ownership prevent recovery or reliable email matching; display names alone are never used to assign a post. First/latest recorded dates do not represent a complete historical visit log. `npm.cmd run test:memories` checks desktop/mobile views, complete paginated exports, same-name accounts, retries, private previews, UTF-8 text and spreadsheet safety.
 
 ## 3. Configure the wedding and host access
@@ -129,7 +133,7 @@ For Netlify, the included `public/_redirects` provides the SPA fallback. Other s
 2. **Families & invites:** add families, use **Import contacts** to select phone contacts or upload a `.vcf` contact file, or use the Excel sample to upload several families. Review names and numbers before importing. Contact imports skip duplicate family names and phone numbers and use the same `0004_import_households.sql` migration as Excel. Send personal links using the WhatsApp buttons. Imports add families; they do not update existing matching family names or send messages automatically.
 3. **General invitation:** edit the companion welcome/cover, upload up to three **Photos before sign-in**, and choose which sections to show. Save invitation changes to publish the previews. Signed-in guests continue to see the latest feed photos. These settings affect `/invitation` and the family app; the original `/` invitation stays as designed.
 4. **PIN & links:** confirm the family PIN and copy the public companion or family recovery link.
-5. **Photos & flags:** moderate photo reports; guests can request review but cannot remove other people's photos.
+5. **Review posts:** approve new photos and wishes, resolve reports, or return hidden posts to the feed. Apply migration `0023_post_approval.sql` before deploying this version. See [post approval setup and daily review](POST-APPROVAL.md).
 6. **General invitation → Review wishes & blessings:** approve wishes before they appear to guests.
 7. **Gamanisi! updates:** publish actual host updates after confirming the wording.
 8. **Analytics → Guest contacts & memories:** review Google names/emails and guest activity, then export contacts and posts/wishes to keep for sending wedding memories later.
@@ -139,7 +143,7 @@ The companion is linked from the public invitation. Its invitation, cover, venue
 ## 7. Check before sharing
 
 - Open `/` on a phone and confirm the original invitation and directions.
-- In a separate private browser window, open `/invitation` without signing in. Confirm photos and wishes stay hidden, sign in with Google when prompted, then upload a test photo and submit a wish. Confirm the wish stays hidden until approved.
+- In a separate private browser window, open `/invitation` without signing in. Confirm photos and wishes stay hidden, sign in with Google when prompted, then upload a test photo and submit a wish. Confirm both stay out of the feed until a host approves them in **Review posts**.
 - Create one test family in admin, open its personal link in the private window, and save RSVP/travel/stay. Confirm the host can see the response and that the general visitor cannot see that family's records.
 - Try `/rsvp` with the configured PIN. Refresh a deep link to confirm hosting fallback.
 - Hide the test photo, approve/reject the test wish, and confirm the guest view updates.

@@ -6,7 +6,7 @@ import './invite-gallery.css';
 const STATUS_ICON = 'M5 19l1.2-3.6A7.5 7.5 0 1 1 9 18.3z';
 
 /** Keepsake: post the invitation to a WhatsApp status with a public link, or just save the image. */
-export default function InvitationDownloads({ bundle, settings, link, publicLink }: { bundle: GeneralInviteBundle; settings: GeneralInvitationSettings; link: string; publicLink: string }) {
+export default function InvitationDownloads({ bundle, settings, publicLink }: { bundle: GeneralInviteBundle; settings: GeneralInvitationSettings; publicLink: string }) {
   const [busy, setBusy] = useState<'share' | 'save' | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -14,9 +14,9 @@ export default function InvitationDownloads({ bundle, settings, link, publicLink
   const fileName = `${bundle.event.slug}-invitation.png`;
   const caption = `${bundle.event.coupleA} & ${bundle.event.coupleB} are getting married! Join the celebration: ${publicLink}`;
 
-  const card = async (cardLink: string) => {
+  const card = async () => {
     const { makeInvitationCard } = await import('./invitationCard');
-    return makeInvitationCard(bundle, settings, cardLink);
+    return makeInvitationCard(bundle, settings);
   };
   const download = (blob: Blob) => {
     const url = URL.createObjectURL(blob);
@@ -34,9 +34,9 @@ export default function InvitationDownloads({ bundle, settings, link, publicLink
 
   // Phones open the share sheet with the image and caption; pick WhatsApp, then "My status".
   const share = () => run('share', async () => {
-    const blob = await card(publicLink);
+    const blob = await card();
     const file = new File([blob], fileName, { type: 'image/png' });
-    if (navigator.canShare?.({ files: [file], text: caption })) {
+    if (typeof navigator.share === 'function' && navigator.canShare?.({ files: [file], text: caption })) {
       await navigator.share({ files: [file], text: caption });
       return;
     }
@@ -44,7 +44,7 @@ export default function InvitationDownloads({ bundle, settings, link, publicLink
     try { await navigator.clipboard.writeText(caption); setMessage('Image saved and caption copied. In WhatsApp, open Status, add the image and paste the caption.'); }
     catch { setMessage(`Image saved. In WhatsApp, open Status and add the image with this link: ${publicLink}`); }
   });
-  const save = () => run('save', async () => { download(await card(link)); });
+  const save = () => run('save', async () => { download(await card()); });
 
   const cover = settings.coverUrl || '/images/anand-susmita-portrait.jpg';
   return <section id="invitation-download" className="invite-keepsake" lang="en" aria-labelledby="keepsake-title" aria-busy={!!busy}>

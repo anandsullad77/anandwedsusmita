@@ -20,9 +20,7 @@ const CHEVRON = 'm9 6 6 6-6 6';
 function ChooseSheet({ ctx, base, canWish, canUpload }: { ctx: PhotoContext; base: string; canWish: boolean; canUpload: boolean }) {
   const nav = useNavigate();
   const [search] = useSearchParams();
-  const camera = useRef<HTMLInputElement>(null);
   const gallery = useRef<HTMLInputElement>(null);
-  const [photosOpen, setPhotosOpen] = useState(false);
   const feedPath = ctx.scenePath || base;
   const today = ctx.questsEnabled !== false ? initialPhotoQuests(ctx.b.event.id)[0] : undefined;
   const close = () => nav(feedPath);
@@ -44,19 +42,12 @@ function ChooseSheet({ ctx, base, canWish, canUpload }: { ctx: PhotoContext; bas
       <span className="create-sheet-handle" aria-hidden="true" />
       <h1 id="create-sheet-title">Share a memory</h1>
       <p className="create-sheet-intro">Everything you add goes into {ctx.b.event.coupleA} and {ctx.b.event.coupleB}’s album.</p>
-      <input ref={camera} type="file" accept="image/*" capture="environment" hidden onChange={event => { pick(event.target.files); event.target.value = ''; }} />
-      <input ref={gallery} type="file" accept="image/*" multiple hidden onChange={event => { pick(event.target.files); event.target.value = ''; }} />
+      <input ref={gallery} type="file" accept="image/*" multiple aria-label="Choose photos from gallery" hidden onChange={event => { pick(event.target.files); event.target.value = ''; }} />
       <div className="create-sheet-options">
-        {canUpload && <div className={`create-option-group${photosOpen ? ' is-open' : ''}`}>
-          <button type="button" className="create-option" aria-expanded={photosOpen} aria-controls="create-photo-sources" onClick={() => setPhotosOpen(open => !open)}>
-            <span className="create-option-icon create-option-rose"><Icon size={24} d="M4 8.5h3l1.6-2.5h6.8L17 8.5h3V19H4zM12 16.6a3.4 3.4 0 1 0 0-6.8 3.4 3.4 0 0 0 0 6.8z" /></span>
-            <span><b>Add photos</b><small>Take one now or choose up to 10</small></span><Icon size={18} d={photosOpen ? 'm6 15 6-6 6 6' : 'm6 9 6 6 6-6'} />
-          </button>
-          {photosOpen && <div className="create-photo-sources" id="create-photo-sources">
-            <button type="button" className="create-photo-source create-option-rose" onClick={() => camera.current?.click()}><Icon size={24} d="M4 8.5h3l1.6-2.5h6.8L17 8.5h3V19H4zM12 16.6a3.4 3.4 0 1 0 0-6.8 3.4 3.4 0 0 0 0 6.8z" />Camera</button>
-            <button type="button" className="create-photo-source create-option-deep" onClick={() => gallery.current?.click()}><Icon size={24} d="M3.5 4.5h17v15h-17zM4 16l5-5 4 4 2.5-2.5L20 17M15.5 9h.01" />Gallery</button>
-          </div>}
-        </div>}
+        {canUpload && <button type="button" className="create-option" onClick={() => gallery.current?.click()}>
+          <span className="create-option-icon create-option-rose"><Icon size={24} d="M3.5 4.5h17v15h-17zM4 16l5-5 4 4 2.5-2.5L20 17M15.5 9h.01" /></span>
+          <span><b>Add photos</b><small>Choose up to 10 from your gallery</small></span><Icon size={18} d={CHEVRON} />
+        </button>}
         {canWish && <Link className="create-option" to={`${base}/create?type=wish`}>
           <span className="create-option-icon create-option-soft"><Icon size={24} d="M5 6h14v10H9l-4 3z" /></span>
           <span><b>Write a wish</b><small>A few words for the couple</small></span><Icon size={18} d={CHEVRON} />
@@ -112,17 +103,17 @@ function Posted({ ctx, base }: { ctx: PhotoContext; base: string }) {
   return <section className="create-done" lang="en" aria-live="polite">
     {sharing ? <>
       <span className="create-done-spinner" aria-hidden="true" />
-      <h1>Sharing your {plural}</h1>
+      <h1>Uploading your {plural}</h1>
       <p>{waiting ? `${waiting} ${waiting === 1 ? 'photo is' : 'photos are'} still on the way.` : 'Getting them ready…'}</p>
       <div className="create-done-note" role="status"><Icon size={20} d="M3 11.5a13 13 0 0 1 18 0M6.5 15a8 8 0 0 1 11 0M10 18.5a3 3 0 0 1 4 0" /><span>You can close this screen. If the signal drops, your {plural} wait safely on this phone and finish on their own.</span></div>
     </> : <>
       <div className="create-done-grains" aria-hidden="true">{Array.from({ length: 8 }, (_, i) => <i key={i} />)}</div>
       <span className="create-done-check" aria-hidden="true"><Icon size={30} d="m5 12.5 4.5 4.5L19 7.5" /></span>
-      <h1>Your {plural} {count === 1 ? 'is' : 'are'} in the album</h1>
-      <p>{count} {plural} added{quest ? ` to ${quest}` : ''}. Thank you for being part of the day.</p>
+      <h1>Sent for approval</h1>
+      <p>{count} {plural} submitted{quest ? ` to ${quest}` : ''}. Your post will appear in the album after a host approves it. Thank you for being part of the day.</p>
     </>}
     <div className="create-done-actions">
-      <Link className="btn btn-deep btn-block" to={feedPath}>{sharing ? 'Back to the gallery' : 'See your post'}</Link>
+      <Link className="btn btn-deep btn-block" to={feedPath}>Back to the gallery</Link>
       {!sharing && <Link className="btn btn-ghost btn-block" to={`${base}/create`}><Icon size={18} d="M12 5v14M5 12h14" />Add more</Link>}
     </div>
   </section>;

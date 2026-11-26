@@ -8,6 +8,8 @@
     "build": "npm run typecheck && vite build",
     "typecheck": "tsc --noEmit -p .",
     "test:access": "node scripts/test-google-access.cjs",
+    "test:approval-db": "node scripts/test-post-approval-db.cjs",
+    "test:approval": "node scripts/test-post-approval-browser.cjs",
     "test:families": "node scripts/test-family-deletion.cjs",
     "test:contacts": "node scripts/test-contact-onboarding.cjs",
     "test:analytics": "node scripts/test-analytics.cjs",

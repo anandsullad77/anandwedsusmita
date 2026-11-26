@@ -7,7 +7,7 @@ export type FeedPost = { id: string; createdAt: string } & (
 export function weddingFeed(photos: Photo[], wishes: Wish[]): FeedPost[] {
   const groups = new Map<string, Photo[]>();
   for (const photo of photos) {
-    if (photo.hidden) continue;
+    if (photo.hidden || (photo.status && photo.status !== 'approved')) continue;
     const key = photo.postId ? `post:${photo.postId}` : `photo:${photo.id}`;
     const group = groups.get(key) ?? [];
     group.push(photo); groups.set(key, group);

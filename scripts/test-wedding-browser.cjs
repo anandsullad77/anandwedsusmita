@@ -13,13 +13,15 @@ const id = n => `00000000-0000-0000-0000-${String(n).padStart(12, '0')}`;
 const eventId = id(1), token = id(2);
 const sections = { cover: true, schedule: true, photos: true, uploads: true, updates: true, guestbook: true, download: true, quests: true };
 const event = { id: eventId, slug: 'anand-susmita', title: "Anand & Susmita's wedding", coupleA: 'Anand', coupleB: 'Susmita', startsAt: '2026-11-29T12:28:00+05:30', venue: 'Wedding venue', theme: { portrait: '/images/wedding-couple-pink-green.png' } };
-const photo = (n, createdAt, extra = {}) => ({ id: id(n), event_id: eventId, storage_path: `${eventId}/${n}.webp`, uploader_name: 'Google guest', uploaded_by: id(12), caption: `Memory ${n}`, created_at: createdAt, hidden: false, pinned: false, ...extra });
+const photo = (n, createdAt, extra = {}) => ({ id: id(n), event_id: eventId, storage_path: `${eventId}/${n}.webp`, uploader_name: 'Google guest', uploaded_by: id(12), caption: `Memory ${n}`, created_at: createdAt, hidden: false, status: 'approved', pinned: false, ...extra });
 const privatePath = pathname => /\/rest\/v1\/(photos|guestbook_messages|akshate)|\/rpc\/photo_quest_summary|\/storage\/v1\/.*photos/.test(pathname);
 
 async function scenario(browser, { width = 390, initial = 'anonymous', family = false, cancel = false, site = origin, customSections = sections, latency = 0, wishDelay = 0, previewPaths = [] } = {}) {
   const context = await browser.newContext({ viewport: { width, height: 900 }, reducedMotion: 'reduce', hasTouch: width < 768 });
   let mode = initial, exchanges = 0, claims = 0, failUpload = false, failInsert = false, loseInsertResponse = false, signings = 0;
   let googleUserId = id(12);
+  let failReview = false, reviewDelay = 0, canReview = true;
+  const photoReports = new Map(), reviews = [];
   let invitationSettings = { event_id: eventId, welcome_message: 'Join us for our wedding.', cover_path: null, sections: customSections, preview_photo_paths: [...previewPaths] };
   let failPreviewUpload = false, failSettingsSave = false;
   const settingsSaves = [];
@@ -81,6 +83,45 @@ async function scenario(browser, { width = 390, initial = 'anonymous', family = 
     if (url.pathname.endsWith('/rpc/admin_wedding_guest_posts')) return json({ total: 0, posts: [] });
     if (url.pathname.endsWith('/household_changes')) return json([]);
     if (url.pathname.endsWith('/rpc/photo_reaction_summary')) return json([]);
+    if (url.pathname.endsWith('/rpc/admin_post_review_queue')) {
+      if (mode !== 'host') return json({ message: 'Only hosts can view the review queue' }, 403);
+      const input = body(), groups = new Map();
+      for (const p of photos) { const key = p.post_id || p.id; groups.set(key, [...(groups.get(key) || []), p]); }
+      const posts = [...groups].map(([postId, images]) => {
+        images.sort((a, b) => (a.post_position || 0) - (b.post_position || 0));
+        return { id: postId, kind: 'photo', name: images[0].uploader_name, text: images[0].caption,
+          status: images.some(p => p.status === 'pending') ? 'pending' : images.every(p => p.status === 'rejected') ? 'rejected' : 'approved',
+          hidden: images.some(p => p.hidden), flags: images.reduce((n, p) => n + (photoReports.get(p.id)?.length || 0), 0),
+          createdAt: images[0].created_at, reviewedAt: null, photos: images.map(p => ({ id: p.id, path: p.storage_path, caption: p.caption, moment: p.moment || null,
+            questId: p.quest_id || null, hidden: p.hidden, status: p.status, reports: photoReports.get(p.id) || [] })) };
+      });
+      posts.push(...wishes.map(w => ({ id: w.id, kind: 'wish', name: w.name, text: w.message, status: w.status,
+        hidden: w.status === 'rejected', flags: 0, createdAt: w.created_at, reviewedAt: null, photos: [] })));
+      const matching = posts.filter(p => (input.p_kind === 'all' || p.kind === input.p_kind)
+        && (!input.p_query || `${p.name} ${p.text || ''}`.toLowerCase().includes(input.p_query.toLowerCase()))
+        && (!input.p_quest || p.photos.some(photo => photo.questId === input.p_quest)));
+      const matches = (p, filter) => filter === 'all' || filter === 'review' && (p.status === 'pending' || p.flags > 0)
+        || filter === 'feed' && p.status === 'approved' && !p.hidden || filter === 'hidden' && (p.hidden || p.status === 'rejected') && p.status !== 'pending';
+      const counts = Object.fromEntries(['review', 'feed', 'hidden', 'all'].map(filter => [filter, matching.filter(p => matches(p, filter)).length]));
+      counts.pending = matching.filter(p => p.status === 'pending').length; counts.reported = matching.filter(p => p.flags > 0).length;
+      const filtered = matching.filter(p => matches(p, input.p_filter)).sort((a, b) => input.p_filter === 'review' ? a.createdAt.localeCompare(b.createdAt) : b.createdAt.localeCompare(a.createdAt));
+      return json({ canReview, total: filtered.length, counts, posts: filtered.slice(input.p_offset, input.p_offset + input.p_limit) });
+    }
+    if (url.pathname.endsWith('/rpc/review_wedding_posts')) {
+      const input = body(); reviews.push(input);
+      if (mode !== 'host' || !canReview) return json({ message: 'Only owners, co-owners and hosts can review posts' }, 403);
+      if (reviewDelay) await new Promise(resolve => setTimeout(resolve, reviewDelay));
+      if (failReview) return json({ message: 'Review could not be saved. Try again.' }, 503);
+      if (input.p_posts.some(p => p.kind === 'photo' ? !photos.some(photo => (photo.post_id || photo.id) === p.id) : !wishes.some(wish => wish.id === p.id))) return json({ message: 'Post not found. Refresh the review queue' }, 404);
+      for (const post of input.p_posts) {
+        if (post.kind === 'photo') for (const p of photos.filter(photo => (photo.post_id || photo.id) === post.id)) {
+          p.had_reports ||= (photoReports.get(p.id)?.length || 0) > 0;
+          if (input.p_action === 'approve' && p.had_reports) p.report_locked = true;
+          p.status = input.p_action === 'approve' ? 'approved' : 'rejected'; p.hidden = input.p_action !== 'approve'; photoReports.delete(p.id);
+        } else wishes.find(wish => wish.id === post.id).status = input.p_action === 'approve' ? 'approved' : 'rejected';
+      }
+      return json(input.p_posts.length);
+    }
     if (url.pathname.endsWith('/rpc/set_photo_reaction')) { reactions.push(request.postDataJSON()); return json(null); }
     if (url.pathname.endsWith('/rpc/open_general_invite')) return json(bundle());
     if (url.pathname.endsWith('/rpc/invite_bundle')) return json({ ...bundle(), household: { id: id(20), name: 'Family', coming: 'yes' }, people: [{ id: id(21), name: 'Family guest', isChild: false, attending: [] }] });
@@ -107,12 +148,14 @@ async function scenario(browser, { width = 390, initial = 'anonymous', family = 
         if (failInsert) return json({ message: 'Temporary insert failure' }, 503);
         const rows = Array.isArray(body()) ? body() : [body()];
         if (rows.some(row => photos.some(existing => existing.id === row.id))) return json({ message: 'Duplicate photo' }, 409);
-        batches.push(rows); photos.unshift(...rows.map(row => ({ ...photo(99, new Date().toISOString()), ...row })));
+        batches.push(rows); photos.unshift(...rows.map(row => ({ ...photo(99, new Date().toISOString()), ...row, status: 'pending', hidden: true })));
         if (loseInsertResponse) { loseInsertResponse = false; return route.abort('failed'); }
         return json(null, 201);
       }
       const postFilter = url.searchParams.get('post_id');
-      let filtered = photos.filter(p => !p.hidden);
+      let filtered = photos.filter(p => !p.hidden || mode === 'host' || p.uploaded_by === googleUserId);
+      if (url.searchParams.get('hidden') === 'eq.false') filtered = filtered.filter(p => !p.hidden);
+      if (url.searchParams.get('status') === 'eq.approved') filtered = filtered.filter(p => p.status === 'approved');
       if (postFilter?.startsWith('eq.')) filtered = filtered.filter(p => p.post_id === postFilter.slice(3));
       if (postFilter?.startsWith('in.')) filtered = filtered.filter(p => postFilter.includes(p.post_id));
       if (url.searchParams.get('quest_id')) filtered = filtered.filter(p => p.quest_id === url.searchParams.get('quest_id').slice(3));
@@ -121,9 +164,16 @@ async function scenario(browser, { width = 390, initial = 'anonymous', family = 
     }
     if (url.pathname.endsWith('/devices')) return json(null);
     if (url.pathname.endsWith('/akshate')) { if (request.method() !== 'GET') reactions.push({ method: request.method(), query: url.search, body: request.postData() }); return json([]); }
-    if (url.pathname.endsWith('/guestbook_messages')) return json(wishes);
+    if (url.pathname.endsWith('/guestbook_messages')) return json(url.searchParams.get('status') ? wishes.filter(w => url.searchParams.get('status') === `eq.${w.status}`) : wishes);
     if (url.pathname.endsWith('/rpc/submit_guestbook_wish')) { submissions.push(body()); return json(null); }
-    if (url.pathname.endsWith('/rpc/flag_photo')) { reports.push(body()); return json(null); }
+    if (url.pathname.endsWith('/rpc/flag_photo')) {
+      const input = body(), p = photos.find(photo => photo.id === input.p_photo);
+      if (!p || p.hidden || p.status !== 'approved') return json({ message: 'Photo is unavailable' }, 400);
+      if (p.report_locked) return json({ message: 'This photo has already been reviewed by the hosts and cannot be reported again' }, 400);
+      reports.push(input); p.had_reports = true;
+      photoReports.set(p.id, [{ reason: input.p_reason, removal: input.p_removal, createdAt: new Date().toISOString() }]);
+      return json(null);
+    }
     if (url.pathname === '/storage/v1/object/sign/photos') {
       const signature = ++signings;
       return json(body().paths.map(p => ({ path: p, signedURL: '/object/sign/photos/' + p + '?token=fixture-' + signature })));
@@ -152,7 +202,8 @@ async function scenario(browser, { width = 390, initial = 'anonymous', family = 
   const page = await context.newPage();
   page.on('pageerror', error => errors.push(error.message));
   page.setDefaultTimeout(12000);
-  return { context, page, requests, submissions, batches, photos, errors, reports, reactions, storage, settingsSaves,
+  return { context, page, requests, submissions, batches, photos, wishes, photoReports, reviews, errors, reports, reactions, storage, settingsSaves,
+    set failReview(value) { failReview = value; }, set reviewDelay(value) { reviewDelay = value; }, set canReview(value) { canReview = value; },
     get invitationSettings() { return invitationSettings; },
     set failPreviewUpload(value) { failPreviewUpload = value; }, set failSettingsSave(value) { failSettingsSave = value; },
     get exchanges() { return exchanges; }, get claims() { return claims; },

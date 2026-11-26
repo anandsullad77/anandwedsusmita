@@ -55,7 +55,6 @@ export default function GuestApp() {
     bundle={{ event: b.event, functions: b.functions, guestName: ctx.me?.name ?? null, settings }}
     base="/app"
     token={s.householdToken}
-    invitationPath={`/i/${encodeURIComponent(s.householdToken)}`}
     photoContext={ctx}
     personalSection={<FamilyPlan ctx={ctx} />}
     familyPage={<Family ctx={ctx} />}

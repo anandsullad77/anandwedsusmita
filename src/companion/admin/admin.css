@@ -1,4 +1,4 @@
-.platform { background: var(--ivory); color: var(--p-ink); min-height: 100dvh; font-family: var(--sans); font-size: 14px; line-height: 1.6; }
+.platform { --sans: 'Noto Sans', 'Noto Sans Kannada', system-ui, sans-serif; background: var(--ivory); color: var(--p-ink); min-height: 100dvh; font-family: var(--sans); font-size: 14px; line-height: 1.6; }
 .platform [hidden] { display: none !important; }
 .host-auth-screen { display: grid; place-items: center; padding: 20px; }
 .host-auth-panel { width: min(420px, 100%); }

@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, NavLink, Route, Routes } from 'react-router-dom';
 import { api } from '../lib/backend';
 import { ago, waLink } from '../lib/format';
-import type { AdminData, AdminHousehold, EventInfo, Person, Photo } from '../lib/types';
+import type { AdminData, AdminHousehold, EventInfo, Person } from '../lib/types';
 import FamilyExcelImport from './FamilyExcelImport';
 import FamilyContactImport from './FamilyContactImport';
 import InvitationTypeSwitch from './InvitationTypeSwitch';
@@ -14,8 +14,7 @@ import HostTeam from './HostTeam';
 import PlaygroundAdmin from './PlaygroundAdmin';
 import { Icon } from '../guest/Icon';
 import { useVisibleViewport } from '../lib/useVisibleViewport';
-import MomentTag from '../guest/MomentTag';
-import { photoQuest, PHOTO_QUESTS } from '../lib/photoQuests';
+import PostReview from './PostReview';
 import './admin.css';
 import WeddingBrand, { WeddingTextile } from '../components/WeddingBrand';
 
@@ -39,7 +38,7 @@ export default function Admin() {
   if (!events.length) return <Login onIn={loadEvents} />;
   if (!data) return <div className="platform" lang="en" style={{ padding: 24 }}>{err ?? 'Loading the wedding…'}</div>;
 
-  const flagged = data.photos.filter(p => p.hidden || (p.flags ?? 0) > 0).length;
+  const flagged = data.postsToReview ?? data.photos.filter(p => p.status === 'pending' || (p.flags ?? 0) > 0).length;
   return (
     <div className="platform" lang="en">
       <div className="adm">
@@ -50,7 +49,7 @@ export default function Admin() {
             <Route index element={<Overview d={data} />} />
             <Route path="families" element={<Families d={data} reload={reload} />} />
             <Route path="general" element={<GeneralInvitationAdmin d={data} />} />
-            <Route path="photos" element={<Photos d={data} reload={reload} />} />
+            <Route path="photos" element={<PostReview eventId={data.event.id} />} />
             <Route path="analytics" element={<Analytics eventId={data.event.id} />} />
             <Route path="hosts" element={<HostTeam eventId={data.event.id} />} />
             <Route path="polls" element={<PlaygroundAdmin d={data} />} />
@@ -118,6 +117,7 @@ function Overview({ d }: { d: AdminData }) {
   const colours: Record<string, string> = { train: 'var(--deep)', bus: 'var(--primary)', car: '#7A927C', flight: '#D7A9B6' };
   return (<>
     <header><h1 className="h1">Overview</h1><span style={{ color: 'var(--p-muted)', fontSize: 14 }}>{Math.max(0, Math.ceil((new Date(d.event.startsAt).getTime() - Date.now()) / 86400000))} days to the muhurta</span></header>
+    {!!d.postsToReview && <section className="panel"><h2>{d.postsToReview} {d.postsToReview === 1 ? 'post needs' : 'posts need'} your review</h2><p className="admin-description">Approve new photos and wishes, or resolve guest reports.</p><Link className="abtn red" to="/admin/photos">Review posts</Link></section>}
     <section className="kpis" aria-label="Key numbers">
       <div className="kpi"><span className="l">Guests coming</span><span className="n">{s.coming}</span><span className="l">incl. {s.kids} children</span></div>
       <div className="kpi"><span className="l">Families answered</span><span className="n">{s.responded}<span style={{ fontSize: 22, color: 'var(--p-muted)' }}> / {s.invited}</span></span><span className="l">{s.cant} can't come · {s.open} joined via open link</span></div>
@@ -334,54 +334,6 @@ function EditFamily({ d, h, onClose }: { d: AdminData; h: AdminHousehold | null;
       <footer className="family-edit-actions"><button type="button" className="abtn" disabled={saving} onClick={onClose}>Cancel</button><button className="abtn red" disabled={!name.trim() || saving}>{saving ? 'Saving…' : 'Save invitation'}</button></footer>
     </form>
   </dialog>;
-}
-
-function Photos({ d, reload }: { d: AdminData; reload: () => void }) {
-  const [show, setShow] = useState<'flagged' | 'all'>('flagged');
-  const [questId, setQuestId] = useState('');
-  const [collection, setCollection] = useState<Photo[] | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  useEffect(() => {
-    let alive = true;
-    setError(null); setCollection(null);
-    if (!questId) { setLoading(false); return; }
-    setLoading(true);
-    api.listPhotos(d.event.id, { questId, includeHidden: true }).then(items => { if (alive) setCollection(items); }).catch(e => { if (alive) setError(e.message); }).finally(() => { if (alive) setLoading(false); });
-    return () => { alive = false; };
-  }, [questId, d.event.id, d.photos]);
-  const photos = questId ? collection ?? [] : d.photos;
-  const list = show === 'flagged' ? photos.filter(p => p.hidden || (p.flags ?? 0) > 0) : photos;
-  const act = async (fn: () => Promise<void>) => { try { await fn(); setError(null); reload(); } catch (e) { setError((e as Error).message); } };
-  return (<>
-    <header style={{ display: 'flex', flexWrap: 'wrap', gap: 12, justifyContent: 'space-between', alignItems: 'center' }}>
-      <div><h1 className="h1">Photos &amp; flags</h1><span style={{ color: 'var(--p-muted)', fontSize: 14 }}>{d.photos.length} photos · hidden photos are invisible to guests</span></div>
-      <div style={{ display: 'flex', gap: 8 }}><button className="chip" aria-pressed={show === 'flagged'} onClick={() => setShow('flagged')}>Needs a look</button><button className="chip" aria-pressed={show === 'all'} onClick={() => setShow('all')}>All</button></div>
-    </header>
-    <div className="field admin-quest-filter"><label htmlFor="admin-photo-collection">Photo quest collection</label><select id="admin-photo-collection" className="input" value={questId} onChange={e => { setQuestId(e.target.value); setShow('all'); }}><option value="">All photos</option>{PHOTO_QUESTS.map(q => <option key={q.id} value={q.id}>{q.tag}</option>)}</select>{photoQuest(questId) && <p className="import-help">{photoQuest(questId)!.prompt}</p>}</div>
-    {error && <p className="error" role="alert">{error}</p>}
-    {loading && <p role="status">Loading the collection…</p>}
-    {!loading && !error && list.length === 0 && <div className="panel">{questId ? 'No photos in this collection yet.' : 'Nothing to review.'}</div>}
-    <div className="photo-grid">
-      {list.map(p => (
-        <article key={p.id} className="panel" style={{ padding: 0, overflow: 'hidden', borderColor: p.hidden ? 'var(--p-kumkuma)' : undefined, borderWidth: p.hidden ? 2 : 1 }}>
-          <div style={{ position: 'relative' }}>
-            <img src={p.url} alt={p.caption ?? `Photo by ${p.uploaderName}`} style={{ width: '100%', height: 180, objectFit: 'cover' }} />
-            {(p.hidden || (p.flags ?? 0) > 0) && <span className="pill no" style={{ position: 'absolute', left: 10, top: 10 }}>{p.hidden ? 'Hidden' : ''}{p.flags ? ` · flagged ${p.flags}×` : ''}</span>}
-          </div>
-          <div style={{ padding: 12, display: 'flex', flexDirection: 'column', gap: 8 }}>
-            <div><b>{p.uploaderName}</b><div className="admin-photo-metadata">{p.moment && <MomentTag label={p.moment} />}{photoQuest(p.questId) && <MomentTag label={photoQuest(p.questId)!.tag} />}{p.pinned && <span className="post-pinned">Pinned</span>}<time className="post-timestamp" dateTime={p.createdAt}>{ago(p.createdAt)}</time></div></div>
-            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-              {p.hidden && <button className="abtn" onClick={() => act(() => api.setPhoto(p.id, { hidden: false }))}>Keep</button>}
-              {!p.hidden && <button className="abtn" onClick={() => act(() => api.setPhoto(p.id, { hidden: true }))}>Hide</button>}
-              <button className="abtn" onClick={() => act(() => api.setPhoto(p.id, { pinned: !p.pinned }))}>{p.pinned ? 'Unpin' : 'Pin'}</button>
-              <button className="abtn solid" onClick={() => { if (confirm('Remove this photo for everyone?')) void act(() => api.deletePhoto(p.id)); }}>Remove</button>
-            </div>
-          </div>
-        </article>
-      ))}
-    </div>
-  </>);
 }
 
 const TEMPLATES = ['The muhurta begins in 10 minutes — please come to the mandap.', 'Oota is served in the dining hall.', 'Pickup vans are leaving the station now — look for the pink flag.', 'Breakfast is ready in the hall.'];

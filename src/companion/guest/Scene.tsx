@@ -110,7 +110,7 @@ export default function Scene({ ctx, canUpload = true, canWish = true, showPhoto
   }
 
   async function flag(p: Photo, removal: boolean) {
-    if (flagging) return;
+    if (flagging || p.reportLocked) return;
     setFlagging(true); setNotice(null); setError(null);
     try {
       await api.flagPhoto(p.id, removal ? 'Please remove this photo' : 'Not appropriate', removal);

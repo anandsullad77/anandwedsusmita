@@ -40,7 +40,7 @@ async function main() {
     await db.query("insert into people (id,event_id,household_id,name) values ($1,$2,$3,'Family guest')", [id(21), wedding, id(20)]);
     await db.query("insert into announcements (event_id,body) values ($1,'Public host update')", [wedding]);
     for (const [photo, event, hidden] of [[id(30), wedding, false], [id(31), wedding, true], [id(32), other, false]]) {
-      await db.query("insert into photos (id,event_id,storage_path,uploader_name,uploaded_by,hidden) values ($1,$2,$3,'Guest',$4,$5)", [photo, event, `${event}/${photo}.webp`, google, hidden]);
+      await db.query("insert into photos (id,event_id,storage_path,uploader_name,uploaded_by,hidden,status) values ($1,$2,$3,'Guest',$4,$5,'approved')", [photo, event, `${event}/${photo}.webp`, google, hidden]);
       await db.query("insert into storage.objects (bucket_id,name) values ('photos',$1)", [`${event}/${photo}.webp`]);
     }
     await db.query("insert into storage.objects (bucket_id,name) values ('invitation-covers',$1)", [`${wedding}/cover.webp`]);
@@ -50,7 +50,7 @@ async function main() {
     const token = (await db.query('select token::text from general_invites where event_id=$1', [wedding])).rows[0].token;
     const otherToken = (await db.query('select token::text from general_invites where event_id=$1', [other])).rows[0].token;
     await db.exec('grant usage on schema public,auth,storage to anon,authenticated; grant select,insert,update,delete on all tables in schema public,storage to authenticated; grant usage,select on all sequences in schema public to authenticated; revoke all on public.wedding_guest_directory, public.wedding_guest_post_activity from authenticated;');
-    const asUser = async user => { await db.exec('reset role'); await db.query("select set_config('request.jwt.claim.sub',$1,false)", [user || '']); await db.exec(user ? 'set role authenticated' : 'set role anon'); };
+    const asUser = async user => { await db.exec("reset role; select set_config('request.jwt.claim.sub','',false)"); await db.query("select set_config('request.jwt.claim.sub',$1,false)", [user || '']); await db.exec(user ? 'set role authenticated' : 'set role anon'); };
     const rows = async table => (await db.query(`select * from ${table}`)).rows;
     const upload = () => db.query("insert into storage.objects (bucket_id,name) values ('photos',$1)", [`${wedding}/new.webp`]);
     const wish = request => db.query('select submit_guestbook_wish($1,$2,$3,$4)', [token, 'Guest', 'Wishing you a wonderful life together!', request]);
@@ -93,7 +93,7 @@ async function main() {
 
     await asUser(google);
     await db.query('select open_wedding_invite($1)', ['Google guest']);
-    assert.deepEqual((await rows('photos')).map(row => row.id), [id(30)]);
+    assert.deepEqual((await rows('photos')).map(row => row.id), [id(30), id(31)], 'Uploaders can read their own private rows for safe retries; feed queries still exclude them');
     assert.deepEqual((await rows('guestbook_messages')).map(row => row.id), [id(40)]);
     await upload();
     await db.query("insert into photos (id,event_id,storage_path,uploader_name,uploaded_by) values ($1,$2,$3,'Google guest',$4)", [id(33), wedding, `${wedding}/new.webp`, google]);
@@ -137,7 +137,7 @@ async function main() {
     await assert.rejects(postRow(id(73), 1), /duplicate key/);
     await assert.rejects(postRow(id(74), 10), /check constraint/);
     await assert.rejects(postRow(id(75), null), /check constraint/);
-    await db.exec('reset role');
+    await db.exec("reset role; select set_config('request.jwt.claim.sub','',false)");
     assert.equal((await db.query('select post_id from photos where id=$1', [id(30)])).rows[0].post_id, null, 'Legacy photos remain ungrouped');
     await asUser(outsider);
     await db.query('select open_wedding_invite()');
@@ -148,7 +148,7 @@ async function main() {
       (id,event_id,storage_path,uploader_name,post_id,post_position) values
       ($1,$3,'atomic-0','Guest',$4,0), ($2,$3,'atomic-invalid','Guest',$4,10)`, [id(81), id(82), wedding, atomicPost]), /check constraint/);
     assert.equal((await db.query('select * from photos where post_id=$1', [atomicPost])).rows.length, 0);
-    await db.exec('reset role');
+    await db.exec("reset role; select set_config('request.jwt.claim.sub','',false)");
     // Mirror auth.users ON DELETE SET NULL without changing the fixture's FK.
     await db.query('update photos set uploaded_by=null where post_id=$1', [post]);
     assert.equal((await db.query('select * from photos where post_id=$1 and uploaded_by is null', [post])).rows.length, 2);
@@ -187,7 +187,7 @@ async function main() {
     assert.equal((await rows('storage.objects')).filter(row => row.bucket_id === 'invitation-previews').length, 0, 'Hidden photo sections do not allow new preview signatures');
     console.log('PASS: hosts manage up to three previews; public visitors see only selected images; guest photos stay private; hidden/removed previews and invalid writes are blocked');
     // Family removal uses the existing host-only DELETE policy and FK cascades.
-    await db.exec('reset role');
+    await db.exec("reset role; select set_config('request.jwt.claim.sub','',false)");
     const removedFamily = id(400), removedPerson = id(401), keptPhoto = id(402), linkedUser = id(403), keptWish = id(405);
     await db.query('insert into auth.users values ($1,$2)', [linkedUser, 'family-delete@example.com']);
     await db.query("insert into households (id,event_id,name,token,coming) values ($1,$2,'Delete this family','delete-family-token','yes'),($3,$4,'Other wedding family','other-family-token',null)", [removedFamily, wedding, id(410), other]);
@@ -209,7 +209,7 @@ async function main() {
     assert.equal((await removeFamily(removedFamily, other)).rows.length, 0, 'A mismatched event never deletes a family');
     assert.deepEqual((await removeFamily()).rows, [{ id: removedFamily }]);
     assert.equal((await removeFamily()).rows.length, 0, 'A missing family returns no deleted row');
-    await db.exec('reset role');
+    await db.exec("reset role; select set_config('request.jwt.claim.sub','',false)");
     for (const [table, column, value] of [['households', 'id', removedFamily], ['people', 'household_id', removedFamily], ['devices', 'household_id', removedFamily], ['household_changes', 'household_id', removedFamily]]) {
       assert.equal((await db.query(`select * from ${table} where ${column}=$1`, [value])).rows.length, 0, table + ' records are removed');
     }
@@ -263,7 +263,7 @@ async function main() {
       assert.deepEqual(await rows('wedding_analytics_signins'), []);
       await assert.rejects(db.query('insert into wedding_analytics_signins (event_id,user_id) values ($1,$2)', [wedding, user]), /row-level security/);
     }
-    await db.exec('reset role');
+    await db.exec("reset role; select set_config('request.jwt.claim.sub','',false)");
     const freshGoogle = id(850), legacyGoogle = id(851), googleHost = id(852);
     for (const user of [freshGoogle, legacyGoogle, googleHost]) {
       await db.query('insert into auth.users (id,email) values ($1,$2)', [user, `${user}@example.com`]);
@@ -282,14 +282,14 @@ async function main() {
     assert.equal(signInCounts.signedIn, beforeAnalytics.signedIn + 2, 'Accounts count once across devices; existing visitor/family sign-ins count once; hosts do not count');
     await asUser(host);
     await assert.rejects(analytics(other), /Only hosts/);
-    await db.exec('reset role');
+    await db.exec("reset role; select set_config('request.jwt.claim.sub','',false)");
     for (const position of [2, 0, 1]) {
-      await db.query(`insert into photos (id,event_id,storage_path,uploader_name,caption,post_id,post_position,hidden,created_at)
-        values ($1,$2,$3,'Carousel guest','Three photos in one post',$4,$5,$6,now() + interval '2 days')`,
+      await db.query(`insert into photos (id,event_id,storage_path,uploader_name,caption,post_id,post_position,hidden,status,created_at)
+        values ($1,$2,$3,'Carousel guest','Three photos in one post',$4,$5,$6,'approved',now() + interval '2 days')`,
       [id(860 + position), wedding, `${wedding}/analytics-${position}.webp`, id(870), position, position === 2]);
     }
-    await db.query(`insert into photos (event_id,storage_path,uploader_name,created_at)
-      select $1,'analytics-' || n,'Earlier guest',now() from generate_series(1,205) n`, [wedding]);
+    await db.query(`insert into photos (event_id,storage_path,uploader_name,status,hidden,created_at)
+      select $1,'analytics-' || n,'Earlier guest','approved',false,now() from generate_series(1,205) n`, [wedding]);
     for (const [wishId, status, days] of [[id(880), 'pending', 3], [id(881), 'rejected', 4]]) {
       await db.query(`insert into guestbook_messages (id,event_id,user_id,request_id,name,message,status,created_at)
         values ($1,$2,$3,$1,'Analytics guest','Wishing you joy!',$4,now() + $5 * interval '1 day')`, [wishId, wedding, freshGoogle, status, days]);
@@ -313,7 +313,7 @@ async function main() {
     assert.equal(otherAnalytics.visitors, 0); assert.equal(otherAnalytics.photoPosts, 1); assert.equal(otherAnalytics.wishes, 1);
     console.log('PASS: analytics deduplicate browsers/accounts, include existing guest sign-ins, exclude hosts, group carousels, count all posts, protect private activity and isolate weddings');
     // Guest contacts are derived from verified account IDs, never display names.
-    await db.exec('reset role');
+    await db.exec("reset role; select set_config('request.jwt.claim.sub','',false)");
     const memoryA = id(9500), memoryB = id(9501), memoryC = id(9502), noWedding = id(9503);
     for (const [user, address] of [[memoryA, 'first.guest@gmail.com'], [memoryB, 'second.guest@gmail.com'], [memoryC, 'quiet.guest@gmail.com'], [noWedding, 'unrelated@gmail.com']]) {
       await db.query('insert into auth.users (id,email,raw_user_meta_data) values ($1,$2,$3::jsonb)', [user, address, JSON.stringify({ full_name: 'Same guest name' })]);
@@ -322,8 +322,8 @@ async function main() {
     // A linked Google identity's email takes precedence over the primary Auth email.
     await db.query("update auth.users set email='another-provider@example.com' where id=$1", [memoryA]);
     for (const position of [2, 0, 1]) {
-      await db.query(`insert into photos (id,event_id,storage_path,uploader_name,uploaded_by,caption,post_id,post_position,hidden)
-        values ($1,$2,$3,'Shared display name',$4,'All three memories',$5,$6,$7)`,
+      await db.query(`insert into photos (id,event_id,storage_path,uploader_name,uploaded_by,caption,post_id,post_position,hidden,status)
+        values ($1,$2,$3,'Shared display name',$4,'All three memories',$5,$6,$7,'approved')`,
         [id(9600 + position), wedding, `${wedding}/memory-${position}.webp`, memoryA, id(9609), position, position === 2]);
     }
     await db.query(`insert into guestbook_messages (id,event_id,user_id,request_id,name,message,status)
@@ -367,7 +367,7 @@ async function main() {
     assert.equal((await memories(wedding, memoryB)).posts[0].status, 'pending');
     assert.equal((await memories(wedding, noWedding)).total, 0);
     // Every historical wish is accessible through paging, beyond recent-post limits.
-    await db.exec('reset role');
+    await db.exec("reset role; select set_config('request.jwt.claim.sub','',false)");
     await db.query(`insert into guestbook_messages (event_id,user_id,request_id,name,message,status)
       select $1,$2,gen_random_uuid(),'Historical guest','Older memory ' || n,'approved' from generate_series(1,205) n`, [wedding, memoryB]);
     await asUser(host);
@@ -414,7 +414,7 @@ async function main() {
     await assert.rejects(setReaction(id(32), 'love'), /unavailable/, 'Another wedding requires its own invitation');
     assert.deepEqual(await reactionSummary([id(9602), id(32)]), []);
     assert.equal((await db.query('update akshate set reaction=$1 where photo_id=$2 returning *', ['wow', id(9600)])).rows.length, 0, 'Guests cannot update another guest’s reaction');
-    await db.exec('reset role');
+    await db.exec("reset role; select set_config('request.jwt.claim.sub','',false)");
     await db.query(`with accounts as (insert into auth.users (id,email) select gen_random_uuid(),null from generate_series(1,1005) returning id)
       insert into akshate (photo_id,user_id,reaction) select $1,id,'celebrate' from accounts`, [id(9601)]);
     await asUser(google);
@@ -436,7 +436,7 @@ async function main() {
     assert.equal((await db.query('select host_team_add($1,$2,$3,$4,$5) as added', [host,wedding,memoryC,'cohost','Changed'])).rows[0].added, false, 'Retry does not change an existing role');
     await asUser(memoryC); assert.equal((await team()).canManage, true);
     console.log('PASS: host-team listing, owner-only additions, server-only grants, co-owner rights and retry role preservation');
-    await db.exec('reset role');
+    await db.exec("reset role; select set_config('request.jwt.claim.sub','',false)");
     await db.query("insert into households (id,event_id,name,token,cap,function_ids) values ($1,$2,'Capacity family','capacity-test',3,'{}')", [id(99000), wedding]);
     await db.query("insert into people (id,event_id,household_id,name) values ($1,$2,$3,'Original member')", [id(99001), wedding, id(99000)]);
     await asUser(family);
@@ -445,7 +445,7 @@ async function main() {
     await db.query('select save_rsvp($1,$2::jsonb)', [wedding, JSON.stringify(capacityReply)]);
     await db.query('select save_rsvp($1,$2::jsonb)', [wedding, JSON.stringify(capacityReply)]);
     await assert.rejects(db.query('select save_rsvp($1,$2::jsonb)', [wedding, JSON.stringify({ ...capacityReply, requestId: id(99003), add: [{ name: 'Over capacity', functionIds: [] }] })]), /family is full/i);
-    await db.exec('reset role');
+    await db.exec("reset role; select set_config('request.jwt.claim.sub','',false)");
     assert.equal((await db.query('select count(*)::int as n from people where household_id=$1', [id(99000)])).rows[0].n, 3);
     console.log('PASS: family RSVP without Google adds members up to host capacity, retries do not duplicate, and excess additions are rejected atomically');
     await asUser(host);

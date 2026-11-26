@@ -8,6 +8,10 @@ import './nostalgia-album.css';
 
 type AlbumFilter = NostalgiaMemory['person'];
 
+const closingMemories = ['susmita-terrace', 'anand-birthday']
+  .map(id => nostalgiaMemories.find(memory => memory.id === id))
+  .filter((memory): memory is NostalgiaMemory => memory !== undefined);
+
 function MemoryPhoto({ memory, sizes, eager = false }: { memory: NostalgiaMemory; sizes: string; eager?: boolean }) {
   return <img src={memoryImage(memory, 960)} srcSet={memorySrcSet(memory)} sizes={sizes}
     width={memory.width} height={memory.height} alt={memory.alt}
@@ -119,8 +123,16 @@ export default function NostalgiaPage({ base }: { base: string }) {
     })}
 
     <footer className="nostalgia-end">
+      <p className="nostalgia-end-eyebrow">Two little worlds</p>
+      <div className="nostalgia-together">
+        {closingMemories.map(memory => <figure key={memory.id} className={`nostalgia-together-${memory.person.toLowerCase()}`}>
+          <MemoryPhoto memory={memory} sizes="(max-width: 655px) calc(50vw - 24px), 304px" />
+          <figcaption>Little {memory.person}</figcaption>
+        </figure>)}
+      </div>
       <h2>The next chapter? <i>Ours.</i></h2>
-      <p>All those little moments brought us here. We’re so happy you’re part of what comes next.</p>
+      <p>Her sunny afternoons. His birthday candles. Two childhoods full of family, laughter and love, now becoming one story.</p>
+      <p className="nostalgia-end-note">We’re so happy you’re part of what comes next.</p>
       <Link to={base}>Back to the invitation <Icon size={16} d="M5 12h14M13 6l6 6-6 6" /></Link>
     </footer>
     {selectedIndex >= 0 && <MemoryViewer memories={visibleMemories} initialIndex={selectedIndex} onClose={() => setSelectedId(null)} />}

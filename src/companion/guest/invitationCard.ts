@@ -22,10 +22,10 @@ type TextBlock = { kind: 'text'; lines: string[]; font: string; lineHeight: numb
 type Block = TextBlock | { kind: 'photos'; height: number; gap: number } | { kind: 'divider'; height: number; gap: number };
 
 // Always export a 1080 × 1920 story, independently of screen size or copy length.
-export async function makeInvitationCard(bundle: GeneralInviteBundle, settings: GeneralInvitationSettings, link: string): Promise<Blob> {
+export async function makeInvitationCard(bundle: GeneralInviteBundle, settings: GeneralInvitationSettings): Promise<Blob> {
   const { event, functions } = bundle;
   const showPhotos = settings.sections.cover;
-  const [, photos, monogram, mandala, textile] = await Promise.all([
+  const [, photos, monogram, mandala, textile, floral] = await Promise.all([
     Promise.all([
       document.fonts.load('700 94px "Cormorant Garamond"'),
       document.fonts.load('600 44px "Cormorant Garamond"'),
@@ -38,6 +38,7 @@ export async function makeInvitationCard(bundle: GeneralInviteBundle, settings: 
     loadImage('/images/as-monogram.svg').catch(() => null),
     loadImage('/images/name-mandala.svg').catch(() => null),
     loadImage('/images/textile-border.svg').catch(() => null),
+    loadImage('/images/invitation-floral-corner.svg').catch(() => null),
   ]);
   const canvas = document.createElement('canvas');
   const ctx = canvas.getContext('2d');
@@ -77,7 +78,7 @@ export async function makeInvitationCard(bundle: GeneralInviteBundle, settings: 
   label('WITH LOVE AND OUR ELDERS’ BLESSINGS', 20);
   text(`${event.coupleA} & ${event.coupleB}`, 94, { display: true, weight: 700, gap: 18, names: true });
   text(settings.welcomeMessage, 23, { color: muted, width: 850, gap: 36 });
-  if (showPhotos) blocks.push({ kind: 'photos', height: 568, gap: 38 });
+  if (showPhotos) blocks.push({ kind: 'photos', height: 600, gap: 46 });
   blocks.push({ kind: 'divider', height: 24, gap: 20 });
   label('OUR WEDDING DAY');
   text(fmtDate(event.startsAt), 44, { display: true, weight: 600, gap: 10 });
@@ -93,14 +94,13 @@ export async function makeInvitationCard(bundle: GeneralInviteBundle, settings: 
       text(`${fmtDate(fn.startsAt)} · ${fmtTime(fn.startsAt)} IST${fn.venue ? `\n${fn.venue}` : ''}`, 21, { color: muted, gap: 24 });
     }
   }
-  text('Your presence is our happiness.', 34, { display: true, italic: true, weight: 500, color: primary, gap: 25 });
-  label('OPEN YOUR INVITATION', 7);
-  text(link.replace(/^https?:\/\//, '').replace(/\/$/, ''), 19, { color: muted, width: 850, gap: 0 });
+  text('Your presence is our happiness.', 36, { display: true, italic: true, weight: 500, color: primary, gap: 0 });
 
-  const top = 185;
+  const top = 280;
   const contentHeight = blocks.reduce((sum, block) => sum + (block.kind === 'text' ? block.lines.length * block.lineHeight : block.height) + block.gap, 0);
   const height = HEIGHT;
-  const contentScale = Math.min(1, (height - top - 180) / contentHeight);
+  const availableHeight = height - top - 300;
+  const contentScale = Math.min(1.06, availableHeight / contentHeight);
   canvas.width = WIDTH * EXPORT_SCALE;
   canvas.height = 1920;
   ctx.scale(EXPORT_SCALE, EXPORT_SCALE);
@@ -110,9 +110,8 @@ export async function makeInvitationCard(bundle: GeneralInviteBundle, settings: 
   ctx.fillRect(0, 0, WIDTH, height);
 
   if (mandala) {
-    ctx.save(); ctx.globalAlpha = .16;
-    ctx.drawImage(mandala, -110, -100, 400, 400);
-    ctx.drawImage(mandala, WIDTH - 290, -100, 400, 400);
+    ctx.save(); ctx.globalAlpha = .07;
+    ctx.drawImage(mandala, 340, 180, 520, 520);
     ctx.restore();
   }
   ctx.strokeStyle = primary;
@@ -120,7 +119,18 @@ export async function makeInvitationCard(bundle: GeneralInviteBundle, settings: 
   ctx.beginPath(); ctx.roundRect(32, 32, WIDTH - 64, height - 64, 26); ctx.stroke();
   ctx.save(); ctx.globalAlpha = .3; ctx.strokeStyle = deep;
   ctx.beginPath(); ctx.roundRect(44, 44, WIDTH - 88, height - 88, 19); ctx.stroke(); ctx.restore();
-  if (monogram) ctx.drawImage(monogram, 554, 66, 92, 92);
+  if (monogram) ctx.drawImage(monogram, 548, 100, 104, 104);
+
+  const floralCorner = (x: number, y: number, size: number, flipX: boolean, flipY: boolean) => {
+    if (!floral) return;
+    ctx.save();
+    ctx.translate(x + (flipX ? size : 0), y + (flipY ? size : 0));
+    ctx.scale(flipX ? -1 : 1, flipY ? -1 : 1);
+    ctx.drawImage(floral, 0, 0, size, size);
+    ctx.restore();
+  };
+  floralCorner(20, 48, 370, false, true);
+  floralCorner(WIDTH - 390, 48, 370, true, true);
 
   const arch = (x: number, y: number, width: number, photoHeight: number) => {
     const radius = width / 2;
@@ -135,7 +145,7 @@ export async function makeInvitationCard(bundle: GeneralInviteBundle, settings: 
     ctx.closePath();
   };
   const portrait = (image: HTMLImageElement, x: number, y: number) => {
-    const width = 434, photoHeight = 552;
+    const width = 434, photoHeight = 584;
     ctx.save();
     arch(x - 8, y - 8, width + 16, photoHeight + 16);
     ctx.strokeStyle = primary; ctx.globalAlpha = .4; ctx.lineWidth = 1.2; ctx.stroke();
@@ -148,7 +158,7 @@ export async function makeInvitationCard(bundle: GeneralInviteBundle, settings: 
   };
   ctx.textBaseline = 'top';
   ctx.save();
-  ctx.translate((WIDTH - WIDTH * contentScale) / 2, top + Math.max(0, (height - top - 180 - contentHeight * contentScale) / 2));
+  ctx.translate((WIDTH - WIDTH * contentScale) / 2, top + Math.max(0, (availableHeight - contentHeight * contentScale) / 2));
   ctx.scale(contentScale, contentScale);
   let y = 0;
   for (const block of blocks) {
@@ -191,5 +201,7 @@ export async function makeInvitationCard(bundle: GeneralInviteBundle, settings: 
     for (let x = 48; x < WIDTH - 48; x += 140) ctx.drawImage(textile, x, height - 132, 140, 84);
     ctx.restore();
   }
+  floralCorner(20, height - 505, 440, false, false);
+  floralCorner(WIDTH - 460, height - 505, 440, true, false);
   return await new Promise<Blob>((resolve, reject) => canvas.toBlob(blob => blob ? resolve(blob) : reject(new Error('Could not download the invitation card.')), 'image/png'));
 }

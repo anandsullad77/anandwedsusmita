@@ -1,7 +1,7 @@
 // Supabase backend — talks to the schema in supabase/migrations/0001_init.sql.
 // Guests use anonymous auth (a silent device session). Hosts use email/password.
 import { supabase as sb } from './supabaseClient';
-import type { AdminAnalytics, AdminData, AdminHousehold, Backend, EventInfo, GeneralInviteBundle, GeneralInvitationSettings, GuestDirectory, GuestMemoryPosts, HostTeam, HostTeamResult, Household, Person, Photo, PhotoQuestSummary, ReactionCounts, ReactionKind, Wish } from './types';
+import type { AdminAnalytics, AdminData, AdminHousehold, Backend, EventInfo, GeneralInviteBundle, GeneralInvitationSettings, GuestDirectory, GuestMemoryPosts, HostTeam, HostTeamResult, Household, Person, Photo, PhotoQuestSummary, PostReviewQueue, ReactionCounts, ReactionKind, Wish } from './types';
 import { defaultGeneralSettings, normalizeGeneralSettings, validateGeneralSettings, validateWish } from './generalInvitation';
 import { photoQuest } from './photoQuests';
 import { emptyReactions, reactionFields } from './reactions';
@@ -89,7 +89,7 @@ async function signedUrls(paths: string[], userId: string): Promise<Map<string, 
 
 async function photosFor(eventId: string, includeHidden: boolean, questId?: string, preview = false): Promise<Photo[]> {
   let q = sb().from('photos').select('*').eq('event_id', eventId);
-  if (!includeHidden) q = q.eq('hidden', false);
+  if (!includeHidden) q = q.eq('hidden', false).eq('status', 'approved');
   if (questId) q = q.eq('quest_id', questId);
   if (includeHidden) q = q.order('pinned', { ascending: false });
   const [result, session] = await Promise.all([
@@ -101,7 +101,7 @@ async function photosFor(eventId: string, includeHidden: boolean, questId?: stri
   const postIds = !preview && rows.length === 200 ? [...new Set(rows.map(r => r.post_id).filter(Boolean))] : [];
   if (postIds.length) {
     let grouped = sb().from('photos').select('*').eq('event_id', eventId).in('post_id', postIds);
-    if (!includeHidden) grouped = grouped.eq('hidden', false);
+    if (!includeHidden) grouped = grouped.eq('hidden', false).eq('status', 'approved');
     if (questId) grouped = grouped.eq('quest_id', questId);
     for (const row of must(await grouped) as any[]) if (!rows.some(r => r.id === row.id)) rows.push(row);
   }
@@ -111,16 +111,17 @@ async function photosFor(eventId: string, includeHidden: boolean, questId?: stri
   const needsDevice = !preview && me && rows.some(r => !r.uploaded_by && r.person_id);
   const [reactions, flags, device, urls] = await Promise.all([
     !preview && ids.length ? photoReactionSummary(ids, me ?? '') : [],
-    includeHidden && ids.length ? sb().from('photo_flags').select('photo_id').in('photo_id', ids).then(r => must(r) as any[]) : [],
+    includeHidden && ids.length ? sb().from('photo_flags').select('photo_id').is('resolved_at', null).in('photo_id', ids).then(r => must(r) as any[]) : [],
     needsDevice ? sb().from('devices').select('person_id').eq('event_id', eventId).eq('user_id', me!).maybeSingle().then(r => must(r) as { person_id: string } | null) : null,
     signedUrls(rows.map(r => r.storage_path), me ?? ''),
   ]);
   const reactionsById = new Map(reactions.map(reaction => [reaction.photoId, reaction]));
   return rows.map(r => ({
-    id: r.id, postId: r.post_id, postPosition: r.post_position, uploaderName: r.uploader_name, moment: r.moment, questId: r.quest_id, caption: r.caption, createdAt: r.created_at, pinned: r.pinned, hidden: r.hidden, flags: includeHidden ? flags.filter(f => f.photo_id === r.id).length : undefined,
+    id: r.id, postId: r.post_id, postPosition: r.post_position, uploaderName: r.uploader_name, moment: r.moment, questId: r.quest_id, caption: r.caption, createdAt: r.created_at, pinned: r.pinned, hidden: r.hidden, status: r.status ?? 'approved', flags: includeHidden ? flags.filter(f => f.photo_id === r.id).length : undefined,
     reactionCounts: reactionsById.get(r.id)?.counts ?? emptyReactions(), myReaction: reactionsById.get(r.id)?.mine ?? null,
     akshate: reactionsById.get(r.id)?.counts.akshate ?? 0, mine: reactionsById.get(r.id)?.mine === 'akshate',
     uploadedByMe: r.uploaded_by ? r.uploaded_by === me : !!r.person_id && r.person_id === device?.person_id,
+    reportLocked: r.report_locked ?? false,
     url: urls.get(r.storage_path) ?? ''
   }));
 }
@@ -220,6 +221,7 @@ export const supabaseBackend: Backend = {
   },
   async moderateWish(eventId, wishId, status) {
     must(await sb().rpc('moderate_guestbook_wish', { p_event: eventId, p_wish: wishId, p_status: status }));
+    window.dispatchEvent(new Event('as-wedding-db'));
   },
   async claimPerson(token, personId, newName, relation) {
     await ensureDevice();
@@ -272,7 +274,7 @@ export const supabaseBackend: Backend = {
         uploader_name: meta.uploaderName, storage_path: path, moment: meta.moment ?? null,
         quest_id: meta.questId ?? null, caption: meta.caption ?? null });
     }
-    // A single database statement publishes every image together.
+    // Submit every image together for host approval.
     must(await sb().from('photos').insert(rows));
   },
   async toggleAkshate(photoId) {
@@ -326,6 +328,8 @@ export const supabaseBackend: Backend = {
     const req = must(await sb().from('access_requests').select('*').eq('event_id', eventId).order('created_at', { ascending: false })) as any[];
     const secret = must(await sb().from('event_secrets').select('pin').eq('event_id', eventId).maybeSingle()) as any;
     const generalToken = must(await sb().rpc('general_invite_token', { p_event: eventId })) as string;
+    // Check the approval RPC first so an older database gets clear setup steps.
+    const reviewQueue = await supabaseBackend.postReviewQueue(eventId, { limit: 0 });
     const photos = await photosFor(eventId, true);
     return {
       event: toEvent(ev),
@@ -334,9 +338,28 @@ export const supabaseBackend: Backend = {
       functions: fns.map(f => ({ id: f.id, nameEn: f.name_en, nameKn: f.name_kn, startsAt: f.starts_at, venue: f.venue })),
       households: hhs.map(h => ({ ...toHousehold(h), people: (h.people ?? []).map(toPerson) })) as AdminHousehold[],
       photos,
+      postsToReview: reviewQueue.counts.review,
       announcements: ann.map(a => ({ id: String(a.id), body: a.body, at: a.created_at })),
       requests: req.map(r => ({ id: String(r.id), name: r.name, phone: r.phone, note: r.note, status: r.status, at: r.created_at }))
     } satisfies AdminData;
+  },
+  async postReviewQueue(eventId, options = {}) {
+    const { data, error } = await sb().rpc('admin_post_review_queue', {
+      p_event: eventId, p_filter: options.filter ?? 'review', p_kind: options.kind ?? 'all',
+      p_query: options.query?.trim() ?? '', p_quest: options.questId || null, p_limit: options.limit ?? 12, p_offset: options.offset ?? 0,
+    });
+    if (error) throw new Error(error.code === 'PGRST202'
+      ? 'Post approvals are not enabled yet. Apply the 0023_post_approval.sql migration, then refresh.' : error.message);
+    const queue = data as PostReviewQueue;
+    const session = await sb().auth.getSession();
+    const urls = await signedUrls(queue.posts.flatMap(post => post.photos.map(photo => photo.path)), session.data.session?.user.id ?? '');
+    return { ...queue, posts: queue.posts.map(post => ({ ...post, photos: post.photos.map(photo => ({ ...photo, url: urls.get(photo.path) ?? '' })) })) };
+  },
+  async reviewPosts(eventId, posts, action) {
+    const { error } = await sb().rpc('review_wedding_posts', { p_event: eventId, p_posts: posts.map(({ id, kind }) => ({ id, kind })), p_action: action });
+    if (error) throw new Error(error.code === 'PGRST202'
+      ? 'Post approvals are not enabled yet. Apply the 0023_post_approval.sql migration, then refresh.' : error.message);
+    window.dispatchEvent(new Event('as-wedding-db'));
   },
   async adminAnalytics(eventId) {
     const { data, error } = await sb().rpc('admin_wedding_analytics', { p_event: eventId });
@@ -392,7 +415,16 @@ export const supabaseBackend: Backend = {
   async setInviteStatus(householdId, status) {
     must(await sb().from('households').update({ invite_status: status }).eq('id', householdId).eq('invite_status', 'not_sent'));
   },
-  async setPhoto(photoId, patch) { must(await sb().from('photos').update(patch).eq('id', photoId)); },
+  async setPhoto(photoId, patch) {
+    if (patch.hidden !== undefined) {
+      const row = must(await sb().from('photos').select('id,event_id,post_id').eq('id', photoId).single()) as any;
+      await supabaseBackend.reviewPosts(row.event_id, [{ id: row.post_id ?? row.id, kind: 'photo' }], patch.hidden ? 'hide' : 'approve');
+    }
+    if (patch.pinned !== undefined) {
+      const row = must(await sb().from('photos').update({ pinned: patch.pinned }).eq('id', photoId).select('id').maybeSingle());
+      if (!row) throw new Error('Photo not found or you do not have permission to update it.');
+    }
+  },
   async deletePhoto(photoId) {
     const row = must(await sb().from('photos').select('storage_path').eq('id', photoId).single()) as any;
     must(await sb().storage.from('photos').remove([row.storage_path]));

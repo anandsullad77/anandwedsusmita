@@ -109,7 +109,7 @@ const json = (route, body, status = 200) => route.fulfill({ status, contentType:
     });
     await broken.page.goto(origin + '/invitation/feed');
     await broken.page.getByRole('button', { name: 'Continue with Google' }).click();
-    await broken.page.getByRole('heading', { name: 'Feed', exact: true }).waitFor();
+    await broken.page.getByRole('heading', { name: 'Gallery', exact: true }).waitFor();
     assert.ok(failedVisits > 0);
     assert.equal(await broken.page.getByRole('alert').count(), 0, 'Unavailable analytics do not interrupt guest sign-in or the feed');
     console.log('PASS: analytics failures do not block guests');

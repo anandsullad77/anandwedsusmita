@@ -17,7 +17,6 @@
 .create-option:hover { border-color: color-mix(in srgb, var(--primary) 45%, transparent); }
 .create-option-icon { width: 48px; height: 48px; flex: 0 0 auto; border-radius: 14px; display: grid; place-items: center; }
 .create-option-rose { background: var(--primary); color: var(--paper); }
-.create-option-deep { background: var(--deep); color: var(--paper); }
 .create-option-soft { background: #F3DDE2; color: var(--primary); }
 .create-sheet-quest { display: flex; align-items: center; gap: 10px; margin-top: 16px; padding: 12px 14px; border-radius: 14px; background: #F3E8D6; color: var(--deep); font-size: 13px; text-decoration: none; }
 .create-sheet-quest-try { margin-left: auto; font-weight: 600; color: var(--primary); }
@@ -51,10 +50,3 @@
   .create-sheet-backdrop, .create-sheet, .create-done-grains i { animation: none; opacity: .8; }
   .create-done-spinner { animation-duration: 3s; }
 }
-
-/* "Add photos" opens two sources: camera or gallery. */
-.create-option-group { border-radius: 16px; border: 1px solid var(--line); background: #FFFFFF; overflow: hidden; }
-.create-option-group .create-option { border: 0; border-radius: 0; background: transparent; }
-.create-option-group.is-open { border-color: color-mix(in srgb, var(--primary) 45%, transparent); }
-.create-photo-sources { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; padding: 0 14px 14px; }
-.create-photo-source { min-height: 84px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; border: 0; border-radius: 14px; font-size: 15px; font-weight: 600; cursor: pointer; }

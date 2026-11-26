@@ -96,8 +96,19 @@ export type Photo = {
   uploadedByMe: boolean;
   pinned: boolean;
   hidden: boolean;
+  status?: WishStatus;
+  reportLocked?: boolean;
   flags?: number;
 };
+
+export type PostReviewFilter = 'review' | 'feed' | 'hidden' | 'all';
+export type PostReviewPhoto = { id: string; path: string; url?: string; caption: string | null; moment: string | null; questId: string | null;
+  hidden: boolean; status: WishStatus; reports: { reason: string | null; removal: boolean; createdAt: string }[] };
+export type PostReview = { id: string; kind: 'photo' | 'wish'; name: string; text: string | null; status: WishStatus;
+  hidden: boolean; flags: number; createdAt: string; reviewedAt: string | null; photos: PostReviewPhoto[] };
+export type PostReviewOptions = { filter?: PostReviewFilter; kind?: 'all' | 'photo' | 'wish'; query?: string; questId?: string; offset?: number; limit?: number };
+export type PostReviewQueue = { canReview: boolean; total: number; posts: PostReview[];
+  counts: Record<PostReviewFilter | 'pending' | 'reported', number> };
 
 export type Announcement = { id: string; body: string; at: string };
 export type PhotoMeta = { moment?: string; questId?: string; caption?: string; uploaderName: string; personId: string | null };
@@ -164,6 +175,7 @@ export type AdminData = {
   functions: Fn[];
   households: AdminHousehold[];
   photos: Photo[];
+  postsToReview?: number;
   announcements: Announcement[];
   requests: { id: string; name: string; phone?: string | null; note?: string | null; status: string; at: string }[];
 };
@@ -201,6 +213,8 @@ export interface Backend {
   hostTeam(eventId: string): Promise<HostTeam>;
   manageHostTeam(eventId: string, action: HostTeamAction): Promise<HostTeamResult>;
   adminData(eventId: string): Promise<AdminData>;
+  postReviewQueue(eventId: string, options?: PostReviewOptions): Promise<PostReviewQueue>;
+  reviewPosts(eventId: string, posts: Pick<PostReview, 'id' | 'kind'>[], action: 'approve' | 'hide'): Promise<void>;
   adminAnalytics(eventId: string): Promise<AdminAnalytics>;
   adminGuests(eventId: string, options?: { query?: string; offset?: number; limit?: number }): Promise<GuestDirectory>;
   adminGuestPosts(eventId: string, options?: { guestId?: string; offset?: number; limit?: number; includeUrls?: boolean }): Promise<GuestMemoryPosts>;
