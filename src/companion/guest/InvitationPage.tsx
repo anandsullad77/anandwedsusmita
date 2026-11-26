@@ -84,7 +84,7 @@ export default function InvitationPage({ bundle, base, token, children }: { bund
     </section>}
 
     {hasMoments && <Editorial title="Gallery" lead="Photos and wishes from the family, as they come in."><InviteGallery base={base} photos={previewPhotos} wishes={wishes} canUpload={sections.uploads} canWish={sections.guestbook} locked={!canAccess} /></Editorial>}
-    {sections.playground && <Editorial title="Playground" lead="A little game while you wait for the muhurta."><WeddingVerdict eventId={event.id} base={base} /></Editorial>}
+    {sections.playground && <Editorial title="Playground" lead="A little game while you wait for the muhurta."><WeddingVerdict event={event} base={base} /></Editorial>}
     {sections.download && <InvitationDownloads bundle={bundle} settings={settings} publicLink={`${PUBLIC_SITE_ORIGIN}/invitation?from=status`} />}
     <div className="general-closing" lang="en"><p className="general-eyebrow">The best part of our day?</p><p>Having you in it.</p><span>With love, {event.coupleA} &amp; {event.coupleB}</span></div>
     <WeddingSignoff />

@@ -28,7 +28,7 @@ const quizAnswers=['Drawing','Roti','Banana','Scuba diving with sharks','Differe
     for(const user of [host,guest,guest2,email,outsider])await db.query('insert into auth.users(id,email) values($1,$2)',[user,`${user}@example.com`]);
     await db.query("insert into auth.identities(user_id,provider) values($1,'google'),($2,'google'),($3,'google'),($4,'email')",[guest,guest2,outsider,email]);
     for(const [eid,slug]of[[event,'anand-susmita'],[other,'other-wedding']]){
-      await db.query("insert into events(id,slug,title,couple_a,couple_b,starts_at,venue,pin_hash) values($1,$2,'Wedding','Anand','Susmita','2026-11-29 12:28:00+05:30','Venue','fixture')",[eid,slug]);
+      await db.query("insert into events(id,slug,title,couple_a,couple_b,starts_at,venue,pin_hash) values($1,$2,'Wedding','Anand','Susmita',now()+interval '3 days','Venue','fixture')",[eid,slug]);
       await db.query('insert into general_invites(event_id) values($1)',[eid]);
       await db.query('insert into general_invitation_settings(event_id) values($1)',[eid]);
     }
@@ -96,11 +96,15 @@ const quizAnswers=['Drawing','Roti','Banana','Scuba diving with sharks','Differe
     assert.deepEqual((await db.query("select * from wedding_polls where event_id=$1 and category not in ('prediction','quiz') order by id",[event])).rows,unrelated.rows,'Other activities are unchanged');
     await db.query("update wedding_polls set status='open' where id=$1",[initialPredictions[0].id]);
     console.log('PASS: nine personalized predictions, stable order and schedules, and removal of old questions from prediction and quiz together');
+    // The question-update checks above re-run older migrations; restore the sealed-results version.
+    await db.exec(fs.readFileSync(path.join(dir,'0026_playground_sealed_until_wedding_ends.sql'),'utf8'));
     await db.exec('grant usage on schema public,auth,storage to anon,authenticated;grant select,insert,update,delete on storage.objects to authenticated;');
     const as=async user=>{await db.exec('reset role');await db.query("select set_config('request.jwt.claim.sub',$1,false)",[user||'']);await db.exec(user?'set role authenticated':'set role anon');};
     const read=async(admin=false)=>(await db.query('select wedding_playground($1,$2) data',[event,admin])).rows[0].data;
     const save=p=>db.query('select save_wedding_poll($1,$2)',[event,JSON.stringify(p)]);
     const vote=(pid,answer)=>db.query('select vote_wedding_poll($1,$2)',[pid,answer]);
+    // Moves the wedding so the Playground is open, between closing and reveal, or revealed.
+    const weddingAt=async(sql,user)=>{await db.exec('reset role');await db.query(`update events set starts_at=${sql} where id=$1`,[event]);await as(user);};
     const poll={id:id(70),category:'quiz',kind:'single',question:'Who takes more photographs?',options:['Anand','Susmita'],photoIds:[],status:'open',startsAt:null,closesAt:null,revealAt:null,results:'closed',pinned:false,correct:1,coupleAnswers:null,provisional:false};
     await as(null);await assert.rejects(read(),/permission denied/);
     for(const user of [email,outsider]){await as(user);await assert.rejects(read(),/Sign in and open/);}
@@ -129,7 +133,7 @@ const quizAnswers=['Drawing','Roti','Banana','Scuba diving with sharks','Differe
     await assert.rejects(db.query('select seed_wedding_prediction_questions($1)',[event]),/permission denied/);
     for(const removed of [id(90),id(92),id(93),id(94)]) await assert.rejects(vote(removed,['0']),/not open/);
     await assert.rejects(vote(poll.id,['2']),/valid, different/);
-    await vote(poll.id,['1']);await vote(poll.id,['1']);await assert.rejects(vote(poll.id,['0']),/locked in/);
+    await vote(poll.id,['0']);await vote(poll.id,['1']);await vote(poll.id,['1']);
     data=await read();assert.deepEqual(data.polls.find(p=>p.id===poll.id).mine,['1']);
     assert.equal(data.polls.find(p=>p.id===poll.id).total,null);assert.equal(data.polls.find(p=>p.id===poll.id).correct,null);
     await db.query('select join_wedding_team($1,$2)',[event,'a']);
@@ -139,17 +143,22 @@ const quizAnswers=['Drawing','Roti','Banana','Scuba diving with sharks','Differe
     await as(guest);assert.equal((await read()).polls.find(p=>p.id===poll.id).correct,null);
     await assert.rejects(vote(poll.id,['1']),/not open/);
     await as(host);await save({...poll,status:'closed'});
-    await as(guest);data=await read();assert.equal(data.polls.find(p=>p.id===poll.id).correct,1);assert.deepEqual(data.polls.find(p=>p.id===poll.id).counts,[0,1]);
+    await as(guest);data=await read();assert.equal(data.polls.find(p=>p.id===poll.id).correct,null,'Closing one question does not reveal it before the wedding ends');
+    assert.equal(data.players,1);assert.ok(Date.parse(data.schedule.revealAt)-Date.parse(data.schedule.closesAt)===8*3600e3,'Reveal is 8 hours after voting closes');
+    await weddingAt("now()-interval '3 days'",guest);data=await read();assert.equal(data.polls.find(p=>p.id===poll.id).correct,1);assert.deepEqual(data.polls.find(p=>p.id===poll.id).counts,[0,1]);
     assert.equal(data.teams.find(t=>t.id==='a').points,25);
     await db.query('select join_wedding_team($1,$2)',[event,'b']);data=await read();assert.equal(data.teams.find(t=>t.id==='a').points,0);assert.equal(data.teams.find(t=>t.id==='b').points,25);
-    console.log('PASS: seed, access, one ballot, retry, quiz locking, private answers, delayed reveals and team scoring');
+    await weddingAt("now()+interval '3 days'",guest);
+    console.log('PASS: seed, access, one ballot, changeable quiz answers, private answers, reveal after the wedding and team scoring');
     await as(host);const duel={...poll,id:id(73),category:'duel',correct:null,results:'after_vote'};await save(duel);
     const multiple={...duel,id:id(74),category:'prediction',kind:'multiple',options:['One','Two','Three']};await save(multiple);
     const scheduled={...duel,id:id(75),startsAt:'2099-01-01T00:00:00Z'};await save(scheduled);
     await as(guest);await vote(duel.id,['0']);await vote(duel.id,['1']);
-    assert.deepEqual((await read()).polls.find(p=>p.id===duel.id).counts,[0,1]);
+    assert.equal((await read()).polls.find(p=>p.id===duel.id).counts,null,'Results stay sealed after voting');
+    assert.deepEqual((await read()).polls.find(p=>p.id===duel.id).mine,['1']);
     await assert.rejects(vote(multiple.id,['0','0']),/valid, different/);await vote(multiple.id,['0','2']);
-    assert.deepEqual((await read()).polls.find(p=>p.id===multiple.id).counts,[1,0,1]);
+    assert.equal((await read()).polls.find(p=>p.id===multiple.id).counts,null);
+    await as(host);assert.deepEqual((await read(true)).polls.find(p=>p.id===multiple.id).counts,[1,0,1],'Hosts still see live totals');await as(guest);
     assert.ok(!(await read()).polls.some(p=>p.id===scheduled.id));await assert.rejects(vote(scheduled.id,['0']),/not open/);
     const word=(await read()).polls.find(p=>p.kind==='text');
     await assert.rejects(vote(word.id,['Two words']),/one word/);await vote(word.id,['Joyful']);
@@ -157,7 +166,15 @@ const quizAnswers=['Drawing','Roti','Banana','Scuba diving with sharks','Differe
     await as(host);let review=await read(true);assert.equal(review.pendingWords[0].word,'joyful');
     await db.query('select moderate_wedding_word($1,$2,$3,true)',[event,word.id,guest]);
     await as(guest2);await db.query('select open_wedding_invite()');
-    assert.deepEqual((await read()).polls.find(p=>p.id===word.id).words,[{word:'joyful',count:1}]);
+    assert.deepEqual((await read()).polls.find(p=>p.id===word.id).words,[],'Words stay sealed too');
+    // The night after the wedding: voting is closed and results are still sealed.
+    await db.exec('reset role');await db.exec("create or replace function public.wedding_playground_schedule(p_event uuid) returns table(closes_at timestamptz,reveal_at timestamptz) language sql stable security definer set search_path=public,pg_temp as $$select now()-interval '1 hour',now()+interval '7 hours'$$");await as(guest2);
+    await assert.rejects(vote(duel.id,['0']),/closed for the wedding/);
+    data=await read();assert.equal(data.polls.find(p=>p.id===duel.id).status,'closed');assert.equal(data.polls.find(p=>p.id===duel.id).counts,null);
+    await db.exec('reset role');await db.exec(fs.readFileSync(path.join(dir,'0026_playground_sealed_until_wedding_ends.sql'),'utf8'));
+    await weddingAt("now()-interval '3 days'",guest2);
+    data=await read();assert.deepEqual(data.polls.find(p=>p.id===duel.id).counts,[0,1],'Everyone sees results after the reveal');assert.deepEqual(data.polls.find(p=>p.id===word.id).words,[{word:'joyful',count:1}]);
+    await weddingAt("now()+interval '3 days'",guest2);
     assert.equal((await read()).polls.find(p=>p.id===duel.id).mine,null);
     console.log('PASS: editable votes, multiple choice validation, scheduled opening, word moderation and other ballot privacy');
     const edit=async(p,allowRevision=false,eid=event)=>(await db.query('select edit_wedding_poll($1,$2,$3) data',[eid,JSON.stringify(p),allowRevision])).rows[0].data;
