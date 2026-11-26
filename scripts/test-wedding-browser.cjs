@@ -17,7 +17,7 @@ const photo = (n, createdAt, extra = {}) => ({ id: id(n), event_id: eventId, sto
 const privatePath = pathname => /\/rest\/v1\/(photos|guestbook_messages|akshate)|\/rpc\/photo_quest_summary|\/storage\/v1\/.*photos/.test(pathname);
 
 async function scenario(browser, { width = 390, initial = 'anonymous', family = false, cancel = false, site = origin, customSections = sections, latency = 0, wishDelay = 0, previewPaths = [], mobile = false } = {}) {
-  const context = await browser.newContext({ viewport: { width, height: 900 }, reducedMotion: 'reduce', hasTouch: width < 768, isMobile: mobile });
+  const context = await browser.newContext({ viewport: { width, height: 900 }, reducedMotion: 'reduce', hasTouch: width < 768, isMobile: mobile, serviceWorkers: 'block' });
   let mode = initial, exchanges = 0, claims = 0, failUpload = false, failInsert = false, loseInsertResponse = false, signings = 0;
   let googleUserId = id(12);
   let failReview = false, reviewDelay = 0, canReview = true;

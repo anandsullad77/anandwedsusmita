@@ -8,6 +8,7 @@ const { scenario, origin, wait, eventId, id } = require('./test-wedding-browser.
 const results = [], tests = [];
 const test = (name, run) => tests.push({ name, run });
 const frames = page => page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+const close = async context => { await context.unrouteAll({ behavior: 'ignoreErrors' }); await context.close(); };
 const scale = async (page, client, value) => { await client.send('Emulation.setPageScaleFactor', { pageScaleFactor: value }); await wait(() => page.evaluate(expected => Math.abs(visualViewport.scale - expected) < .01, value), 'Browser zoom changes'); await frames(page); };
 async function pan(client, vertical = false) {
   const start = { x: vertical ? 195 : 300, y: vertical ? 650 : 400 };
@@ -58,7 +59,7 @@ test('gallery: 200% and 300% zoom pans without changing photos, then swipes resu
     await scale(page, client, 2); await page.keyboard.press('Escape');
     assert.equal(await viewer.count(), 0); assert.equal(await page.evaluate(() => document.body.style.overflow), '');
     assert.deepEqual(run.errors, []);
-  } finally { await context.close(); }
+  } finally { await close(context); }
 });
 
 test('childhood photo viewer: zoomed pans and two-finger gestures preserve the memory', async browser => {
@@ -83,7 +84,7 @@ test('childhood photo viewer: zoomed pans and two-finger gestures preserve the m
     await scale(page, client, 2); await page.keyboard.press('Escape'); assert.equal(await viewer.count(), 0);
     assert.equal(await page.evaluate(() => document.body.style.overflow), '');
     assert.deepEqual(run.errors, []);
-  } finally { await context.close(); }
+  } finally { await close(context); }
 });
 
 for (const route of ['/invitation', '/i/zoom-test']) test(`${route}: mobile page zoom and desktop reflow preserve layout and form state`, async browser => {
@@ -112,7 +113,7 @@ for (const route of ['/invitation', '/i/zoom-test']) test(`${route}: mobile page
       await page.getByRole('heading', { name: 'Let’s plan your visit.', exact: true }).waitFor();
     }
     assert.deepEqual(run.errors, []);
-  } finally { await context.close(); }
+  } finally { await close(context); }
 });
 
 (async () => {
