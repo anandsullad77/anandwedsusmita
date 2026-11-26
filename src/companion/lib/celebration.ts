@@ -3,6 +3,7 @@ import { requireGuestSignIn } from './guestAuth';
 import { supabase } from './supabaseClient';
 import { emptyPlayground, isPlaygroundCategory, type Playground, type Poll, type PollDraft, type Team } from './celebrationTypes';
 import { DEMO_QUIZ_ANSWERS, DUEL_QUESTIONS, PREDICTION_QUESTIONS, QUIZ_QUESTIONS } from './playgroundQuestions';
+import { pollContentChanged, preparePollDraft, type PollSaveResult } from './pollEditing';
 
 const must = <T>(result: { data: T; error: { message: string } | null }): T => {
   if (result.error) throw new Error(result.error.message);
@@ -13,7 +14,7 @@ async function rpc<T>(name: string, args: Record<string, unknown>): Promise<T> {
   if (result.error?.code === 'PGRST202' || result.error?.code === '42P01') throw new Error('This section is being prepared by the hosts. Please try again later.');
   return must(result) as T;
 }
-type Demo = { polls: (Poll & { archived?: boolean })[]; votes: Record<string, Record<string, string[]>>; approved: Record<string, Record<string, boolean>>; teams: Record<string, Team['id']>; duelQuestionsVersion?: number; quizQuestionsVersion?: number; predictionQuestionsVersion?: number };
+type Demo = { polls: (Poll & { archived?: boolean; replacesPollId?: string })[]; votes: Record<string, Record<string, string[]>>; approved: Record<string, Record<string, boolean>>; teams: Record<string, Team['id']>; duelQuestionsVersion?: number; quizQuestionsVersion?: number; predictionQuestionsVersion?: number };
 const makeDemoPoll = (category: Poll['category'], question: string, options = ['Anand','Susmita'], extra: Partial<Poll> = {}): Poll => ({ id:crypto.randomUUID(), category, kind:'single', question, options, photoIds:[],status:'open',startsAt:null,closesAt:null,revealAt:null,results:'after_vote',pinned:false,provisional:false,mine:null,counts:null,total:null,words:[],correct:null,coupleAnswers:null,...extra });
 const makeDemoQuiz = (entry: typeof QUIZ_QUESTIONS[number], index: number) => makeDemoPoll('quiz', entry.question, [...entry.options], { correct: DEMO_QUIZ_ANSWERS?.[index] ?? null });
 const makeDemoPrediction = (entry: typeof PREDICTION_QUESTIONS[number]) => makeDemoPoll('prediction', entry.question, [...entry.options], { closesAt: '2026-11-30T12:28:00+05:30', revealAt: '2027-11-29T12:28:00+05:30' });
@@ -118,7 +119,10 @@ export const celebration = {
     if (api.kind === 'local') { const data = readDemo(eventId); data.teams[user.id] = team; writeDemo(eventId, data); return; }
     await rpc('join_wedding_team', { p_event: eventId, p_team: team });
   },
-  async savePoll(eventId: string, poll: PollDraft) {
+  async savePoll(eventId: string, input: PollDraft, allowRevision = false): Promise<PollSaveResult> {
+    const poll = preparePollDraft(input);
+    if (!poll.question || poll.question.length > 240) throw new Error('Enter a question between 1 and 240 characters.');
+    if (poll.options.some(option => option.length > 100)) throw new Error('Keep each option under 100 characters.');
     const user=await requireGuestSignIn();
     if(!isPlaygroundCategory(poll.category))throw new Error('This activity is no longer available.');
     if (api.kind === 'local') {
@@ -127,10 +131,24 @@ export const celebration = {
       if(poll.kind!=='text'&&(poll.options.length<2||poll.options.length>6||poll.options.some(o=>!o.trim())||new Set(poll.options.map(o=>o.trim().toLowerCase())).size!==poll.options.length))throw new Error('Add 2–6 different options.');
       if(poll.category==='quiz'&&poll.status==='open'&&poll.correct===null)throw new Error('Choose the correct answer.');
       const data=readDemo(eventId),existing=data.polls.find(p=>p.id===poll.id);
-      if(existing&&Object.keys(data.votes[poll.id]??{}).length&&['options','category','kind','correct','coupleAnswers','photoIds'].some(k=>JSON.stringify(existing[k as keyof Poll])!==JSON.stringify(poll[k as keyof PollDraft])))throw new Error('This poll has votes. Duplicate it to change options or answer keys.');
-      if(existing)Object.assign(existing,poll);else data.polls.push({...poll,mine:null,counts:null,total:null,words:[]});writeDemo(eventId,data);return;
+      if(existing?.archived) {
+        const replacement = data.polls.find(p => p.replacesPollId === poll.id && !p.archived);
+        if (allowRevision && replacement && JSON.stringify({ ...preparePollDraft(replacement), id: poll.id }) === JSON.stringify(poll)) return { id: replacement.id, revised: true };
+        throw new Error('This question has already been updated. Refresh the list and edit its latest version');
+      }
+      if(existing && Object.keys(data.votes[poll.id]??{}).length && pollContentChanged(existing, poll)) {
+        if (!allowRevision) throw new Error('Guests have already voted. Save these edits as a new voting round to keep their earlier answers intact');
+        const next = { ...poll, id: crypto.randomUUID(), replacesPollId: poll.id, mine: null, counts: null, total: null, words: [] };
+        const index = data.polls.indexOf(existing);
+        existing.archived = true; existing.status = 'draft'; existing.pinned = false;
+        data.polls.splice(index, 0, next); writeDemo(eventId, data);
+        return { id: next.id, revised: true };
+      }
+      if(existing)Object.assign(existing,poll);else data.polls.push({...poll,mine:null,counts:null,total:null,words:[]});writeDemo(eventId,data);return { id: poll.id, revised: false };
     }
-    await rpc('save_wedding_poll', { p_event: eventId, p_poll: poll });
+    const result = await supabase().rpc('edit_wedding_poll', { p_event: eventId, p_poll: poll, p_allow_revision: allowRevision });
+    if (result.error?.code === 'PGRST202') throw new Error('Question editing is not enabled in this database yet. Apply 0025_edit_playground_questions.sql before publishing this update.');
+    return must(result) as PollSaveResult;
   },
   async moderateWord(eventId: string, pollId: string, userId: string, approved: boolean) {
     const user=await requireGuestSignIn();

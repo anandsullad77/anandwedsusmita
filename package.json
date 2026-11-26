@@ -27,6 +27,7 @@
     "test:invitation": "node scripts/test-invitation-download.cjs",
     "test:sharing": "node scripts/test-invitation-sharing.cjs",
     "test:celebration-db": "node scripts/test-celebration-db.cjs",
+    "test:poll-editing": "node scripts/test-poll-editing-browser.cjs",
     "test:celebration": "node scripts/test-celebration-browser.cjs",
     "test:nostalgia": "node scripts/test-nostalgia-browser.cjs",
     "preview": "vite preview --host 127.0.0.1"

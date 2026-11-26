@@ -31,10 +31,10 @@ async function mock(context,s){
   });
   await context.route(url=>url.pathname.endsWith('/rpc/join_wedding_team'),route=>{s.team=route.request().postDataJSON().p_team;return json(route,null);});
   await context.route(url=>url.pathname.endsWith('/rpc/moderate_wedding_word'),route=>{s.wordApproved=route.request().postDataJSON().p_approved;return json(route,null);});
-  await context.route(url=>url.pathname.endsWith('/rpc/save_wedding_poll'),route=>{
+  await context.route(url=>url.pathname.endsWith('/rpc/save_wedding_poll')||url.pathname.endsWith('/rpc/edit_wedding_poll'),route=>{
     const p=route.request().postDataJSON().p_poll;
     if(p.status==='open'&&p.provisional)return json(route,{message:'Confirm provisional answers before publishing'},400);
-    const old=s.polls.find(x=>x.id===p.id);if(old)Object.assign(old,p);else s.polls.push({...basePoll,...p});return json(route,null);
+    const old=s.polls.find(x=>x.id===p.id);if(old)Object.assign(old,p);else s.polls.push({...basePoll,...p});return json(route,{id:p.id,revised:false});
   });
 }
 async function layout(page){assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),'No horizontal overflow');}

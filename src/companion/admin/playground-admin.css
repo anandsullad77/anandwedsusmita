@@ -19,6 +19,7 @@
 .poll-editor .input { min-width: 0; width: 100%; min-height: 48px; font-size: 16px; }
 .poll-editor-check { display: flex; gap: 10px; align-items: center; font-size: 13px; line-height: 1.8; min-height: 48px; }
 .poll-editor-check input { width: 18px; height: 18px; flex-shrink: 0; }
+.poll-editor .poll-edit-notice { margin: 0; padding: 14px 16px; border-radius: 10px; background: #f3e8d6; color: #556457; font-size: 13px; line-height: 1.7; }
 .admin-memory-list { margin-top: 18px; }
 .admin-memory-card { display: grid; grid-template-columns: minmax(0,180px) minmax(0,1fr); gap: 24px; }
 .admin-memory-card:not(:has(img)) { grid-template-columns: minmax(0,1fr); }
