@@ -20,6 +20,7 @@ export function GoogleSignIn({ returnTo, purpose = 'share in the celebration' }:
     }}><img src="/images/google-sign-in.png" width={20} height={20} alt="" aria-hidden="true" />{busy ? 'Opening Google…' : 'Continue with Google'}</button>
     <small>Your invitation stays public. Photos and wishes are shared with signed-in wedding guests.</small>
     <small>Your Google name and email are visible only to the wedding hosts. They may use your email to send you wedding memories, including your posts.</small>
+    <small>By continuing you agree to the <a href="/terms">Terms of Service</a> and <a href="/privacy">Privacy Policy</a>.</small>
     {error && <p className="error" role="alert">{error}</p>}
   </div>;
 }
