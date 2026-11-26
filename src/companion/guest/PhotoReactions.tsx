@@ -5,7 +5,7 @@ import { REACTIONS } from '../lib/reactions';
 import './reactions.css';
 import ReactionSymbol from './ReactionSymbol';
 
-export default function PhotoReactions({ photo, pending, onChange }: { photo: Photo; pending: boolean; onChange: (kind: ReactionKind | null) => Promise<void> }) {
+export default function PhotoReactions({ photo, pending, onChange, appearance = 'default' }: { photo: Photo; pending: boolean; onChange: (kind: ReactionKind | null) => Promise<void>; appearance?: 'default' | 'overlay' }) {
   const [open, setOpen] = useState(false);
   const [error, setError] = useState('');
   const [position, setPosition] = useState<{ left: number; top: number } | null>(null);
@@ -17,6 +17,7 @@ export default function PhotoReactions({ photo, pending, onChange }: { photo: Ph
   const leaving = useRef<ReturnType<typeof setTimeout> | null>(null);
   const mounted = useRef(true);
   const locked = useRef(false);
+  const focusOnOpen = useRef<number | null>(null);
   const menuId = useId();
   const current = REACTIONS.find(r => r.id === photo.myReaction);
   const used = REACTIONS.filter(r => photo.reactionCounts[r.id] > 0);
@@ -25,12 +26,17 @@ export default function PhotoReactions({ photo, pending, onChange }: { photo: Ph
   const cancelLeave = () => { if (leaving.current) clearTimeout(leaving.current); leaving.current = null; };
   const close = (restore = false) => { cancelLeave(); setOpen(false); if (restore) trigger.current?.focus({ preventScroll: true }); };
   const focusItem = (index: number) => menu.current?.querySelectorAll<HTMLButtonElement>('[role=menuitemradio]')[index]?.focus({ preventScroll: true });
+  const openAndFocus = (index: number) => {
+    cancelLeave();
+    if (open && position) focusItem(index);
+    else { focusOnOpen.current = index; setOpen(true); }
+  };
   useLayoutEffect(() => {
     if (!open) { setPosition(null); return; }
     const place = () => {
       const anchor = trigger.current?.getBoundingClientRect();
       if (!anchor) return;
-      const header = document.querySelector('.general-header')?.getBoundingClientRect().bottom ?? 0;
+      const header = appearance === 'overlay' ? 0 : document.querySelector('.general-header')?.getBoundingClientRect().bottom ?? 0;
       if (anchor.bottom < header || anchor.top > innerHeight) { setOpen(false); return; }
       const width = Math.min(292, innerWidth - 64), height = menu.current?.offsetHeight ?? 90;
       let top = anchor.top - height - 10;
@@ -39,7 +45,16 @@ export default function PhotoReactions({ photo, pending, onChange }: { photo: Ph
     };
     place(); window.addEventListener('scroll', place, true); window.addEventListener('resize', place);
     return () => { window.removeEventListener('scroll', place, true); window.removeEventListener('resize', place); };
-  }, [open]);
+  }, [open, appearance]);
+  useEffect(() => {
+    if (open && position && focusOnOpen.current !== null) {
+      const frame = requestAnimationFrame(() => {
+        if (focusOnOpen.current !== null) focusItem(focusOnOpen.current);
+        focusOnOpen.current = null;
+      });
+      return () => cancelAnimationFrame(frame);
+    }
+  }, [open, position]);
   useEffect(() => {
     mounted.current = true;
     return () => { mounted.current = false; cancelHold(); cancelLeave(); };
@@ -64,22 +79,21 @@ export default function PhotoReactions({ photo, pending, onChange }: { photo: Ph
     }
   };
 
-  return <div ref={root} className="photo-reactions" onPointerEnter={cancelLeave} onPointerLeave={event => {
-    if (event.pointerType === 'mouse') { cancelLeave(); leaving.current = setTimeout(() => setOpen(false), 250); }
+  return <div ref={root} className={`photo-reactions${appearance === 'overlay' ? ' photo-reactions-overlay' : ''}`} onPointerEnter={cancelLeave} onPointerLeave={event => {
+    if (appearance === 'default' && event.pointerType === 'mouse') { cancelLeave(); leaving.current = setTimeout(() => setOpen(false), 250); }
   }} onKeyDown={event => {
     if (event.key === 'Escape' && open) { event.preventDefault(); event.stopPropagation(); close(true); }
   }}>
     <div className="reaction-button-row">
       <button ref={trigger} type="button" className={`reaction-trigger${current ? ` has-reaction reaction-${current.id}` : ''}`} aria-label={current ? `Your reaction: ${current.label}. Change reaction` : 'React to this photo'} aria-haspopup="menu" aria-expanded={open} aria-controls={open ? menuId : undefined} disabled={pending} onClick={() => {
         if (held.current) { held.current = false; return; }
-        setOpen(true);
-        requestAnimationFrame(() => focusItem(Math.max(0, REACTIONS.findIndex(r => r.id === photo.myReaction))));
-      }} onPointerEnter={event => { if (event.pointerType === 'mouse' && !pending) { cancelLeave(); setOpen(true); } }} onPointerDown={event => {
+        openAndFocus(Math.max(0, REACTIONS.findIndex(r => r.id === photo.myReaction)));
+      }} onPointerEnter={event => { if (appearance === 'default' && event.pointerType === 'mouse' && !pending) { cancelLeave(); setOpen(true); } }} onPointerDown={event => {
         if (event.pointerType === 'mouse' || pending) return;
         held.current = false; cancelHold();
         hold.current = setTimeout(() => { held.current = true; setOpen(true); }, 450);
       }} onPointerUp={cancelHold} onPointerCancel={() => { cancelHold(); held.current = false; }} onPointerMove={event => { if (event.pointerType !== 'mouse' && event.buttons && Math.abs(event.movementY) > 8) cancelHold(); }} onContextMenu={event => event.preventDefault()} onKeyDown={event => {
-        if (event.key === 'ArrowDown' || event.key === 'ArrowUp') { event.preventDefault(); setOpen(true); requestAnimationFrame(() => focusItem(event.key === 'ArrowUp' ? 3 : 0)); }
+        if (event.key === 'ArrowDown' || event.key === 'ArrowUp') { event.preventDefault(); openAndFocus(event.key === 'ArrowUp' ? 3 : 0); }
       }}>
         <span className="reaction-trigger-emoji" aria-hidden="true">{current ? <ReactionSymbol kind={current.id} /> : '♡'}</span><span>{pending ? 'Saving…' : current?.label ?? 'React'}</span>
       </button>
@@ -87,8 +101,8 @@ export default function PhotoReactions({ photo, pending, onChange }: { photo: Ph
         <span className="reaction-summary-icons" aria-hidden="true">{used.map(r => <span key={r.id} title={`${r.label}: ${photo.reactionCounts[r.id]}`}><ReactionSymbol kind={r.id} /></span>)}</span><span aria-hidden="true">{total}</span>
       </span>}
     </div>
-    {open && createPortal(<div ref={menu} id={menuId} className="reaction-picker" style={{ left: position?.left ?? 0, top: position?.top ?? 0, visibility: position ? 'visible' : 'hidden' }} role="menu" aria-label="Choose a photo reaction" onPointerEnter={cancelLeave} onPointerLeave={event => {
-      if (event.pointerType === 'mouse') { cancelLeave(); leaving.current = setTimeout(() => close(), 250); }
+    {open && createPortal(<div ref={menu} id={menuId} className={`reaction-picker${appearance === 'overlay' ? ' reaction-picker-overlay' : ''}`} style={{ left: position?.left ?? 0, top: position?.top ?? 0 }} role="menu" aria-label="Choose a photo reaction" onPointerEnter={cancelLeave} onPointerLeave={event => {
+      if (appearance === 'default' && event.pointerType === 'mouse') { cancelLeave(); leaving.current = setTimeout(() => close(), 250); }
     }} onKeyDown={event => {
       const items = Array.from(menu.current?.querySelectorAll<HTMLButtonElement>('[role=menuitemradio]') ?? []);
       const index = items.indexOf(document.activeElement as HTMLButtonElement);

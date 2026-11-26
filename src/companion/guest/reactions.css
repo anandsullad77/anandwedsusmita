@@ -20,6 +20,14 @@
 .reaction-picker > button:hover, .reaction-picker > button:focus-visible, .reaction-picker > button[aria-checked=true] { background: #f6efe4; }
 .reaction-picker > button:hover > span, .reaction-picker > button:focus-visible > span { transform: translateY(-5px) scale(1.15); }
 .reaction-error { margin: 8px 0 0; font-size: 12px; line-height: 1.6; overflow-wrap: anywhere; }
+.photo-reactions-overlay { flex: none; width: 64px; pointer-events: auto; }
+.photo-reactions-overlay .reaction-button-row { flex-direction: column; flex-wrap: nowrap; gap: 3px; }
+.photo-reactions-overlay .reaction-trigger { flex-direction: column; gap: 4px; min-width: 52px; padding: 6px; border: 0; border-radius: 12px; background: transparent; color: #FFF7EB; font-size: 12px; text-shadow: 0 1px 4px #000b; }
+.photo-reactions-overlay .reaction-trigger-emoji { font-size: 30px; }
+.photo-reactions-overlay .reaction-summary { color: #FFF7EB; font-variant-numeric: tabular-nums; }
+.photo-reactions-overlay .reaction-summary-icons { display: none; }
+.photo-reactions-overlay .reaction-error { position: absolute; bottom: 100%; right: 0; width: min(280px, calc(100vw - 40px)); padding: 10px 12px; border-radius: 12px; background: #3B1724; color: #FFF7EB; text-shadow: none; }
+.reaction-picker-overlay { z-index: 220; text-shadow: none; }
 .carousel-photo-surface { position: relative; overflow: hidden; isolation: isolate; }
 .reaction-effect { position: absolute; inset: 0; z-index: 3; overflow: hidden; pointer-events: none; }
 .reaction-center { position: absolute; left: 50%; top: 50%; font-size: clamp(54px, 14vw, 88px); line-height: 1; filter: drop-shadow(0 3px 10px #0003); animation: reaction-photo-pop 1.2s ease-out both; }
