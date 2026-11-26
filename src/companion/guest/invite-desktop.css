@@ -44,7 +44,13 @@
   .invite-gallery-note { margin-top: 12px; }
 
   /* Playground card fills its column. */
-  .invite-ed .pg-teaser, .invite-ed .pg-verdict-invite { max-width: none; margin: 0; }
+  .invite-ed .pg-teaser, .invite-ed .pg-verdict-invite, .invite-ed .pg-invite-env { max-width: none; margin: 0; }
+  .invite-ed .pg-invite-env { padding: 32px 32px 28px; }
+  .invite-ed .pg-invite-env h2 { font-size: 34px; }
+  .invite-ed .pg-invite-env .pg-have-say { display: flex; max-width: 360px; margin-left: auto; margin-right: auto; }
+  .invite-ed .pg-invite-env .pg-envelope:not(.is-open) { width: 140px; height: 90px; }
+  .invite-ed .pg-invite-env .pg-envelope:not(.is-open) .pg-flap { height: 54px; }
+  .invite-ed .pg-invite-env .pg-envelope:not(.is-open) .pg-wax { top: 30px; width: 42px; height: 42px; font-size: 16px; }
   .invite-ed .pg-teaser { padding: 26px 28px; border-radius: 22px; gap: 18px; }
   .invite-ed .pg-teaser b { font: 600 30px/1.1 var(--serif); }
   .invite-ed .pg-teaser small { font-size: 15px; margin-top: 6px; }

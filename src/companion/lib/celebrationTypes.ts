@@ -20,9 +20,30 @@ export type PollDraft = Omit<Poll, 'mine' | 'counts' | 'total' | 'words' | 'phot
 export type Team = { id: 'a' | 'b' | 'both'; members: number; points: number };
 export type Playground = {
   polls: Poll[]; teams: Team[]; myTeam: Team['id'] | null;
+  /** When voting closes and when everyone's results open. Missing from older databases. */
+  schedule?: PlaygroundSchedule | null;
+  /** How many guests have answered at least one question. */
+  players?: number;
   stats: { votes: number; voters: number; completed: number };
   pendingWords: { pollId: string; userId: string; question: string; word: string }[];
 };
+export type PlaygroundSchedule = { closesAt: string; revealAt: string };
+/** Voting closes when the wedding day ends (midnight, India time); results open at 8:00 AM the next morning. */
+export function playgroundSchedule(startsAt: string): PlaygroundSchedule {
+  const ist = new Date(Date.parse(startsAt) + 330 * 60e3);
+  const closes = Date.UTC(ist.getUTCFullYear(), ist.getUTCMonth(), ist.getUTCDate() + 1) - 330 * 60e3;
+  return { closesAt: new Date(closes).toISOString(), revealAt: new Date(closes + 8 * 3600e3).toISOString() };
+}
+/** The Playground's clock. In development, localStorage 'as-wedding-demo-now' (an ISO date) previews other moments. */
+export function playgroundNow() {
+  if (import.meta.env.DEV) { const at = Date.parse(localStorage.getItem('as-wedding-demo-now') ?? ''); if (!Number.isNaN(at)) return at; }
+  return Date.now();
+}
+export type PlaygroundPhase = 'open' | 'lastcall' | 'closed' | 'revealed';
+export function playgroundPhase(schedule: PlaygroundSchedule, now = playgroundNow()): PlaygroundPhase {
+  const closes = Date.parse(schedule.closesAt), reveal = Date.parse(schedule.revealAt);
+  return now >= reveal ? 'revealed' : now >= closes ? 'closed' : now >= closes - 3 * 3600e3 ? 'lastcall' : 'open';
+}
 export const emptyPlayground = (): Playground => ({ polls: [], teams: [], myTeam: null, stats: { votes: 0, voters: 0, completed: 0 }, pendingWords: [] });
 export function quizTitle(percent: number) {
   return percent >= 90 ? 'The Relationship Insider' : percent >= 70 ? 'The Certified Bestie' : percent >= 50 ? 'The Close Observer' : percent >= 25 ? 'The Professional Guesser' : 'Here for the Wedding Food';

@@ -1,7 +1,7 @@
 import { api } from './backend';
 import { requireGuestSignIn } from './guestAuth';
 import { supabase } from './supabaseClient';
-import { emptyPlayground, isPlaygroundCategory, type Playground, type Poll, type PollDraft, type Team } from './celebrationTypes';
+import { emptyPlayground, isPlaygroundCategory, playgroundNow, playgroundSchedule, type Playground, type Poll, type PollDraft, type Team } from './celebrationTypes';
 import { DEMO_QUIZ_ANSWERS, DUEL_QUESTIONS, PREDICTION_QUESTIONS, QUIZ_QUESTIONS } from './playgroundQuestions';
 import { pollContentChanged, preparePollDraft, type PollSaveResult } from './pollEditing';
 
@@ -67,20 +67,24 @@ const readDemo = (eventId: string): Demo => {
 const writeDemo = (eventId: string, data: Demo) => { localStorage.setItem(`as-wedding-celebration:${eventId}`, JSON.stringify(data)); };
 
 export const celebration = {
-  async playground(eventId: string, admin = false): Promise<Playground> {
+  async playground(eventId: string, admin = false, startsAt?: string): Promise<Playground> {
     const user = await requireGuestSignIn();
     if (api.kind === 'local') {
       const data = readDemo(eventId), result = emptyPlayground();
+      const schedule = startsAt ? playgroundSchedule(startsAt) : null, now = playgroundNow();
+      const sealed = !!schedule && now < Date.parse(schedule.revealAt), votingOver = !!schedule && now >= Date.parse(schedule.closesAt);
       if (admin && !user.host) throw new Error('Only hosts can manage polls.');
       result.polls = data.polls.filter(p => !p.archived && isPlaygroundCategory(p.category) && (admin || (p.status !== 'draft' && !p.provisional && (!p.startsAt || Date.parse(p.startsAt)<=Date.now())))).map(p => {
         const votes = Object.entries(data.votes[p.id] ?? {}).filter(([uid])=>p.kind!=='text'||data.approved[p.id]?.[uid]).map(([,answer])=>answer), mine = data.votes[p.id]?.[user.id] ?? null;
-        const closed=p.status==='closed'|| (!!p.closesAt && Date.parse(p.closesAt)<=Date.now());
-        const reveal = closed && (!p.revealAt || Date.parse(p.revealAt) <= Date.now());
-        const show = admin || p.results === 'always' || (p.results === 'after_vote' && !!mine) || (p.results==='closed' && reveal);
+        const closed=p.status==='closed'|| (!!p.closesAt && Date.parse(p.closesAt)<=now) || votingOver;
+        const reveal = schedule ? !sealed : closed && (!p.revealAt || Date.parse(p.revealAt) <= now);
+        const show = admin || (schedule ? reveal : p.results === 'always' || (p.results === 'after_vote' && !!mine) || (p.results==='closed' && reveal));
         const words=Object.entries(votes.reduce<Record<string,number>>((all,v)=>{all[v[0]]=(all[v[0]]??0)+1;return all;},{})).map(([word,count])=>({word,count}));
         return { ...p, status:!admin&&closed?'closed':p.status, mine, total: show ? votes.length : null, counts: show ? p.options.map((_, i) => votes.filter(v => v.includes(String(i))).length) : null, words:show&&p.kind==='text'?words:[],correct: admin || reveal ? p.correct : null, coupleAnswers: admin || reveal ? p.coupleAnswers : null };
       });
       result.myTeam = data.teams[user.id] ?? null;
+      result.schedule = schedule;
+      result.players = new Set(data.polls.filter(p => !p.archived && p.status !== 'draft').flatMap(p => Object.keys(data.votes[p.id] ?? {}))).size;
       let social: {photos?:{id:string;postId?:string;hidden:boolean;questId?:string}[];wishes?:{status:string}[] }={};
       try {social=JSON.parse(localStorage.getItem('as-wedding-demo-db-v1')||'{}');}catch{/* No demo posts yet. */}
       const photos=social.photos?.filter(p=>!p.hidden)??[];
@@ -102,13 +106,13 @@ export const celebration = {
     }
     return data;
   },
-  async vote(eventId: string, pollId: string, answer: string[]) {
+  async vote(eventId: string, pollId: string, answer: string[], startsAt?: string) {
     const user = await requireGuestSignIn();
     if (api.kind === 'local') {
       const data=readDemo(eventId),p=data.polls.find(p=>p.id===pollId);
       if(!p||p.archived||p.status!=='open'||p.provisional||(p.startsAt&&Date.parse(p.startsAt)>Date.now())||(p.closesAt&&Date.parse(p.closesAt)<=Date.now()))throw new Error('Voting is not open for this poll.');
       if(!answer.length||(p.kind!=='multiple'&&answer.length!==1)||new Set(answer).size!==answer.length||(p.kind!=='text'&&answer.some(a=>!p.options[Number(a)])))throw new Error('Choose a valid answer.');
-      if(p.category==='quiz'&&data.votes[pollId]?.[user.id]&&JSON.stringify(data.votes[pollId][user.id])!==JSON.stringify(answer))throw new Error('Your quiz answer is already locked in.');
+      if(startsAt&&playgroundNow()>=Date.parse(playgroundSchedule(startsAt).closesAt))throw new Error('Voting has closed for the wedding.');
       if(p.kind==='text'){if(!/^\S{1,30}$/.test(answer[0].trim()))throw new Error('Share one word, up to 30 characters.');answer=[answer[0].trim().toLowerCase()];}
       data.votes[pollId]??={};data.votes[pollId][user.id]=answer;data.approved[pollId]??={};data.approved[pollId][user.id]=p.kind!=='text';writeDemo(eventId,data);return;
     }
