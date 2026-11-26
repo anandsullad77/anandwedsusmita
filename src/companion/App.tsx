@@ -8,6 +8,7 @@ import Admin from './admin/Admin';
 import { ForgotHostPassword, ResetHostPassword } from './admin/HostPasswordRecovery';
 import { WEDDING_SLUG } from './lib/wedding';
 import AuthCallback from './guest/AuthCallback';
+import { PrivacyPolicy, TermsOfService } from './guest/LegalPages';
 import { getSession } from './lib/familySession';
 
 function Home() {
@@ -35,6 +36,8 @@ export default function App() {
   return <Routes>
     <Route path="/auth/callback" element={<AuthCallback />} />
     <Route path="/start" element={<AppStart />} />
+    <Route path="/privacy" element={<PrivacyPolicy />} />
+    <Route path="/terms" element={<TermsOfService />} />
     <Route path="/invitation/*" element={<GeneralInvite />} />
     <Route path="/celebrate/*" element={<LegacyInvitation />} />
     <Route path="/rsvp" element={<FamilyEntry />} />

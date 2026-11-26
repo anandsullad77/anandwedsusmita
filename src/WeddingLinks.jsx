@@ -11,5 +11,6 @@ export default function WeddingLinks() {
       <a className="button button-outline" href="/rsvp">Family RSVP &amp; travel</a>
     </nav>
     <a className="wedding-host-link" href="/admin">Host sign in</a>
+    <p className="wedding-legal-links"><a href="/privacy">Privacy Policy</a> · <a href="/terms">Terms of Service</a></p>
   </section>;
 }
