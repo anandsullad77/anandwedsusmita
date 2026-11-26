@@ -58,3 +58,4 @@
 .create-option-group.is-open { border-color: color-mix(in srgb, var(--primary) 45%, transparent); }
 .create-photo-sources { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; padding: 0 14px 14px; }
 .create-photo-source { min-height: 84px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; border: 0; border-radius: 14px; font-size: 15px; font-weight: 600; cursor: pointer; }
+.create-sheet .sign-in-reassurance { margin-top: 14px; }
