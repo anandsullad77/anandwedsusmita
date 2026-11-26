@@ -1,0 +1,44 @@
+/* Add photos: one full-screen composer (approved Round 3, Option A). */
+.general-shell:has(.compose) .general-header { display: none; }
+.general-shell:has(.compose) main.general-main { max-width: 640px; padding: 0; }
+.compose { min-height: 100dvh; display: flex; flex-direction: column; background: var(--paper); color: var(--deep); }
+.compose-top { position: sticky; top: 0; z-index: 5; height: 60px; display: grid; grid-template-columns: 60px 1fr 60px; align-items: center; padding: 0 8px; background: var(--paper); border-bottom: 1px solid var(--line); }
+.compose-top h1 { margin: 0; text-align: center; font: 600 22px/1 var(--serif); }
+.compose-close { width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center; color: var(--deep); }
+.compose-count { text-align: right; padding-right: 10px; font-size: 13px; color: #556457; white-space: nowrap; }
+.compose-body { flex: 1; display: flex; flex-direction: column; gap: 20px; padding: 16px 20px 24px; }
+.compose-preview { position: relative; height: min(380px, 46dvh); border-radius: 18px; overflow: hidden; background: var(--deep); }
+.compose-preview-fill { position: absolute; inset: -20px; width: calc(100% + 40px); height: calc(100% + 40px); object-fit: cover; filter: blur(18px) brightness(.75); }
+.compose-preview-photo { position: relative; display: block; width: 100%; height: 100%; object-fit: contain; }
+.compose-thumbs { display: flex; gap: 10px; overflow-x: auto; padding: 8px 4px 4px; margin: -12px -4px 0; scrollbar-width: none; }
+.compose-thumbs::-webkit-scrollbar { display: none; }
+.compose-thumb { position: relative; flex: 0 0 auto; width: 60px; height: 60px; }
+.compose-thumb > button:first-child { display: block; width: 100%; height: 100%; padding: 0; border: 0; border-radius: 12px; overflow: hidden; background: #EFE3CF; cursor: pointer; }
+.compose-thumb > button[aria-pressed=true] { outline: 2px solid var(--primary); outline-offset: 2px; }
+.compose-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.compose-thumb-remove { position: absolute; top: -7px; right: -7px; width: 24px; height: 24px; padding: 0; border: 0; border-radius: 50%; display: grid; place-items: center; background: var(--deep); color: var(--paper); box-shadow: 0 0 0 2px var(--paper); cursor: pointer; }
+.compose-thumb-remove::before { content: ''; position: absolute; inset: -10px; }
+.compose-thumb-add { flex: 0 0 auto; width: 60px; height: 60px; border-radius: 12px; border: 1.5px dashed color-mix(in srgb, var(--primary) 50%, transparent); background: transparent; color: var(--primary); display: grid; place-items: center; cursor: pointer; }
+.compose-hint { margin: -12px 0 0; font-size: 12px; color: #556457; }
+.compose-pick { min-height: 220px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; border: 1.5px dashed color-mix(in srgb, var(--primary) 45%, transparent); border-radius: 18px; background: #F6ECDB; color: var(--primary); cursor: pointer; }
+.compose-pick b { font-size: 16px; color: var(--deep); }
+.compose-pick span { font-size: 13px; color: #556457; }
+.compose-field { display: flex; flex-direction: column; gap: 8px; }
+.compose-field > label, .compose-label { font-size: 14px; font-weight: 600; color: var(--deep); }
+.compose-label small { font-size: 14px; font-weight: 400; color: #556457; }
+.compose-field textarea, .compose-field input { width: 100%; box-sizing: border-box; border-radius: 14px; font-size: 16px; }
+.compose-field textarea { min-height: 76px; resize: none; }
+.compose-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.compose-chip { min-height: 36px; padding: 0 14px; border-radius: 999px; border: 1px solid color-mix(in srgb, var(--deep) 16%, transparent); background: #fff; color: var(--deep); font-family: inherit; font-size: 14px; font-weight: 500; line-height: 1; display: inline-flex; align-items: center; gap: 6px; cursor: pointer; }
+.compose-chip[aria-pressed=true] { background: var(--deep); border-color: var(--deep); color: var(--paper); }
+.compose-chip-more { border-style: dashed; color: var(--primary); }
+.compose-quest-prompt { margin: 0; font-size: 13px; line-height: 1.5; color: #556457; }
+.compose-as { margin: 0; font-size: 13px; color: #556457; }
+.compose-as b { color: var(--deep); }
+.compose-as button { min-height: 32px; padding: 0; border: 0; background: none; color: var(--primary); font: inherit; font-weight: 600; cursor: pointer; }
+.compose-actions { position: sticky; bottom: var(--keyboard-bottom, 0px); z-index: 5; padding: 12px 20px max(16px, env(safe-area-inset-bottom)); background: var(--paper); border-top: 1px solid var(--line); }
+.compose-actions .btn { min-height: 54px; border-radius: 999px; font-size: 16px; font-weight: 600; box-shadow: 0 8px 18px -8px rgba(165, 48, 81, .6); }
+.compose-actions .btn:disabled { box-shadow: none; }
+.compose-actions p { display: flex; align-items: flex-start; justify-content: center; gap: 6px; margin: 8px 0 0; font-size: 12px; line-height: 1.45; text-align: center; color: #556457; }
+.compose-actions p svg { flex: 0 0 auto; margin-top: 1px; }
+.general-main .compose.haaku-screen { min-height: 100dvh; }

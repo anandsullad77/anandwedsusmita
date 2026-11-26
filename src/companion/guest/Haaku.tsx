@@ -6,9 +6,8 @@ import type { PhotoContext } from '../lib/types';
 import { Icon } from './Icon';
 import { useVisibleViewport } from '../lib/useVisibleViewport';
 import { clearQuestDraft, photoQuest, PHOTO_QUESTS, questDraftFiles } from '../lib/photoQuests';
-import MomentTag from './MomentTag';
 import './photo-quests.css';
-import { WeddingMark } from '../components/WeddingBrand';
+import './compose.css';
 import { requireGuestSignIn } from '../lib/guestAuth';
 import { useGuestAuth } from '../lib/useGuestAuth';
 import { get, set, del } from 'idb-keyval';
@@ -21,7 +20,8 @@ export default function Haaku({ ctx }: { ctx: PhotoContext }) {
   const [search] = useSearchParams();
   const initialQuest = ctx.questsEnabled !== false ? photoQuest(search.get('quest')) : undefined;
   const [questId, setQuestId] = useState(initialQuest?.id ?? '');
-  const [questPickerOpen, setQuestPickerOpen] = useState(!!initialQuest);
+  const [allQuests, setAllQuests] = useState(false);
+  const [editName, setEditName] = useState(!me?.name?.trim());
   const selectedQuest = photoQuest(questId);
   const [files, setFiles] = useState<File[]>(() => questDraftFiles(search.get('draft'), b.event.id, initialQuest?.id ?? ''));
   const [previews, setPreviews] = useState<string[]>([]);
@@ -88,22 +88,62 @@ export default function Haaku({ ctx }: { ctx: PhotoContext }) {
   }
   const moments = [...new Set([...b.functions.map(f => f.nameEn), ...MOMENTS])];
   if (!draftReady) return <p role="status">Opening your photo draft…</p>;
-  return <div ref={viewportRoot} className="haaku-screen" aria-busy={busy} lang="en">
-    <header className="upload-header"><Link to={scenePath} aria-label="Close" className="upload-close"><Icon size={20} d="M6 6l12 12M18 6L6 18" /></Link><div className="upload-wedding-heading"><a href="/" aria-label="Anand and Susmita — wedding invitation"><WeddingMark size={40} /></a><div><span className="guest-eyebrow">Create Post</span><h1>Upload Photos</h1></div></div><span className="upload-count">{files.length}/10</span></header>
-    <div className="upload-body">
-      <p className="upload-intro">A little of the day, through your eyes. Choose up to 10 photos.</p>
-      <input ref={galRef} type="file" accept="image/*" multiple aria-label="Choose photos from gallery" hidden disabled={busy} onChange={e => { add(e.target.files); e.target.value = ''; }} />
-      {general && <div className="field"><label htmlFor="uploader-name">Your name</label><input id="uploader-name" className="input" autoComplete="name" maxLength={80} disabled={busy} placeholder="So the couple knows who shared these" value={name} onChange={e => setName(e.target.value)} /></div>}
-      {previews.length ? <>
-        <div className="upload-preview"><img src={previews[active] ?? previews[0]} alt="Selected photo" /></div>
-        <div className="upload-selection-meta"><span>{files.length} {files.length === 1 ? 'photo' : 'photos'} selected</span><button className="upload-remove" disabled={busy} onClick={remove}>Remove this photo</button></div>
-        <div className="thumbs" aria-label="Selected photos">{previews.map((u, i) => <button key={u} aria-label={`Preview photo ${i + 1}`} aria-pressed={active === i} disabled={busy} onClick={() => setActive(i)}><img src={u} alt={`Photo ${i + 1}`} /></button>)}{files.length < 10 && <button className="upload-add" aria-label="Add more photos" disabled={busy} onClick={() => galRef.current?.click()}><Icon size={24} d="M12 5v14M5 12h14" /></button>}</div>
-      </> : <div className="upload-choices"><button className="upload-choice" onClick={() => galRef.current?.click()}><Icon size={30} d="M3 6h18v14H3zM21 16l-5-5-9 9" /><b>From gallery</b><span>Choose your favourites</span></button></div>}
-      {ctx.questsEnabled !== false && <details className="upload-quest-picker" open={questPickerOpen} onToggle={e => setQuestPickerOpen(e.currentTarget.open)}><summary><span>{selectedQuest ? `Photo quest · ${selectedQuest.title}` : 'Join a photo quest (optional)'}</span><Icon size={16} d="M6 9l6 6 6-6" /></summary><div className="upload-quest-fields"><div className="field"><label htmlFor="upload-quest">Quest tag</label><select id="upload-quest" className="input" disabled={busy} value={questId} onChange={e => setQuestId(e.target.value)}><option value="">No photo quest</option>{(['heartfelt', 'playful'] as const).map(mood => <optgroup key={mood} label={mood === 'heartfelt' ? 'Heartfelt' : 'Playful'}>{PHOTO_QUESTS.filter(q => q.mood === mood).map(q => <option key={q.id} value={q.id}>{q.title}</option>)}</optgroup>)}</select></div>{selectedQuest && <><p>{selectedQuest.prompt}</p><MomentTag label={selectedQuest.tag} /><small>This quest tag is added to every photo in this post.</small></>}</div></details>}
-      <div className="field"><label id="moment-label">Add a moment</label><div className="upload-moments" role="group" aria-labelledby="moment-label">{moments.map(m => <button key={m} className="chip" disabled={busy} aria-pressed={moment === m} onClick={() => setMoment(m)}><Icon size={14} d="M20 13l-7 7a2 2 0 0 1-3 0l-8-8V3h9l9 8a2 2 0 0 1 0 2zM7 7h.01" />{m}</button>)}</div></div>
-      <div className="field"><label htmlFor="cap">Caption (optional)</label><textarea id="cap" rows={2} className="input" disabled={busy} placeholder="The story behind the moment…" value={caption} onChange={e => setCaption(e.target.value)} /></div>
+  const questChoices = PHOTO_QUESTS.filter(q => allQuests || q.easy || q.id === questId);
+  const canShare = !busy && files.length > 0 && !(general && !name.trim());
+  const shareLabel = busy ? 'Getting them ready…' : files.length ? `Share ${files.length} ${files.length === 1 ? 'photo' : 'photos'}` : 'Choose a photo first';
+  const current = previews[active] ?? previews[0];
+  return <div ref={viewportRoot} className="haaku-screen compose" aria-busy={busy} lang="en">
+    <header className="compose-top">
+      <Link to={scenePath} aria-label="Close" className="compose-close"><Icon size={20} d="M6 6l12 12M18 6L6 18" /></Link>
+      <h1>New post</h1>
+      <span className="compose-count" aria-label={`${files.length} of 10 photos`}>{files.length} of 10</span>
+    </header>
+    <input ref={galRef} type="file" accept="image/*" multiple aria-label="Choose photos from gallery" hidden disabled={busy} onChange={e => { add(e.target.files); e.target.value = ''; }} />
+    <div className="compose-body">
+      {current ? <>
+        <div className="compose-preview">
+          <img className="compose-preview-fill" src={current} alt="" aria-hidden="true" />
+          <img className="compose-preview-photo" src={current} alt={`Selected photo ${active + 1} of ${files.length}`} />
+        </div>
+        <div className="compose-thumbs" aria-label="Selected photos">
+          {previews.map((u, i) => <span key={u} className="compose-thumb">
+            <button type="button" aria-label={`Preview photo ${i + 1}`} aria-pressed={active === i} disabled={busy} onClick={() => setActive(i)}><img src={u} alt="" /></button>
+            {active === i && <button type="button" className="compose-thumb-remove" aria-label={`Remove photo ${i + 1}`} disabled={busy} onClick={remove}><Icon size={12} d="M6 6l12 12M18 6L6 18" /></button>}
+          </span>)}
+          {files.length < 10 && <button type="button" className="compose-thumb-add" aria-label="Add more photos" disabled={busy} onClick={() => galRef.current?.click()}><Icon size={20} d="M12 5v14M5 12h14" /></button>}
+        </div>
+        <p className="compose-hint">Tap a photo to preview it. The × removes it.</p>
+      </> : <button type="button" className="compose-pick" onClick={() => galRef.current?.click()}>
+        <Icon size={30} d="M3.5 4.5h17v15h-17zM4 16l5-5 4 4 2.5-2.5L20 17M15.5 9h.01" />
+        <b>Choose photos</b><span>Up to 10 from your gallery</span>
+      </button>}
+
+      <div className="compose-field">
+        <label htmlFor="cap">Caption</label>
+        <textarea id="cap" rows={2} className="input" disabled={busy} placeholder="What’s happening in this moment?" value={caption} onChange={e => setCaption(e.target.value)} />
+      </div>
+      <div className="compose-field">
+        <span className="compose-label" id="moment-label">Moment</span>
+        <div className="compose-chips" role="group" aria-labelledby="moment-label">{moments.map(m => <button type="button" key={m} className="compose-chip" disabled={busy} aria-pressed={moment === m} onClick={() => setMoment(m)}>{moment === m && <Icon size={14} d="M20 13l-7 7a2 2 0 0 1-3 0l-8-8V3h9l9 8a2 2 0 0 1 0 2zM7 7h.01" />}{m}</button>)}</div>
+      </div>
+      {ctx.questsEnabled !== false && <div className="compose-field">
+        <span className="compose-label" id="quest-label">Photo quest <small>(optional)</small></span>
+        <div className="compose-chips" role="group" aria-labelledby="quest-label">
+          <button type="button" className="compose-chip" disabled={busy} aria-pressed={!questId} onClick={() => setQuestId('')}>None</button>
+          {questChoices.map(q => <button type="button" key={q.id} className="compose-chip" disabled={busy} aria-pressed={questId === q.id} onClick={() => setQuestId(q.id)}>{questId === q.id && <Icon size={14} d="M20 13l-7 7a2 2 0 0 1-3 0l-8-8V3h9l9 8a2 2 0 0 1 0 2zM7 7h.01" />}{q.title}</button>)}
+          {!allQuests && <button type="button" className="compose-chip compose-chip-more" disabled={busy} onClick={() => setAllQuests(true)}>More quests</button>}
+        </div>
+        {selectedQuest && <p className="compose-quest-prompt">{selectedQuest.prompt}</p>}
+      </div>}
+      {general && (editName || !name.trim()
+        ? <div className="compose-field"><label htmlFor="uploader-name">Your name</label><input id="uploader-name" className="input" autoComplete="name" maxLength={80} disabled={busy} placeholder="So the couple knows who shared these" value={name} onChange={e => setName(e.target.value)} onBlur={() => { if (name.trim()) setEditName(false); }}  /></div>
+        : <p className="compose-as">Posting as <b>{name.trim()}</b> · <button type="button" disabled={busy} onClick={() => setEditName(true)}>Change</button></p>)}
+      {!general && me && <p className="compose-as">Posting as <b>{me.name}</b></p>}
       {err && <p className="error" role="alert">{err}</p>}
     </div>
-    <footer className="upload-actions"><button className="btn btn-primary btn-block" disabled={busy || !files.length || (general && !name.trim())} onClick={post}>{busy ? 'Getting them ready…' : files.length ? `Create Post · ${files.length} photo${files.length > 1 ? 's' : ''}` : 'Pick a photo first'}</button><p>A host will approve your post before it appears in the album. Weak signal? We’ll send it when you’re back online.</p></footer>
+    <footer className="compose-actions">
+      <button type="button" className="btn btn-primary btn-block" disabled={!canShare} onClick={post}>{shareLabel}</button>
+      <p><Icon size={14} d="M3 11.5a13 13 0 0 1 18 0M6.5 15a8 8 0 0 1 11 0M10 18.5a3 3 0 0 1 4 0" />A host approves each post before it appears. Weak signal? It waits on your phone and sends itself.</p>
+    </footer>
   </div>;
 }
