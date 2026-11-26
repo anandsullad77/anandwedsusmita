@@ -16,8 +16,8 @@ const event = { id: eventId, slug: 'anand-susmita', title: "Anand & Susmita's we
 const photo = (n, createdAt, extra = {}) => ({ id: id(n), event_id: eventId, storage_path: `${eventId}/${n}.webp`, uploader_name: 'Google guest', uploaded_by: id(12), caption: `Memory ${n}`, created_at: createdAt, hidden: false, status: 'approved', pinned: false, ...extra });
 const privatePath = pathname => /\/rest\/v1\/(photos|guestbook_messages|akshate)|\/rpc\/photo_quest_summary|\/storage\/v1\/.*photos/.test(pathname);
 
-async function scenario(browser, { width = 390, initial = 'anonymous', family = false, cancel = false, site = origin, customSections = sections, latency = 0, wishDelay = 0, previewPaths = [] } = {}) {
-  const context = await browser.newContext({ viewport: { width, height: 900 }, reducedMotion: 'reduce', hasTouch: width < 768 });
+async function scenario(browser, { width = 390, initial = 'anonymous', family = false, cancel = false, site = origin, customSections = sections, latency = 0, wishDelay = 0, previewPaths = [], mobile = false } = {}) {
+  const context = await browser.newContext({ viewport: { width, height: 900 }, reducedMotion: 'reduce', hasTouch: width < 768, isMobile: mobile });
   let mode = initial, exchanges = 0, claims = 0, failUpload = false, failInsert = false, loseInsertResponse = false, signings = 0;
   let googleUserId = id(12);
   let failReview = false, reviewDelay = 0, canReview = true;

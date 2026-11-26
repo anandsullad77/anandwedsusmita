@@ -16,6 +16,7 @@
     "test:memories": "node scripts/test-guest-memories.cjs",
     "test:reactions": "node scripts/test-photo-reactions.cjs",
     "test:viewer": "node scripts/test-photo-viewer.cjs",
+    "test:zoom": "node scripts/test-zoom-browser.cjs",
     "test:recovery": "node scripts/test-host-recovery.cjs",
     "test:hosts": "node scripts/test-host-team.cjs",
     "test:family-profile": "node scripts/test-family-profile.cjs",

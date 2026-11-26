@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import type { Photo, ReactionKind } from '../lib/types';
 import { ago } from '../lib/format';
 import { photoQuest } from '../lib/photoQuests';
+import { isPageZoomed, usePageZoom } from '../lib/usePageZoom';
 import PhotoReactions from './PhotoReactions';
 import { Icon } from './Icon';
 import './gallery.css';
@@ -27,6 +28,7 @@ export default function PhotoViewer({ photos, start, total, reacting, onClose, o
   const [menu, setMenu] = useState(false);
   const [controls, setControls] = useState(true);
   const [saving, setSaving] = useState(false);
+  const zoomed = usePageZoom();
   const dialog = useRef<HTMLDivElement>(null);
   const track = useRef<HTMLDivElement>(null);
   const touch = useRef<{ x: number; y: number } | null>(null);
@@ -67,6 +69,12 @@ export default function PhotoViewer({ photos, start, total, reacting, onClose, o
   }, []);
 
   useEffect(() => {
+    touch.current = null;
+    if (zoomed) { swiped.current = true; setMenu(false); }
+    else if (track.current) track.current.scrollTop = activeIndex.current * track.current.clientHeight;
+  }, [zoomed]);
+
+  useEffect(() => {
     if (!menu) return;
     options.current?.querySelector<HTMLButtonElement>('button')?.focus({ preventScroll: true });
     const outside = (event: Event) => { if (!more.current?.contains(event.target as Node)) setMenu(false); };
@@ -89,7 +97,7 @@ export default function PhotoViewer({ photos, start, total, reacting, onClose, o
         if (menu) { setMenu(false); moreButton.current?.focus({ preventScroll: true }); }
         else onClose();
       }
-      if (menu || document.querySelector('.reaction-picker-overlay')) return;
+      if (menu || document.querySelector('.reaction-picker-overlay') || isPageZoomed()) return;
       if (event.key === 'ArrowRight' || event.key === 'ArrowDown') { event.preventDefault(); go(index + 1); }
       if (event.key === 'ArrowLeft' || event.key === 'ArrowUp') { event.preventDefault(); go(index - 1); }
     };
@@ -117,7 +125,7 @@ export default function PhotoViewer({ photos, start, total, reacting, onClose, o
   }
 
   const quest = photoQuest(photo.questId);
-  return createPortal(<div ref={dialog} className="photo-viewer" role="dialog" aria-modal="true" aria-label="Photo viewer" lang="en">
+  return createPortal(<div ref={dialog} className={`photo-viewer${zoomed ? ' is-page-zoomed' : ''}`} role="dialog" aria-modal="true" aria-label="Photo viewer" lang="en">
     {controls && <header className="photo-viewer-top">
       <button ref={closeButton} type="button" className="photo-viewer-round" aria-label="Close" onClick={onClose}><Icon size={20} d="M6 6l12 12M18 6 6 18" /></button>
       <div className="photo-viewer-position"><span aria-live="polite">{index + 1} of {total} {total === 1 ? 'photo' : 'photos'}</span>{photos.length > 1 && <small>Swipe up or down</small>}</div>
@@ -144,17 +152,19 @@ export default function PhotoViewer({ photos, start, total, reacting, onClose, o
     </header>}
 
     <div ref={track} className="photo-viewer-track" role="region" aria-roledescription="carousel" aria-label="All gallery photos" onScroll={event => {
+      if (isPageZoomed()) return;
       const next = Math.round(event.currentTarget.scrollTop / event.currentTarget.clientHeight);
       if (next !== index) { setIndex(Math.max(0, Math.min(photos.length - 1, next))); setMenu(false); }
     }} onTouchStart={event => {
+      if (event.touches.length !== 1 || isPageZoomed()) { touch.current = null; swiped.current = true; return; }
       swiped.current = false;
-      touch.current = event.touches.length === 1 ? { x: event.touches[0].clientX, y: event.touches[0].clientY } : null;
+      touch.current = { x: event.touches[0].clientX, y: event.touches[0].clientY };
     }} onTouchMove={event => {
-      if (event.touches.length !== 1) { touch.current = null; swiped.current = true; }
+      if (event.touches.length !== 1 || isPageZoomed()) { touch.current = null; swiped.current = true; }
     }} onTouchCancel={() => { touch.current = null; swiped.current = true; }} onTouchEnd={event => {
       const start = touch.current;
       touch.current = null;
-      if (!start || event.touches.length || event.changedTouches.length !== 1) return;
+      if (!start || isPageZoomed() || event.touches.length || event.changedTouches.length !== 1) return;
       const dx = event.changedTouches[0].clientX - start.x;
       const dy = event.changedTouches[0].clientY - start.y;
       // Vertical swipes scroll and snap natively; horizontal swipes also move one photo.
@@ -165,6 +175,7 @@ export default function PhotoViewer({ photos, start, total, reacting, onClose, o
     }}>
       {photos.map((item, i) => <div key={item.id} className="photo-viewer-slide" role="group" aria-roledescription="slide" aria-label={`${i + 1} of ${total}`} aria-hidden={i !== index}>
         {Math.abs(i - index) <= 1 && <button type="button" className="photo-viewer-photo" tabIndex={i === index ? 0 : -1} aria-label={controls ? 'Hide photo controls' : 'Show photo controls'} onPointerDown={event => { if (event.pointerType === 'mouse') swiped.current = false; }} onClick={() => {
+          if (isPageZoomed()) return;
           if (swiped.current) { swiped.current = false; return; }
           setMenu(false); setControls(visible => !visible);
         }}>

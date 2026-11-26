@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Link } from 'react-router-dom';
 import { Icon } from './Icon';
+import { isPageZoomed, usePageZoom } from '../lib/usePageZoom';
 import { nostalgiaAlbums, nostalgiaMemories, memoryImage, memorySrcSet, type NostalgiaMemory } from './nostalgiaMemories';
 import './nostalgia.css';
 import './nostalgia-album.css';
@@ -22,6 +23,7 @@ function MemoryViewer({ memories, initialIndex, onClose }: { memories: Nostalgia
   const dialog = useRef<HTMLDialogElement>(null);
   const touch = useRef<{ x: number; y: number } | null>(null);
   const [index, setIndex] = useState(initialIndex);
+  const zoomed = usePageZoom();
   const memory = memories[index];
   const move = (direction: number) => setIndex(current => (current + direction + memories.length) % memories.length);
 
@@ -46,10 +48,11 @@ function MemoryViewer({ memories, initialIndex, onClose }: { memories: Nostalgia
     dialog.current?.querySelector<HTMLButtonElement>('[aria-pressed="true"]')?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
   }, [index, memories]);
 
-  return createPortal(<dialog ref={dialog} className="nostalgia-viewer" aria-labelledby="memory-viewer-title" aria-describedby="memory-viewer-description"
+  return createPortal(<dialog ref={dialog} className={`nostalgia-viewer${zoomed ? ' is-page-zoomed' : ''}`} aria-labelledby="memory-viewer-title" aria-describedby="memory-viewer-description"
     onCancel={event => { event.preventDefault(); onClose(); }}
     onClick={event => { if (event.target === event.currentTarget) onClose(); }}
     onKeyDown={event => {
+      if (isPageZoomed()) return;
       if (event.key === 'ArrowRight') { event.preventDefault(); move(1); }
       if (event.key === 'ArrowLeft') { event.preventDefault(); move(-1); }
       if (event.key === 'Home') { event.preventDefault(); setIndex(0); }
@@ -61,12 +64,14 @@ function MemoryViewer({ memories, initialIndex, onClose }: { memories: Nostalgia
         <button type="button" autoFocus onClick={onClose} aria-label="Close photo viewer"><Icon d="M6 6l12 12M6 18L18 6" /></button>
       </header>
       <div className="nostalgia-viewer-stage"
-        onTouchStart={event => { touch.current = event.touches.length === 1 ? { x: event.touches[0].clientX, y: event.touches[0].clientY } : null; }}
+        onTouchStart={event => { touch.current = event.touches.length === 1 && !isPageZoomed() ? { x: event.touches[0].clientX, y: event.touches[0].clientY } : null; }}
+        onTouchMove={event => { if (event.touches.length !== 1 || isPageZoomed()) touch.current = null; }}
         onTouchEnd={event => {
-          if (!touch.current || event.touches.length || !event.changedTouches.length) return;
-          const dx = event.changedTouches[0].clientX - touch.current.x;
-          const dy = event.changedTouches[0].clientY - touch.current.y;
+          const start = touch.current;
           touch.current = null;
+          if (!start || isPageZoomed() || event.touches.length || event.changedTouches.length !== 1) return;
+          const dx = event.changedTouches[0].clientX - start.x;
+          const dy = event.changedTouches[0].clientY - start.y;
           if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 1.4) move(dx < 0 ? 1 : -1);
         }} onTouchCancel={() => { touch.current = null; }}>
         <img key={memory.id} src={memoryImage(memory)} width={memory.width} height={memory.height} alt={memory.alt} />
