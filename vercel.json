@@ -3,6 +3,11 @@
   "framework": "vite",
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
+  "git": {
+    "deploymentEnabled": {
+      "codex/playground-questions-and-swipes": false
+    }
+  },
   "redirects": [
     { "source": "/:path*", "has": [{ "type": "host", "value": "anandwedsusmita.vercel.app" }], "destination": "https://anandwedsusmita.in/:path*", "permanent": true },
     { "source": "/:path*", "has": [{ "type": "host", "value": "www.anandwedsusmita.in" }], "destination": "https://anandwedsusmita.in/:path*", "permanent": true }

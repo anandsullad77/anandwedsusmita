@@ -22,7 +22,8 @@ const fits = locator => locator.evaluate(element => {
   const browser = await playwright.chromium.launch({ executablePath: process.env.CHROME_PATH || (process.platform === 'win32' ? 'C:/Program Files/Google/Chrome/Application/chrome.exe' : undefined), headless: true });
   try {
     for (const viewport of [{ width: 320, height: 568 }, { width: 390, height: 844 }, { width: 844, height: 390 }, { width: 1440, height: 900 }]) {
-      const run = await scenario(browser, { width: viewport.width, initial: 'google' });
+      const touchScreen = Math.min(viewport.width, viewport.height) < 768;
+      const run = await scenario(browser, { width: Math.min(viewport.width, viewport.height), initial: 'google' });
       const { page, context } = run;
       try {
         await page.setViewportSize(viewport);
@@ -56,6 +57,22 @@ const fits = locator => locator.evaluate(element => {
         const photo = () => viewer.locator('.photo-viewer-slide[aria-hidden=false] img');
         const trigger = () => viewer.locator('.reaction-trigger');
         const picker = () => page.getByRole('menu', { name: 'Choose a photo reaction', exact: true });
+        const selected = number => wait(async () => await viewer.locator('.photo-viewer-track').evaluate((element, index) => Math.abs(element.scrollTop / element.clientHeight - index) < .01, number - 1), `Photo ${number} snaps into place`);
+        const swipe = async direction => {
+          const vertical = direction === 'up' || direction === 'down';
+          const forward = direction === 'up' || direction === 'left';
+          const from = { x: viewport.width * (vertical ? .5 : forward ? .8 : .2), y: viewport.height * (vertical ? forward ? .65 : .25 : .5) };
+          const to = { x: viewport.width * (vertical ? .5 : forward ? .2 : .8), y: viewport.height * (vertical ? forward ? .05 : .85 : .5) };
+          const client = await context.newCDPSession(page);
+          try {
+            await client.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [from] });
+            for (let step = 1; step <= 8; step++) {
+              await client.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ x: from.x + (to.x - from.x) * step / 8, y: from.y + (to.y - from.y) * step / 8 }] });
+              await page.waitForTimeout(20);
+            }
+            await client.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+          } finally { await client.detach(); }
+        };
         const assertPhotoFits = async () => {
           await photo().evaluate(image => image.decode());
           assert.ok(await fits(photo()), 'Entire photo frame fits the visible screen');
@@ -70,6 +87,26 @@ const fits = locator => locator.evaluate(element => {
         assert.equal(await viewer.locator('.photo-viewer-info').evaluate(element => getComputedStyle(element).position), 'absolute', 'Caption overlays the photo without taking away image space');
         assert.equal(await viewer.locator('.photo-viewer-info').evaluate(element => getComputedStyle(element).backgroundColor), 'rgba(0, 0, 0, 0)', 'Name and caption have a transparent background');
         await page.screenshot({ path: path.join(artifacts, `photo-viewer-${viewport.width}.png`) });
+
+        if (touchScreen) {
+          await swipe('down'); await selected(1);
+          await swipe('up'); await selected(2);
+          assert.equal(await photo().getAttribute('alt'), 'Memory 32', 'Swipe updates the selected photo');
+          assert.equal(await viewer.locator('.photo-viewer-caption').textContent(), 'Memory 32', 'Caption follows the swiped photo');
+          await swipe('up'); await selected(3);
+          await swipe('up'); await selected(3);
+          await swipe('down'); await selected(2);
+          await swipe('down'); await selected(1);
+          await swipe('left'); await selected(2);
+          await swipe('right'); await selected(1);
+          assert.equal(await viewer.locator('.photo-viewer-top,.photo-viewer-info').count(), 2, 'Swipes preserve the overlay controls');
+        } else {
+          await page.mouse.move(viewport.width / 2, viewport.height / 2);
+          await page.mouse.wheel(0, viewport.height * .75); await selected(2);
+          await page.mouse.wheel(0, -viewport.height * .75); await selected(1);
+        }
+        await page.keyboard.press('ArrowDown'); await selected(2);
+        await page.keyboard.press('ArrowUp'); await selected(1);
 
         await trigger().click();
         await picker().waitFor();
@@ -130,12 +167,17 @@ const fits = locator => locator.evaluate(element => {
 
         await viewer.getByRole('button', { name: 'Hide photo controls', exact: true }).click();
         assert.equal(await viewer.locator('.photo-viewer-top,.photo-viewer-info').count(), 0, 'A tap reveals the unobstructed image');
+        if (touchScreen) {
+          await swipe('up'); await selected(3);
+          await swipe('down'); await selected(2);
+          assert.equal(await viewer.locator('.photo-viewer-top,.photo-viewer-info').count(), 0, 'Swiping also works with controls hidden');
+        }
         await viewer.getByRole('button', { name: 'Show photo controls', exact: true }).click();
         await more.waitFor();
         await page.setViewportSize({ width: viewport.height, height: viewport.width });
         await wait(async () => {
-          const geometry = await viewer.locator('.photo-viewer-track').evaluate(element => ({ index: element.scrollLeft / element.clientWidth, width: element.clientWidth }));
-          return Math.abs(geometry.index - 1) < .01 && geometry.width === viewport.height;
+          const geometry = await viewer.locator('.photo-viewer-track').evaluate(element => ({ index: element.scrollTop / element.clientHeight, height: element.clientHeight }));
+          return Math.abs(geometry.index - 1) < .01 && geometry.height === viewport.width;
         }, 'Rotation keeps the selected photo aligned');
         await assertPhotoFits();
         await viewer.getByRole('button', { name: 'Close', exact: true }).click();
@@ -143,7 +185,7 @@ const fits = locator => locator.evaluate(element => {
         assert.equal(await opener.evaluate(element => element === document.activeElement), true, 'Closing restores focus');
         assert.equal(await page.evaluate(() => document.body.style.overflow), '', 'Page scrolling is restored');
         assert.deepEqual(run.errors, []);
-        console.log(`PASS ${viewport.width}x${viewport.height}: full portraits/landscapes, overlay, reaction selection/removal/rollback, menu download/report, unobstructed viewing and rotation`);
+        console.log(`PASS ${viewport.width}x${viewport.height}: vertical/horizontal swipes or wheel, keyboard, photo boundaries, hidden controls, reactions, download/report and rotation`);
       } finally { await context.close(); }
     }
   } finally { await browser.close(); }

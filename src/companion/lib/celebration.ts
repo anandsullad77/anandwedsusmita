@@ -2,6 +2,7 @@ import { api } from './backend';
 import { requireGuestSignIn } from './guestAuth';
 import { supabase } from './supabaseClient';
 import { emptyPlayground, isPlaygroundCategory, type Playground, type Poll, type PollDraft, type Team } from './celebrationTypes';
+import { DEMO_QUIZ_ANSWERS, DUEL_QUESTIONS, PREDICTION_QUESTIONS, QUIZ_QUESTIONS } from './playgroundQuestions';
 
 const must = <T>(result: { data: T; error: { message: string } | null }): T => {
   if (result.error) throw new Error(result.error.message);
@@ -12,21 +13,54 @@ async function rpc<T>(name: string, args: Record<string, unknown>): Promise<T> {
   if (result.error?.code === 'PGRST202' || result.error?.code === '42P01') throw new Error('This section is being prepared by the hosts. Please try again later.');
   return must(result) as T;
 }
-type Demo = { polls: Poll[]; votes: Record<string, Record<string, string[]>>; approved: Record<string, Record<string, boolean>>; teams: Record<string, Team['id']> };
+type Demo = { polls: (Poll & { archived?: boolean })[]; votes: Record<string, Record<string, string[]>>; approved: Record<string, Record<string, boolean>>; teams: Record<string, Team['id']>; duelQuestionsVersion?: number; quizQuestionsVersion?: number; predictionQuestionsVersion?: number };
+const makeDemoPoll = (category: Poll['category'], question: string, options = ['Anand','Susmita'], extra: Partial<Poll> = {}): Poll => ({ id:crypto.randomUUID(), category, kind:'single', question, options, photoIds:[],status:'open',startsAt:null,closesAt:null,revealAt:null,results:'after_vote',pinned:false,provisional:false,mine:null,counts:null,total:null,words:[],correct:null,coupleAnswers:null,...extra });
+const makeDemoQuiz = (entry: typeof QUIZ_QUESTIONS[number], index: number) => makeDemoPoll('quiz', entry.question, [...entry.options], { correct: DEMO_QUIZ_ANSWERS?.[index] ?? null });
+const makeDemoPrediction = (entry: typeof PREDICTION_QUESTIONS[number]) => makeDemoPoll('prediction', entry.question, [...entry.options], { closesAt: '2026-11-30T12:28:00+05:30', revealAt: '2027-11-29T12:28:00+05:30' });
 function demoPolls(): Poll[] {
-  const make = (category: Poll['category'], question: string, options = ['Anand','Susmita'], extra: Partial<Poll> = {}): Poll => ({ id:crypto.randomUUID(), category, kind:'single', question, options, photoIds:[],status:'open',startsAt:null,closesAt:null,revealAt:null,results:'after_vote',pinned:false,provisional:false,mine:null,counts:null,total:null,words:[],correct:null,coupleAnswers:null,...extra });
+  const make = makeDemoPoll;
   return [
-    ...['Who will say sorry first after an argument?','Who will control the TV remote?','Who will plan surprise dates?','Who will steal the blanket at night?','Who will take longer to get ready?'].map((q,index)=>make('duel',q,undefined,{pinned:index===0})),
-    make('prediction','Where will our first international trip be?',['Maldives','Switzerland','Bali','Dubai'],{closesAt:'2026-11-30T12:28:00+05:30',revealAt:'2027-11-29T12:28:00+05:30'}),
-    make('prediction','What will our weekends look like?',['Movie nights','Long drives','Sleeping in','Exploring new places'],{closesAt:'2026-11-30T12:28:00+05:30'}),
-    make('prediction','What will be our biggest household debate?',['What to eat','Room temperature','Shopping expenses','Where to travel'],{closesAt:'2026-11-30T12:28:00+05:30'}),
-    ...['Who initiated the first conversation?','Who takes more photographs?','Who made the first move?'].map(q=>make('quiz',q,undefined,{status:'draft',provisional:true,correct:0})),
+    ...DUEL_QUESTIONS.map((q,index)=>make('duel',q,undefined,{pinned:index===0})),
+    ...PREDICTION_QUESTIONS.map(makeDemoPrediction),
+    ...QUIZ_QUESTIONS.map(makeDemoQuiz),
   ];
 }
 const readDemo = (eventId: string): Demo => {
   const data = localStorage.getItem(`as-wedding-celebration:${eventId}`);
-  if (data) { const saved=JSON.parse(data) as Demo; saved.approved ??= {}; return saved; }
-  const initial: Demo={polls:demoPolls(),votes:{},approved:{},teams:{}};
+  if (data) {
+    const saved=JSON.parse(data) as Demo;
+    saved.approved ??= {};
+    let changed = false;
+    if (saved.duelQuestionsVersion !== 2) {
+      const questions = DUEL_QUESTIONS.map((question, index) => ({ ...(saved.polls.find(p => p.category === 'duel' && p.kind === 'single' && p.question === question && JSON.stringify(p.options) === '["Anand","Susmita"]') ?? makeDemoPoll('duel', question, undefined, { pinned: index === 0 })), archived: false }));
+      const keep = new Set(questions.map(p => p.id));
+      // Retain old ballots without returning their questions to either question list.
+      saved.polls = [...questions, ...saved.polls.filter(p => !keep.has(p.id)).map(p => p.category === 'duel' ? { ...p, status: 'draft' as const, pinned: false, archived: true } : p)];
+      saved.duelQuestionsVersion = 2;
+      changed = true;
+    }
+    if (saved.quizQuestionsVersion !== 2) {
+      const questions = QUIZ_QUESTIONS.map((entry, index) => {
+        const correct = DEMO_QUIZ_ANSWERS?.[index] ?? null;
+        const existing = saved.polls.find(p => p.category === 'quiz' && p.kind === 'single' && p.question === entry.question && JSON.stringify(p.options) === JSON.stringify(entry.options) && (p.correct === correct || !Object.keys(saved.votes[p.id] ?? {}).length));
+        return { ...(existing ?? makeDemoQuiz(entry, index)), correct, provisional: false, archived: false, status: existing && !existing.provisional && !existing.archived ? existing.status : 'open' as const };
+      });
+      const keep = new Set(questions.map(p => p.id));
+      saved.polls = [...saved.polls.filter(p => p.category === 'duel' && !p.archived), ...questions, ...saved.polls.filter(p => !keep.has(p.id) && (p.category !== 'duel' || p.archived)).map(p => p.category === 'quiz' ? { ...p, status: 'draft' as const, pinned: false, archived: true } : p)];
+      saved.quizQuestionsVersion = 2;
+      changed = true;
+    }
+    if (saved.predictionQuestionsVersion !== 1) {
+      const questions = PREDICTION_QUESTIONS.map(entry => ({ ...(saved.polls.find(p => p.category === 'prediction' && p.kind === 'single' && p.question === entry.question && JSON.stringify(p.options) === JSON.stringify(entry.options)) ?? makeDemoPrediction(entry)), archived: false }));
+      const keep = new Set(questions.map(p => p.id));
+      saved.polls = [...saved.polls.filter(p => p.category === 'duel' && !p.archived), ...questions, ...saved.polls.filter(p => !keep.has(p.id) && (p.category !== 'duel' || p.archived)).map(p => p.category === 'prediction' ? { ...p, status: 'draft' as const, pinned: false, archived: true } : p)];
+      saved.predictionQuestionsVersion = 1;
+      changed = true;
+    }
+    if (changed) localStorage.setItem(`as-wedding-celebration:${eventId}`, JSON.stringify(saved));
+    return saved;
+  }
+  const initial: Demo={polls:demoPolls(),votes:{},approved:{},teams:{},duelQuestionsVersion:2,quizQuestionsVersion:2,predictionQuestionsVersion:1};
   localStorage.setItem(`as-wedding-celebration:${eventId}`,JSON.stringify(initial)); return initial;
 };
 const writeDemo = (eventId: string, data: Demo) => { localStorage.setItem(`as-wedding-celebration:${eventId}`, JSON.stringify(data)); };
@@ -37,7 +71,7 @@ export const celebration = {
     if (api.kind === 'local') {
       const data = readDemo(eventId), result = emptyPlayground();
       if (admin && !user.host) throw new Error('Only hosts can manage polls.');
-      result.polls = data.polls.filter(p => isPlaygroundCategory(p.category) && (admin || (p.status !== 'draft' && !p.provisional && (!p.startsAt || Date.parse(p.startsAt)<=Date.now())))).map(p => {
+      result.polls = data.polls.filter(p => !p.archived && isPlaygroundCategory(p.category) && (admin || (p.status !== 'draft' && !p.provisional && (!p.startsAt || Date.parse(p.startsAt)<=Date.now())))).map(p => {
         const votes = Object.entries(data.votes[p.id] ?? {}).filter(([uid])=>p.kind!=='text'||data.approved[p.id]?.[uid]).map(([,answer])=>answer), mine = data.votes[p.id]?.[user.id] ?? null;
         const closed=p.status==='closed'|| (!!p.closesAt && Date.parse(p.closesAt)<=Date.now());
         const reveal = closed && (!p.revealAt || Date.parse(p.revealAt) <= Date.now());
@@ -49,10 +83,12 @@ export const celebration = {
       let social: {photos?:{id:string;postId?:string;hidden:boolean;questId?:string}[];wishes?:{status:string}[] }={};
       try {social=JSON.parse(localStorage.getItem('as-wedding-demo-db-v1')||'{}');}catch{/* No demo posts yet. */}
       const photos=social.photos?.filter(p=>!p.hidden)??[];
-      result.teams = (['a', 'b', 'both'] as const).map(id => ({ id, members: Object.values(data.teams).filter(t => t === id).length, points: Object.entries(data.teams).filter(([, t]) => t === id).reduce((n, [uid]) => n + data.polls.filter(p=>data.votes[p.id]?.[uid] && (p.kind!=='text'||data.approved[p.id]?.[uid])).length*5
+      result.teams = (['a', 'b', 'both'] as const).map(id => ({ id, members: Object.values(data.teams).filter(t => t === id).length, points: Object.entries(data.teams).filter(([, t]) => t === id).reduce((n, [uid]) => n + data.polls.filter(p=>!p.archived && data.votes[p.id]?.[uid] && (p.kind!=='text'||data.approved[p.id]?.[uid])).length*5
         + result.polls.filter(p=>p.category==='quiz'&&p.correct!==null&&p.mine?.[0]===String(p.correct)&&p.status==='closed').length*20
         + new Set(photos.map(p=>p.postId||p.id)).size*10 + new Set(photos.flatMap(p=>p.questId?[p.questId]:[])).size*25 + (social.wishes?.filter(w=>w.status==='approved').length??0)*15, 0) }));
-      result.stats={votes:Object.values(data.votes).reduce((n,v)=>n+Object.keys(v).length,0),voters:new Set(Object.values(data.votes).flatMap(v=>Object.keys(v))).size,completed:Object.keys(data.votes).length};
+      const activeIds = new Set(data.polls.filter(p => !p.archived).map(p => p.id));
+      const activeVotes = Object.entries(data.votes).filter(([pollId]) => activeIds.has(pollId)).map(([, votes]) => votes);
+      result.stats={votes:activeVotes.reduce((n,v)=>n+Object.keys(v).length,0),voters:new Set(activeVotes.flatMap(v=>Object.keys(v))).size,completed:activeVotes.length};
       if(admin)result.pendingWords=data.polls.filter(p=>p.kind==='text').flatMap(p=>Object.entries(data.votes[p.id]??{}).filter(([uid])=>!data.approved[p.id]?.[uid]).map(([userId,answer])=>({pollId:p.id,userId,question:p.question,word:answer[0]})));
       return result;
     }
@@ -69,7 +105,7 @@ export const celebration = {
     const user = await requireGuestSignIn();
     if (api.kind === 'local') {
       const data=readDemo(eventId),p=data.polls.find(p=>p.id===pollId);
-      if(!p||p.status!=='open'||p.provisional||(p.startsAt&&Date.parse(p.startsAt)>Date.now())||(p.closesAt&&Date.parse(p.closesAt)<=Date.now()))throw new Error('Voting is not open for this poll.');
+      if(!p||p.archived||p.status!=='open'||p.provisional||(p.startsAt&&Date.parse(p.startsAt)>Date.now())||(p.closesAt&&Date.parse(p.closesAt)<=Date.now()))throw new Error('Voting is not open for this poll.');
       if(!answer.length||(p.kind!=='multiple'&&answer.length!==1)||new Set(answer).size!==answer.length||(p.kind!=='text'&&answer.some(a=>!p.options[Number(a)])))throw new Error('Choose a valid answer.');
       if(p.category==='quiz'&&data.votes[pollId]?.[user.id]&&JSON.stringify(data.votes[pollId][user.id])!==JSON.stringify(answer))throw new Error('Your quiz answer is already locked in.');
       if(p.kind==='text'){if(!/^\S{1,30}$/.test(answer[0].trim()))throw new Error('Share one word, up to 30 characters.');answer=[answer[0].trim().toLowerCase()];}

@@ -29,6 +29,8 @@ export default function PhotoViewer({ photos, start, total, reacting, onClose, o
   const [saving, setSaving] = useState(false);
   const dialog = useRef<HTMLDivElement>(null);
   const track = useRef<HTMLDivElement>(null);
+  const touch = useRef<{ x: number; y: number } | null>(null);
+  const swiped = useRef(false);
   const activeIndex = useRef(index);
   activeIndex.current = index;
   const closeButton = useRef<HTMLButtonElement>(null);
@@ -41,7 +43,7 @@ export default function PhotoViewer({ photos, start, total, reacting, onClose, o
 
   const go = useCallback((next: number) => {
     const target = Math.max(0, Math.min(photos.length - 1, next));
-    track.current?.scrollTo({ left: target * track.current.clientWidth, behavior: reduced ? 'instant' : 'smooth' });
+    track.current?.scrollTo({ top: target * track.current.clientHeight, behavior: reduced ? 'instant' : 'smooth' });
     setIndex(target); setMenu(false);
   }, [photos.length, reduced]);
 
@@ -50,7 +52,7 @@ export default function PhotoViewer({ photos, start, total, reacting, onClose, o
     const overflow = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
     closeButton.current?.focus({ preventScroll: true });
-    if (track.current) track.current.scrollLeft = index * track.current.clientWidth;
+    if (track.current) track.current.scrollTop = index * track.current.clientHeight;
     return () => { document.body.style.overflow = overflow; previous?.focus?.({ preventScroll: true }); };
     // Position once on open; later moves come from swipes and the arrows.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -59,7 +61,7 @@ export default function PhotoViewer({ photos, start, total, reacting, onClose, o
   useEffect(() => {
     const element = track.current;
     if (!element) return;
-    const resize = new ResizeObserver(() => { element.scrollLeft = activeIndex.current * element.clientWidth; });
+    const resize = new ResizeObserver(() => { element.scrollTop = activeIndex.current * element.clientHeight; });
     resize.observe(element);
     return () => resize.disconnect();
   }, []);
@@ -88,8 +90,8 @@ export default function PhotoViewer({ photos, start, total, reacting, onClose, o
         else onClose();
       }
       if (menu || document.querySelector('.reaction-picker-overlay')) return;
-      if (event.key === 'ArrowRight') { event.preventDefault(); go(index + 1); }
-      if (event.key === 'ArrowLeft') { event.preventDefault(); go(index - 1); }
+      if (event.key === 'ArrowRight' || event.key === 'ArrowDown') { event.preventDefault(); go(index + 1); }
+      if (event.key === 'ArrowLeft' || event.key === 'ArrowUp') { event.preventDefault(); go(index - 1); }
     };
     document.addEventListener('keydown', key);
     return () => document.removeEventListener('keydown', key);
@@ -118,7 +120,7 @@ export default function PhotoViewer({ photos, start, total, reacting, onClose, o
   return createPortal(<div ref={dialog} className="photo-viewer" role="dialog" aria-modal="true" aria-label="Photo viewer" lang="en">
     {controls && <header className="photo-viewer-top">
       <button ref={closeButton} type="button" className="photo-viewer-round" aria-label="Close" onClick={onClose}><Icon size={20} d="M6 6l12 12M18 6 6 18" /></button>
-      <span aria-live="polite">{index + 1} of {total} {total === 1 ? 'photo' : 'photos'}</span>
+      <div className="photo-viewer-position"><span aria-live="polite">{index + 1} of {total} {total === 1 ? 'photo' : 'photos'}</span>{photos.length > 1 && <small>Swipe up or down</small>}</div>
       <div ref={more} className="photo-viewer-more">
         <button ref={moreButton} type="button" className="photo-viewer-round" aria-label="More options" aria-haspopup="menu" aria-expanded={menu} aria-controls={menu ? menuId : undefined} onClick={() => setMenu(open => !open)} onKeyDown={event => {
           if (event.key === 'ArrowDown' || event.key === 'ArrowUp') { event.preventDefault(); setMenu(true); }
@@ -141,12 +143,31 @@ export default function PhotoViewer({ photos, start, total, reacting, onClose, o
       </div>
     </header>}
 
-    <div ref={track} className="photo-viewer-track" aria-roledescription="carousel" aria-label="All gallery photos" onScroll={event => {
-      const next = Math.round(event.currentTarget.scrollLeft / event.currentTarget.clientWidth);
+    <div ref={track} className="photo-viewer-track" role="region" aria-roledescription="carousel" aria-label="All gallery photos" onScroll={event => {
+      const next = Math.round(event.currentTarget.scrollTop / event.currentTarget.clientHeight);
       if (next !== index) { setIndex(Math.max(0, Math.min(photos.length - 1, next))); setMenu(false); }
+    }} onTouchStart={event => {
+      swiped.current = false;
+      touch.current = event.touches.length === 1 ? { x: event.touches[0].clientX, y: event.touches[0].clientY } : null;
+    }} onTouchMove={event => {
+      if (event.touches.length !== 1) { touch.current = null; swiped.current = true; }
+    }} onTouchCancel={() => { touch.current = null; swiped.current = true; }} onTouchEnd={event => {
+      const start = touch.current;
+      touch.current = null;
+      if (!start || event.touches.length || event.changedTouches.length !== 1) return;
+      const dx = event.changedTouches[0].clientX - start.x;
+      const dy = event.changedTouches[0].clientY - start.y;
+      // Vertical swipes scroll and snap natively; horizontal swipes also move one photo.
+      if (Math.abs(dx) >= 56 && Math.abs(dx) > Math.abs(dy) * 1.4) {
+        swiped.current = true;
+        go(activeIndex.current + (dx < 0 ? 1 : -1));
+      }
     }}>
       {photos.map((item, i) => <div key={item.id} className="photo-viewer-slide" role="group" aria-roledescription="slide" aria-label={`${i + 1} of ${total}`} aria-hidden={i !== index}>
-        {Math.abs(i - index) <= 1 && <button type="button" className="photo-viewer-photo" tabIndex={i === index ? 0 : -1} aria-label={controls ? 'Hide photo controls' : 'Show photo controls'} onClick={() => { setMenu(false); setControls(visible => !visible); }}>
+        {Math.abs(i - index) <= 1 && <button type="button" className="photo-viewer-photo" tabIndex={i === index ? 0 : -1} aria-label={controls ? 'Hide photo controls' : 'Show photo controls'} onPointerDown={event => { if (event.pointerType === 'mouse') swiped.current = false; }} onClick={() => {
+          if (swiped.current) { swiped.current = false; return; }
+          setMenu(false); setControls(visible => !visible);
+        }}>
           <img src={item.url} alt={item.caption ? item.caption : `Photo by ${item.uploaderName}`} decoding="async" draggable={false} />
         </button>}
       </div>)}
