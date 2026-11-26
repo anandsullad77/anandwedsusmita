@@ -40,3 +40,9 @@
   .invite-mosaic { grid-template-rows: repeat(3, 160px); margin-inline: 0; }
   .invite-gallery-open { width: auto; }
 }
+/* Signed-out placeholders (drawn, no real photos). */
+.invite-mosaic-locked .invite-tile svg { display: block; }
+.invite-mosaic-locked .invite-wish { color: #7F2440; }
+.invite-wish-lines { display: flex; flex-direction: column; gap: 8px; margin-top: auto; }
+.invite-wish-lines i { display: block; height: 10px; border-radius: 999px; background: rgba(127, 36, 64, .18); }
+.invite-gallery-note { margin: 10px 0 0; text-align: center; font-size: 13px; color: #556457; }

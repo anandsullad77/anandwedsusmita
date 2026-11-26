@@ -285,13 +285,13 @@ if (require.main === module) (async () => {
       await nav(page).getByRole('link', { name: 'Create Post', exact: true }).click();
       await page.getByRole('link', { name: /Upload Photos/ }).click();
       await page.getByLabel('Choose photos from gallery').setInputFiles([path.join(root, 'public/images/couple.webp'), path.join(root, 'public/images/invitation-couple.webp')]);
-      await page.getByLabel('Caption (optional)').fill(`A single post at ${width}px`);
+      await page.getByLabel('Caption', { exact: true }).fill(`A single post at ${width}px`);
       await page.reload();
-      await page.getByRole('button', { name: 'Create Post · 2 photos', exact: true }).waitFor();
-      assert.equal(await page.getByLabel('Caption (optional)').inputValue(), `A single post at ${width}px`);
+      await page.getByRole('button', { name: 'Share 2 photos', exact: true }).waitFor();
+      assert.equal(await page.getByLabel('Caption', { exact: true }).inputValue(), `A single post at ${width}px`);
       await assertLayout(page);
       await page.screenshot({ path: path.join(root, `artifacts/photo-composer-${width}.png`), fullPage: true });
-      await page.getByRole('button', { name: 'Create Post · 2 photos', exact: true }).click();
+      await page.getByRole('button', { name: 'Share 2 photos', exact: true }).click();
       await page.waitForURL(origin + '/invitation/feed');
       await page.locator('.post-caption').filter({ hasText: `A single post at ${width}px` }).waitFor();
       await wait(() => run.batches.length === 1, 'Photo post published');
@@ -319,7 +319,7 @@ if (require.main === module) (async () => {
       await run.page.getByRole('button', { name: /Account menu for/ }).waitFor();
       assert.equal(run.exchanges, 1); assert.equal(run.claims, 1);
       if (target.includes('type=wish')) await run.page.getByLabel('Your wish or blessing').waitFor();
-      if (target.includes('type=photos')) { await run.page.getByRole('heading', { name: 'Upload Photos', exact: true }).waitFor(); assert.equal(await run.page.getByLabel('Quest tag').inputValue(), 'proud-moment'); }
+      if (target.includes('type=photos')) { await run.page.getByRole('heading', { name: 'New post', exact: true }).waitFor(); assert.equal(await run.page.getByRole('button', { name: 'A Proud Moment', exact: true }).getAttribute('aria-pressed'), 'true'); }
       assert.deepEqual(run.errors, []); await run.context.close();
     }
     console.log('PASS: exact page, queries, anchor, chosen post type, photo quest and family identity survive OAuth');
@@ -336,10 +336,10 @@ if (require.main === module) (async () => {
     const offline = await scenario(browser, { initial: 'google' });
     await offline.page.goto(origin + '/invitation/create?type=photos');
     await offline.page.getByLabel('Choose photos from gallery').setInputFiles([path.join(root, 'public/images/couple.webp'), path.join(root, 'public/images/invitation-couple.webp')]);
-    await offline.page.getByLabel('Caption (optional)').fill('Offline post retained');
+    await offline.page.getByLabel('Caption', { exact: true }).fill('Offline post retained');
     // Keep local app routing available while simulating a device with no signal.
     await offline.page.evaluate(() => Object.defineProperty(navigator, 'onLine', { configurable: true, get: () => false }));
-    await offline.page.getByRole('button', { name: 'Create Post · 2 photos', exact: true }).click();
+    await offline.page.getByRole('button', { name: 'Share 2 photos', exact: true }).click();
     await offline.page.waitForURL(origin + '/invitation/feed');
     await wait(async () => await offline.page.evaluate(async () => (await import('/src/companion/lib/uploadQueue.ts')).pendingCount()) === 2, 'Offline queue');
     assert.equal(offline.batches.length, 0);

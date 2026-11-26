@@ -35,9 +35,10 @@ function seed(run) {
           guest.photos.splice(0, guest.photos.length);
           await guest.page.goto(origin + '/invitation/create?type=photos');
           await guest.page.getByLabel('Choose photos from gallery').setInputFiles([path.join(root, 'public/images/couple.webp'), path.join(root, 'public/images/invitation-couple.webp')]);
+          if (await guest.page.getByRole('button', { name: 'Change', exact: true }).count()) await guest.page.getByRole('button', { name: 'Change', exact: true }).click();
           await guest.page.getByLabel('Your name', { exact: true }).fill('Uploaded guest');
-          await guest.page.getByLabel('Caption (optional)').fill('An approval required post');
-          await guest.page.getByRole('button', { name: /Create Post.*2 photos/ }).click();
+          await guest.page.getByLabel('Caption', { exact: true }).fill('An approval required post');
+          await guest.page.getByRole('button', { name: 'Share 2 photos', exact: true }).click();
           await guest.page.getByRole('heading', { name: 'Sent for approval', exact: true }).waitFor();
           assert.equal(guest.batches.length, 1);
           assert.ok(guest.photos.every(p => p.status === 'pending' && p.hidden));

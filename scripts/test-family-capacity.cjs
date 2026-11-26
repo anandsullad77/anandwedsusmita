@@ -64,7 +64,7 @@ const json = (route, body) => route.fulfill({ contentType: 'application/json', b
       }
       await page.getByRole('button', { name: 'Continue with Google', exact: true }).click();
       await page.waitForURL(origin + '/app/create?type=photos');
-      await page.getByRole('heading', { name: 'Upload Photos', exact: true }).waitFor();
+      await page.getByRole('heading', { name: 'New post', exact: true }).waitFor();
       assert.equal(run.claims, 2, 'OAuth reclaims the family for the Google account');
       if (width === 390) {
         let rejectSave = true;

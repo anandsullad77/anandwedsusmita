@@ -108,7 +108,7 @@ function Posted({ ctx, base }: { ctx: PhotoContext; base: string }) {
       <div className="create-done-note" role="status"><Icon size={20} d="M3 11.5a13 13 0 0 1 18 0M6.5 15a8 8 0 0 1 11 0M10 18.5a3 3 0 0 1 4 0" /><span>You can close this screen. If the signal drops, your {plural} wait safely on this phone and finish on their own.</span></div>
     </> : <>
       <div className="create-done-grains" aria-hidden="true">{Array.from({ length: 8 }, (_, i) => <i key={i} />)}</div>
-      <span className="create-done-check" aria-hidden="true"><Icon size={30} d="m5 12.5 4.5 4.5L19 7.5" /></span>
+      <span className="create-done-check" aria-hidden="true"><Icon size={30} d="M7 3h10M7 21h10M8 3v3.5a4 4 0 0 0 1.6 3.2L12 12l2.4-2.3A4 4 0 0 0 16 6.5V3M8 21v-3.5a4 4 0 0 1 1.6-3.2L12 12l2.4 2.3a4 4 0 0 1 1.6 3.2V21" /></span>
       <h1>Sent for approval</h1>
       <p>{count} {plural} submitted{quest ? ` to ${quest}` : ''}. Your post will appear in the album after a host approves it. Thank you for being part of the day.</p>
     </>}
