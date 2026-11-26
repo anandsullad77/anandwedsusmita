@@ -286,7 +286,11 @@ function EditFamily({ d, h, onClose }: { d: AdminData; h: AdminHousehold | null;
   const [side, setSide] = useState(h?.side ?? '');
   const [invitedBy, setInvitedBy] = useState(h?.invitedBy ?? '');
   const [cap, setCap] = useState(h?.cap ?? 6);
-  const [fns, setFns] = useState<string[]>(h?.functionIds ?? d.functions.map(f => f.id));
+  const [fns, setFns] = useState<string[]>(() => {
+    const valid = h?.functionIds?.filter(id => d.functions.some(f => f.id === id));
+    if (!h || (!valid?.length && d.functions.length === 1)) return d.functions.map(f => f.id);
+    return valid ?? [];
+  });
   const [people, setPeople] = useState<Partial<Person>[]>(h?.people.length ? h.people : [{ name: '', phone: '' }]);
   const [err, setErr] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
@@ -309,6 +313,7 @@ function EditFamily({ d, h, onClose }: { d: AdminData; h: AdminHousehold | null;
       const clean = sourcePeople.filter(p => p.name?.trim()).map(p => ({ ...p, name: p.name!.trim(), phone: p.phone?.replace(/[^\d+]/g, '') || null }));
       const limit = invitationType === 'individual' ? 1 : cap;
       if (!Number.isInteger(limit) || limit < 1 || limit > 20 || limit < clean.length) throw new Error('Max people must be 1–20 and cover everyone listed.');
+      if (!fns.length) throw new Error(d.functions.length ? 'Choose at least one event for this invitation so the guest can RSVP.' : 'Add a wedding event in Setup before saving this invitation.');
       await api.saveHousehold(d.event.id, { id: h?.id, name: name.trim(), invitationType, side: side || null, invitedBy: invitedBy.trim() || null, cap: limit, functionIds: fns }, clean);
       onClose();
     } catch (e) { setErr((e as Error).message); setSaving(false); lock.current = false; }
@@ -325,7 +330,7 @@ function EditFamily({ d, h, onClose }: { d: AdminData; h: AdminHousehold | null;
           <div className="field"><label htmlFor="ib">Invited by</label><input id="ib" className="input" value={invitedBy} onChange={e => setInvitedBy(e.target.value)} /></div>
           {invitationType === 'family' && <div className="field"><label htmlFor="cp">Max people</label><input id="cp" className="input" type="number" inputMode="numeric" min={1} max={20} value={cap} onChange={e => setCap(Number(e.target.value))} /></div>}
         </div>
-        {d.functions.length > 1 && <div><b>Invited to</b><div className="import-actions">{d.functions.map(f => <button type="button" key={f.id} className="chip" aria-pressed={fns.includes(f.id)} onClick={() => setFns(s => s.includes(f.id) ? s.filter(x => x !== f.id) : [...s, f.id])}>{f.nameEn}</button>)}</div></div>}
+        {d.functions.length > 0 && <div><b>Invited to</b><div className="import-actions">{d.functions.map(f => <button type="button" key={f.id} className="chip" aria-pressed={fns.includes(f.id)} onClick={() => setFns(s => s.includes(f.id) ? s.filter(x => x !== f.id) : [...s, f.id])}>{f.nameEn}</button>)}</div></div>}
         <div className="family-people-heading"><b>People</b><span className="import-help">Names and WhatsApp numbers</span></div>
         {people.map((p, i) => <div key={p.id ?? i} className="family-person-fields">{invitationType === "family" && <div className="field"><label htmlFor={`person-${i}`}>Person {i + 1} name</label><input id={`person-${i}`} className="input" placeholder="Full name" value={p.name ?? ''} onChange={e => upd(i, { name: e.target.value })} /></div>}<div className="field"><label htmlFor={`phone-${i}`}>Person {i + 1} WhatsApp number</label><input id={`phone-${i}`} className="input" placeholder="Optional · include country code" inputMode="tel" value={p.phone ?? ''} onChange={e => upd(i, { phone: e.target.value })} /></div><label className="family-child-field"><input type="checkbox" checked={!!p.isChild} onChange={e => upd(i, { isChild: e.target.checked })} />Child</label></div>)}
         {invitationType === 'family' && <button type="button" className="abtn" disabled={people.length >= 20} onClick={() => setPeople(ps => [...ps, { name: '', phone: '' }])}>+ Add person</button>}
