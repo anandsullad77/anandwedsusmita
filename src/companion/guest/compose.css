@@ -42,3 +42,23 @@
 .compose-actions p { display: flex; align-items: flex-start; justify-content: center; gap: 6px; margin: 8px 0 0; font-size: 12px; line-height: 1.45; text-align: center; color: #556457; }
 .compose-actions p svg { flex: 0 0 auto; margin-top: 1px; }
 .general-main .compose.haaku-screen { min-height: 100dvh; }
+
+/* Phones: the two wrappers don't change the single column. */
+.compose-media, .compose-details { display: contents; }
+
+/* Desktop (approved Round 5): photo on the left, details and Share on the right, in one card. */
+@media (min-width: 1024px) {
+  .general-shell:has(.compose) main.general-main { max-width: none; padding: 40px 40px 60px; }
+  .general-main .compose.haaku-screen { min-height: 0; width: min(100%, 1120px); margin: 0 auto; display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); grid-template-rows: auto 1fr auto; grid-template-areas: "top top" "media details" "media actions"; column-gap: 40px; border: 1px solid var(--line); border-radius: 24px; background: #fff; box-shadow: 0 30px 60px -40px rgba(40, 58, 45, .5); overflow: hidden; }
+  .compose-top { grid-area: top; height: 64px; grid-template-columns: 64px 1fr 120px; padding: 0 12px; background: #fff; }
+  .compose-top h1 { font-size: 24px; }
+  .compose-body { display: contents; }
+  .compose-media { grid-area: media; display: flex; flex-direction: column; gap: 20px; padding: 28px 0 32px 36px; }
+  .compose-details { grid-area: details; display: flex; flex-direction: column; gap: 22px; padding: 28px 36px 0 0; }
+  .compose-preview { height: 500px; }
+  .compose-thumb, .compose-thumb-add { width: 64px; height: 64px; }
+  .compose-pick { min-height: 500px; }
+  .compose-actions { grid-area: actions; position: static; padding: 24px 36px 32px 0; background: transparent; border-top: 0; }
+  .compose-actions .btn { min-height: 56px; }
+  .compose-actions p { font-size: 13px; }
+}
